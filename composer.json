@@ -10,7 +10,7 @@
             "role": "Developer"
         }
     ],
-    "license": "GPL-3.0-or-later",
+    "license": "GPL-2.0-or-later",
     "require": {
         "typo3/cms-core": "^10.4",
         "deeplcom/deepl-php": "v1.4.0"
