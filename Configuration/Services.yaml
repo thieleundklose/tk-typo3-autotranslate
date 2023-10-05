@@ -1,0 +1,11 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  ThieleUndKlose\Autotranslate\EventListener\PageTsConfigListener:
+    tags:
+      - name: event.listener
+        method: 'onModifyLoadedPageTsConfig'
+        event: TYPO3\CMS\Core\Configuration\Event\ModifyLoadedPageTsConfigEvent
