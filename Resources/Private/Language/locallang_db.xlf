@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<xliff version="1.0">
+	<file source-language="en" datatype="plaintext" original="messages" date="2016-12-12T11:07:00Z" product-name="autotranslate">
+		<header/>
+		<body>
+			<trans-unit id="autotranslate_exclude" xml:space="preserve">
+				<source>Exclude from autotranslation</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_languages" xml:space="preserve">
+				<source>Translate automatically to selected languages</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_last" xml:space="preserve">
+				<source>Last execution of autotranslation</source>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>
