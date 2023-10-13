@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Utility;
 
+use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -61,7 +62,7 @@ class TranslationHelper {
             if (!in_array($config['type'], self::COLUMN_TRANSLATEABLE_TYPES)) {
                 return;
             }
-            $evalList = GeneralUtility::trimExplode(',', $config['eval'], true);
+            $evalList = GeneralUtility::trimExplode(',', $config['eval'] ?? '', true);
             $evalIntersect = array_intersect($evalList, self::COLUMN_TRANSLATEABLE_EXCLUDE_EVALS);
             if (!empty($evalIntersect)) {
                 return;
@@ -153,7 +154,7 @@ class TranslationHelper {
         $fieldnameAutotranslateTextFields = self::configurationFieldname($table,'textfields');
         $fieldnameAutotranslateFileReferences = self::configurationFieldname($table,'fileReferences');
 
-        if ($siteConfiguration[$fieldnameAutotranslateEnabled] !== TRUE && $table != 'sys_file_reference') {
+        if (!isset($siteConfiguration[$fieldnameAutotranslateEnabled]) || $siteConfiguration[$fieldnameAutotranslateEnabled] === FALSE || $table == 'sys_file_reference') {
             return null;
         }
 
@@ -278,11 +279,49 @@ class TranslationHelper {
      */
     public static function fetchSysLanguages() {
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-        $site = $siteFinder->getSiteByPageId(is_null($GLOBALS['TSFE']->id) ? 1 : $GLOBALS['TSFE']->id);
+
+        $request = self::getRequest();
+        $parsedBody = $request->getParsedBody();
+
+        $pid = 0;
+        if (empty($pid) && isset($parsedBody['popViewId'])) {
+            $pid = $parsedBody['popViewId'];
+        }
+        if (empty($pid) && isset($parsedBody['effectivePid'])) {
+            $pid = $parsedBody['effectivePid'];
+        }
+        if (empty($pid) && is_array($parsedBody['data']) && is_array($parsedBody['data']['pages'])) { // on page insert
+            $pageRecord = current($parsedBody['data']['pages']);
+            if (isset($pageRecord['pid'])) {
+                $pid = $pageRecord['pid'];
+            }
+        }
+        // on page update
+        if (empty($pid)) {
+            $queryParams = $request->getQueryParams();
+            if (is_array($queryParams) && is_array($queryParams['data']) && is_array($queryParams['data']['pages'])) {
+                $pid = current(array_keys($queryParams['data']['pages']));
+            }
+        }
+
+        if (empty((int)$pid)) {
+            return [];
+        }
+
+        $site = $siteFinder->getSiteByPageId((int)$pid);
         $languages = $site->getLanguages();
         ksort($languages);
 
         return $languages;
     }
 
+    /**
+     * Get request interface.
+     *
+     * @return ServerRequestInterface
+     */
+    private static function getRequest(): ServerRequestInterface
+    {
+        return $GLOBALS['TYPO3_REQUEST'];
+    }
 }

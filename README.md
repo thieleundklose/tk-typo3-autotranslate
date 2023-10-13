@@ -1,4 +1,3 @@
-
 # Thiele & Klose - Autotranslate
 
 ### Why we build this Extension
@@ -18,9 +17,15 @@ DeepL autotranslator is a powerful tool for editors with many features, especial
 
 ### Compatibility
 
-The DeepL autotranslate extension is in the first version with TYPO3 v10. Translations for news articles of the extension [News](https://extensions.typo3.org/extension/news) are also already integrated.
+The DeepL Autotranslate extension is available in the version for TYPO3 v10 and v11. Translations for news articles of the extension [News](https://extensions.typo3.org/extension/news) are also already integrated.
 
 ### Documentation
 
 * [Installation](Documentation/Installation/Readme.md)
 * [Configuration](Documentation/Configuration/Readme.md)
+
+### Roadmap
+
+* Support for alternative translation services such as Google Translate, ChatGPT.
+* Support for glossaries.
+* Batch translation with symfony command and scheduler.
