@@ -3,16 +3,17 @@
 $EM_CONF[$_EXTKEY] = [
     'title' => 'Thiele & Klose - Autotranslate',
     'description' => 'Integration of automatic translations into the backend process when maintaining pages and content elements by editors.',
-    'category' => 'plugin',
-    'author' => '',
-    'author_email' => '',
-    'state' => 'alpha',
+    'category' => 'be',
+    'author' => 'Mike Zimmer',
+    'author_company' => 'Thiele & Klose GmbH',
+    'author_email' => 'typo3@thieleundklose.de',
+    'state' => 'beta',
     'clearCacheOnLoad' => 0,
-    'version' => '0.1.0',
+    'version' => '0.9.1',
     'constraints' => [
         'depends' => [
-            'typo3' => '10.4.0-10.4.99',
-            'php' => '7.3.0-7.4.99',
+            'typo3' => '10.4.0-11.5.99',
+            'php' => '7.4.0-8.1.99',
         ],
         'conflicts' => [],
         'suggests' => [
