@@ -277,7 +277,8 @@ class TranslationHelper {
      * @return \TYPO3\CMS\Core\Site\Entity\SiteLanguage[]
      * @throws \TYPO3\CMS\Core\Exception\SiteNotFoundException
      */
-    public static function fetchSysLanguages() {
+    public static function fetchSysLanguages() 
+    {
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
 
         $request = self::getRequest();
@@ -287,15 +288,18 @@ class TranslationHelper {
         if (empty($pid) && isset($parsedBody['popViewId'])) {
             $pid = $parsedBody['popViewId'];
         }
+
         if (empty($pid) && isset($parsedBody['effectivePid'])) {
             $pid = $parsedBody['effectivePid'];
         }
+
         if (empty($pid) && is_array($parsedBody['data']) && is_array($parsedBody['data']['pages'])) { // on page insert
             $pageRecord = current($parsedBody['data']['pages']);
             if (isset($pageRecord['pid'])) {
                 $pid = $pageRecord['pid'];
             }
         }
+
         // on page update
         if (empty($pid)) {
             $queryParams = $request->getQueryParams();

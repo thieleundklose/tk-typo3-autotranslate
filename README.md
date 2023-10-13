@@ -26,6 +26,6 @@ The DeepL Autotranslate extension is available in the version for TYPO3 v10 and 
 
 ### Roadmap
 
+* Batch translation with symfony command and scheduler.
 * Support for alternative translation services such as Google Translate, ChatGPT.
 * Support for glossaries.
-* Batch translation with symfony command and scheduler.
