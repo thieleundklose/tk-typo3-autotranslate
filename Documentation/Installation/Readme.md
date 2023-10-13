@@ -6,4 +6,4 @@ A DeepL API key is required to use the extension. This API key can be generated 
 
 ### How to install
 
-You can install this extension via "composer require tuk/tuk_deepl" or download it from the TYPO3 extension repository and activate the extension in the backend extension manager of your TYPO3 installation.
+You can install this extension via "composer require thieleundklose/autotranslate" or download it from the TYPO3 extension repository and activate the extension in the backend extension manager of your TYPO3 installation.

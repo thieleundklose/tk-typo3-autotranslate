@@ -5,15 +5,16 @@
     "authors": [
         {
             "name": "Mike Zimmer",
-            "email": "mike.zimmer@thieleundklose.de",
+            "email": "typo3@thieleundklose.de",
             "homepage": "https://www.thieleundklose.de",
             "role": "Developer"
         }
     ],
     "license": "GPL-2.0-or-later",
     "require": {
-        "typo3/cms-core": "^10.4",
-        "deeplcom/deepl-php": "v1.4.0"
+        "typo3/cms-core": "^10.4 || ^11.5",
+        "deeplcom/deepl-php": "v1.4.0",
+        "php": ">= 7.4 < 8.2"
     },
     "require-dev": {
         "typo3/testing-framework": "^6.8"
