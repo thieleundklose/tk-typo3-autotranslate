@@ -16,6 +16,8 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Utility;
 
+use TYPO3\CMS\Core\Exception\SiteNotFoundException;
+use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
@@ -171,7 +173,7 @@ class TranslationHelper {
      * @param int $pageId
      * @param string $table
      * @return array|null
-     * @throws \TYPO3\CMS\Core\Exception\SiteNotFoundException
+     * @throws SiteNotFoundException
      */
     public static function translationTextfields(int $pageId, string $table) : ?array {
 
@@ -191,7 +193,7 @@ class TranslationHelper {
      * @param int $pageId
      * @param string $table
      * @return array|null
-     * @throws \TYPO3\CMS\Core\Exception\SiteNotFoundException
+     * @throws SiteNotFoundException
      */
     public static function translationFileReferences(int $pageId, string $table) : ?array {
 
@@ -225,7 +227,7 @@ class TranslationHelper {
      * @param int $pageId
      * @param array|null $keyPath
      * @return array|mixed|null
-     * @throws \TYPO3\CMS\Core\Exception\SiteNotFoundException
+     * @throws SiteNotFoundException
      */
     public static function siteConfigurationValue(int $pageId, array $keyPath = null)
     {
@@ -249,7 +251,7 @@ class TranslationHelper {
      *
      * @param int|null $pageId
      * @return string|null
-     * @throws \TYPO3\CMS\Core\Exception\SiteNotFoundException
+     * @throws SiteNotFoundException
      */
     public static function apiKey(int $pageId = null) : ?string
     {
@@ -274,10 +276,10 @@ class TranslationHelper {
     /**
      * Receive possible languages by page.
      *
-     * @return \TYPO3\CMS\Core\Site\Entity\SiteLanguage[]
-     * @throws \TYPO3\CMS\Core\Exception\SiteNotFoundException
+     * @return SiteLanguage[]
+     * @throws SiteNotFoundException
      */
-    public static function fetchSysLanguages() 
+    public static function fetchSysLanguages()
     {
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
 

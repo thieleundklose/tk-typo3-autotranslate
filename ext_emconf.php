@@ -8,7 +8,6 @@ $EM_CONF[$_EXTKEY] = [
     'author_company' => 'Thiele & Klose GmbH',
     'author_email' => 'typo3@thieleundklose.de',
     'state' => 'beta',
-    'clearCacheOnLoad' => 0,
     'version' => '0.9.1',
     'constraints' => [
         'depends' => [

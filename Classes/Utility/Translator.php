@@ -36,7 +36,7 @@ class Translator {
      * @return void
      */
     function __construct() {
-        $this->logger = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
+        $this->logger = GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
 
         // load languages from TYPO3 configuration
         $this->languages = TranslationHelper::fetchSysLanguages();
