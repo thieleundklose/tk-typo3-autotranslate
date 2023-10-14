@@ -215,10 +215,16 @@ class TranslationHelper {
      */
     public static function configurationFieldname(string $table, string $fieldname) : string
     {
-        $tableUpperCamelCase = GeneralUtility::underscoredToUpperCamelCase($table);
-        $fieldnameUpperCamelCase = GeneralUtility::underscoredToUpperCamelCase($fieldname);
+        $parts = implode(
+            '_',
+            [
+                'autotranslate',
+                GeneralUtility::camelCaseToLowerCaseUnderscored($table),
+                GeneralUtility::camelCaseToLowerCaseUnderscored($fieldname)
+            ]
+        );
 
-        return 'autotranslate' . $tableUpperCamelCase . $fieldnameUpperCamelCase;
+        return GeneralUtility::underscoredToLowerCamelCase($parts);
     }
 
     /**
