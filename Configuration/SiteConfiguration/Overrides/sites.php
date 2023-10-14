@@ -39,7 +39,7 @@ if (!empty($translateableTables)) {
             'config' => [
                 'type' => 'check',
                 'renderType' => 'checkboxToggle',
-                'default' => 1,
+                'default' => 0,
                 'items' => [
                     [
                         0 => '',
