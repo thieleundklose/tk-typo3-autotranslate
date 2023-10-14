@@ -57,18 +57,22 @@ class TranslationHelper {
             if ($table == 'sys_file_reference' && in_array($k, ['tablenames', 'fieldname', 'table_local'])) {
                 return;
             }
+
             $config = $v['config'];
-            if (isset($config['renderType']) || isset($config['softref'])) {
+            if (isset($config['renderType'])) {
                 return;
             }
+
             if (!in_array($config['type'], self::COLUMN_TRANSLATEABLE_TYPES)) {
                 return;
             }
+
             $evalList = GeneralUtility::trimExplode(',', $config['eval'] ?? '', true);
             $evalIntersect = array_intersect($evalList, self::COLUMN_TRANSLATEABLE_EXCLUDE_EVALS);
             if (!empty($evalIntersect)) {
                 return;
             }
+
             return true;
         }, ARRAY_FILTER_USE_BOTH);
 
