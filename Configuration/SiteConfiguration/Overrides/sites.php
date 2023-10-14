@@ -23,7 +23,7 @@ $translateableTables = TranslationHelper::translateableTables();
 if (!empty($translateableTables)) {
 
     $possibleTranslationLanguages = array_map(function ($v) {
-        return $v['languageId'] . ' => ' . $v['typo3Language'];
+        return $v['languageId'] . ' => ' . ( isset($v['title']) ? $v['title'] : 'no title defined' );
     }, TranslationHelper::possibleTranslationLanguages($siteConfiguration['languages']));
     $possibleTranslationLanguagesDescription = !empty($possibleTranslationLanguages) ? 'Comma seperated list of language uids. (' . implode(', ', $possibleTranslationLanguages) . ')' : 'First define Languages in Site Configuration.';
 

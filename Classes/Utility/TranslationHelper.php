@@ -163,7 +163,7 @@ class TranslationHelper {
         return [
             'autotranslateLanguages' => $siteConfiguration[$fieldnameAutotranslateLanguages],
             'autotranslateTextfields' => $siteConfiguration[$fieldnameAutotranslateTextFields],
-            'autotranslateFileReferences' => $siteConfiguration[$fieldnameAutotranslateFileReferences],
+            'autotranslateFileReferences' => $siteConfiguration[$fieldnameAutotranslateFileReferences] ?? NULL,
         ];
     }
 
