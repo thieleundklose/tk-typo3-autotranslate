@@ -27,6 +27,7 @@ class Translator {
     const AUTOTRANSLATE_LANGUAGES = 'autotranslate_languages';
 
     public $languages = [];
+    public $siteLanguages = [];
     public $logger = null;
     protected $apiKey = null;
 
