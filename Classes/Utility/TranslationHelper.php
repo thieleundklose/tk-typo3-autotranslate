@@ -116,7 +116,7 @@ class TranslationHelper {
      * @param int $type
      * @return array
      */
-    public static function unusedTranslateableColumns(string $table, string $value, int $type = 0) : array
+    public static function unusedTranslateableColumns(string $table, string $value, int $type) : array
     {
         $translateableColumns = self::translateableColumns($table);
         $valueList = GeneralUtility::trimExplode(',', $value, true);
@@ -180,14 +180,12 @@ class TranslationHelper {
      * @throws SiteNotFoundException
      */
     public static function translationTextfields(int $pageId, string $table) : ?array {
-
         if ($pageId === 0) {
             return null;
         }
 
         $siteConfiguration = self::siteConfigurationValue($pageId);
         $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
-
         return GeneralUtility::trimExplode(',', $translationSettings['autotranslateTextfields'], true);
     }
 

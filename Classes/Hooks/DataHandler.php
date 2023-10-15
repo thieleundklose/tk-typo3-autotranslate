@@ -44,13 +44,14 @@ class DataHandler implements SingletonInterface
         array $fields,
         \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject
     ) {
-        // Skip auto translation if page created on root level.
-        if ($table == 'pages' && $status == 'new' && $fields['pid'] === 0) {
-            return;
-        }
 
         // Skip auto translation if hook is suspended. @see processCmdmap() for detailed description.
         if ($this->suspended) {
+            return;
+        }
+
+        // Skip auto translation if page created on root level.
+        if ($table == 'pages' && $status == 'new' && $fields['pid'] === 0) {
             return;
         }
 
