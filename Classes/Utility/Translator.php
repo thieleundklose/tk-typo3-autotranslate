@@ -241,6 +241,7 @@ class Translator {
 
             // synchronized properties
             $translatedColumns['hidden'] = $record['hidden'];
+            $translatedColumns[self::AUTOTRANSLATE_LAST] = time();
 
             $this->logger->info(sprintf('Successful translated to target language %s.', $target['title']));
 
