@@ -166,13 +166,14 @@ class TranslationHelper {
     public static function translationSettingsDefaults(array $siteConfiguration, string $table) : ?array
     {
         $fieldnameAutotranslateEnabled = self::configurationFieldname($table,'enabled');
+
+        if ($table != 'sys_file_reference' && (!isset($siteConfiguration[$fieldnameAutotranslateEnabled]) || $siteConfiguration[$fieldnameAutotranslateEnabled] === FALSE)) {
+            return null;
+        }
+
         $fieldnameAutotranslateLanguages = self::configurationFieldname($table,'languages');
         $fieldnameAutotranslateTextFields = self::configurationFieldname($table,'textfields');
         $fieldnameAutotranslateFileReferences = self::configurationFieldname($table,'fileReferences');
-
-        if (!isset($siteConfiguration[$fieldnameAutotranslateEnabled]) || $siteConfiguration[$fieldnameAutotranslateEnabled] === FALSE || $table == 'sys_file_reference') {
-            return null;
-        }
 
         return [
             'autotranslateLanguages' => $siteConfiguration[$fieldnameAutotranslateLanguages],
