@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Hooks;
 
+use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -56,15 +57,33 @@ class DataHandler implements SingletonInterface
         }
 
         // replace real record uid if is new record
-        if (isset($parentObject->substNEWwithIDs[$recordUid]))
+        if (isset($parentObject->substNEWwithIDs[$recordUid])) {
             $recordUid = $parentObject->substNEWwithIDs[$recordUid];
+        }
 
         $pid = $parentObject->getPID($table, $recordUid);
-        $sitePid = ($pid === 0 && $table === 'pages') ? $recordUid : $pid;
+        $pageId = ($pid === 0 && $table === 'pages') ? $recordUid : $pid;
+        $translator = GeneralUtility::makeInstance(Translator::class, $pageId);
 
         if (in_array($table, TranslationHelper::translateableTables())) {
-            $translator = GeneralUtility::makeInstance(Translator::class);
-            $translator->translate($table, (int)$recordUid, (int)$sitePid);
+            $translator->translate($table, (int)$recordUid);
+        }
+
+        if ($table == 'sys_file_reference') {
+            $record = Records::getRecord($table, $recordUid);
+
+            if (in_array($record['tablenames'], TranslationHelper::translateableTables())) {
+                $translateableColumnsForeignTable = TranslationHelper::translationFileReferences((int)$pageId, $record['tablenames']);
+  
+                if (in_array($record['fieldname'], $translateableColumnsForeignTable)) {
+                    $recordParent = Records::getRecord($record['tablenames'], $record['uid_foreign']);
+                    $languages = $recordParent[Translator::AUTOTRANSLATE_LANGUAGES] ?? '';
+
+                    if (!empty($languages)) {
+                        $translator->translateSysFileReference($record['tablenames'], $record['uid_foreign'], $record['fieldname'], $languages);
+                    }
+                }
+            }
         }
 
     }
