@@ -19,9 +19,11 @@ namespace ThieleUndKlose\Autotranslate\Utility;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 
 class TranslationHelper {
 
@@ -78,14 +80,22 @@ class TranslationHelper {
 
         $fileReferenceColumns = array_filter($GLOBALS['TCA'][$table]['columns'], function($v) {
             $config = $v['config'];
-            if (
-                isset($config['type']) && $config['type'] == 'inline' &&
-                isset($config['foreign_table']) && $config['foreign_table'] == 'sys_file_reference'
-            ) {
-                return true;
+
+            if (!isset($config['type']) || !isset($config['foreign_table']) || $config['foreign_table'] != 'sys_file_reference') {
+                return false;
             }
 
-            return;
+            if (VersionNumberUtility::convertVersionStringToArray((new Typo3Version())->getVersion())['version_main'] > 11) {
+                if ($config['type'] != 'file') {
+                    return false;
+                }
+            } else {
+                if ($config['type'] != 'inline') {
+                    return false;
+                }
+            }
+
+            return true;
         });
 
         return [
