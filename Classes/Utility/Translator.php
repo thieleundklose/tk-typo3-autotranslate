@@ -137,11 +137,12 @@ class Translator {
 
         // load translation columns for sys_file_reference
         $sysFileReferenceTranslationColumns = TranslationHelper::translationTextfields($pageId, 'sys_file_reference');
+
         if ($sysFileReferenceTranslationColumns === null) {
             return;
         }
-        
-        foreach($sysFileReferenceColumns as $sysFileReferenceColumn) {
+
+        foreach ($sysFileReferenceColumns as $sysFileReferenceColumn) {
             $this->translateSysFileReference($table, $recordUid, $sysFileReferenceColumn, $languagesToTranslate, $sysFileReferenceTranslationColumns);
         }
 
@@ -171,19 +172,23 @@ class Translator {
             "sys_language_uid = 0",
             "{$tca['foreign_field']} = {$uid}"
         ];
-        foreach($tca['foreign_match_fields'] as $k => $v) {
+
+        foreach ($tca['foreign_match_fields'] as $k => $v) {
             $constraints[] = "{$k} = '{$v}'";
         }
+
         $originalReferences = Records::getRecords($tca['foreign_table'], 'uid', $constraints);
 
-        foreach($originalReferences as $originalReferenceUid) {
+        foreach ($originalReferences as $originalReferenceUid) {
             $record = Records::getRecord('sys_file_reference', $originalReferenceUid);
+
             $translatedReferencesByLanguage = Records::getLocalizedUids($tca['foreign_table'], $originalReferenceUid);
-            foreach($languageIds as $languageId) {
+
+            foreach ($languageIds as $languageId) {
 
                 $translatedColumns = [];
-
                 $translatedRecordUid = $translatedReferencesByLanguage[(int)$languageId] ?? null;
+
                 if ($translatedRecordUid === null) {
                     $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
                     $dataHandler->start([], []);
@@ -197,7 +202,6 @@ class Translator {
                     Records::updateRecord($tca['foreign_table'], $translatedRecordUid, $translatedColumns);
                 }
             }
-
         }
     }
 
@@ -223,14 +227,13 @@ class Translator {
 
             $toTranslate = array_filter($toTranslateObject, fn($value) => !is_null($value) && $value !== '');
             $target = $this->language($targetLanguageUid);
-
             if (count($toTranslate) > 0 && !empty($target['deeplTargetLang'])) {
                 $translator = new \DeepL\Translator($this->apiKey);
                 $result = $translator->translateText($toTranslate, null , $target['deeplTargetLang']);
             }
 
             $keys = array_keys($toTranslate);
-            if(!empty($result)) {
+            if (!empty($result)) {
                 foreach ($result as $k => $v) {
                     $translatedColumns[$keys[$k]] = $v->text;
                 }
