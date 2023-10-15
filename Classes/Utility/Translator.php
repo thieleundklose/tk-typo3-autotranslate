@@ -166,6 +166,12 @@ class Translator {
 
         // get original references
         $tca = BackendUtility::getTcaFieldConfiguration($table, $column);
+
+        // return for not existend defined fields
+        if (empty($tca)) {
+            return;
+        }
+
         $constraints = [
             "{$tca['foreign_table_field']} = '{$table}'",
             "fieldname = '{$column}'",
