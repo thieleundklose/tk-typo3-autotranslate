@@ -28,7 +28,7 @@ The DeepL Autotranslate extension is available in the version for TYPO3 v10 and 
 
 | Version     | Release Date | Description                                              |
 |-------------|--------------|----------------------------------------------------------|
-| 0.9.2       | 2023-10-14   | Fixed field names in site configuration , typo3 v12      |
+| 0.9.2       | 2023-10-15   | Fixed field names in site configuration , typo3 v12      |
 |             |              |  support, php 8 bugfixes & stabilizations.               |
 |             |              | Adjust following site config in yaml file if configured: |
 |             |              | - autotranslatePagesFilereferences to                    |
