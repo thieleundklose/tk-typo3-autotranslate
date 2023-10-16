@@ -27,19 +27,23 @@ class Translator {
     const AUTOTRANSLATE_LANGUAGES = 'autotranslate_languages';
 
     public $languages = [];
+    public $siteLanguages = [];
     public $logger = null;
     protected $apiKey = null;
+    protected $pageId = null;
 
     /**
      * object constructor
      *
+     * @param int $pageId
      * @return void
      */
-    function __construct() {
-        $this->logger = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
-
-        // load languages from TYPO3 configuration
+    function __construct(int $pageId) {
+        $this->logger = GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
+        $this->pageId = $pageId;
+        $this->apiKey = TranslationHelper::apiKey($pageId);
         $this->languages = TranslationHelper::fetchSysLanguages();
+        $this->siteLanguages = TranslationHelper::siteConfigurationValue($pageId, ['languages']);
     }
 
     /**
@@ -47,26 +51,19 @@ class Translator {
      *
      * @param string $table
      * @param int $recordUid
-     * @param array $columns
      * @return void
      * @throws \Doctrine\DBAL\Driver\Exception
      */
-    public function translate(string $table, int $recordUid, int $pageId) : void
+    public function translate(string $table, int $recordUid) : void
     {
-
-        $record = Records::getRecord($table, $recordUid);
-
-        // set api key
-        $this->apiKey = TranslationHelper::apiKey($pageId);
         if ($this->apiKey === null) {
             return;
         }
 
-        // set site languages by pageId
-        $this->siteLanguages = TranslationHelper::siteConfigurationValue($pageId, ['languages']);
+        $record = Records::getRecord($table, $recordUid);
 
         // load translation columns for table
-        $columns = TranslationHelper::translationTextfields($pageId, $table);
+        $columns = TranslationHelper::translationTextfields($this->pageId, $table);
         if ($columns === null) {
             return;
         }
@@ -123,27 +120,6 @@ class Translator {
         Records::updateRecord($table, $recordUid, [
             self::AUTOTRANSLATE_LAST => time()
         ]);
-
-        // only support tt_content at beginning
-        if (!in_array($table, TranslationHelper::translateableTables())) {
-            return;
-        }
-
-        $sysFileReferenceColumns = TranslationHelper::translationFileReferences($pageId, $table);
-        if ($sysFileReferenceColumns === null) {
-            return;
-        }
-
-        // load translation columns for sys_file_reference
-        $sysFileReferenceTranslationColumns = TranslationHelper::translationTextfields($pageId, 'sys_file_reference');
-        if ($sysFileReferenceTranslationColumns === null) {
-            return;
-        }
-        
-        foreach($sysFileReferenceColumns as $sysFileReferenceColumn) {
-            $this->translateSysFileReference($table, $recordUid, $sysFileReferenceColumn, $languagesToTranslate, $sysFileReferenceTranslationColumns);
-        }
-
     }
 
     /**
@@ -151,38 +127,53 @@ class Translator {
      * @param int $uid
      * @param string $column
      * @param string $languages
-     * @param array $columns
      * @return void
      * @throws \Doctrine\DBAL\Driver\Exception
      */
-    public function translateSysFileReference(string $table, int $uid, string $column, string $languages, array $columns): void
+    public function translateSysFileReference(string $table, int $uid, string $column, string $languages): void
     {
+        if ($this->apiKey === null) {
+            return;
+        }
+
+        // load translation columns for table
+        $columns = TranslationHelper::translationTextfields($this->pageId, 'sys_file_reference');
+        if ($columns === null) {
+            return;
+        }
 
         $localizedUids = Records::getLocalizedUids($table, $uid);
-
         $languageIds = GeneralUtility::trimExplode(',', $languages, true);
 
         // get original references
         $tca = BackendUtility::getTcaFieldConfiguration($table, $column);
+        if (empty($tca)) {
+            return;
+        }
+
         $constraints = [
             "{$tca['foreign_table_field']} = '{$table}'",
             "fieldname = '{$column}'",
             "sys_language_uid = 0",
             "{$tca['foreign_field']} = {$uid}"
         ];
-        foreach($tca['foreign_match_fields'] as $k => $v) {
+
+        foreach ($tca['foreign_match_fields'] as $k => $v) {
             $constraints[] = "{$k} = '{$v}'";
         }
+
         $originalReferences = Records::getRecords($tca['foreign_table'], 'uid', $constraints);
 
-        foreach($originalReferences as $originalReferenceUid) {
+        foreach ($originalReferences as $originalReferenceUid) {
             $record = Records::getRecord('sys_file_reference', $originalReferenceUid);
+
             $translatedReferencesByLanguage = Records::getLocalizedUids($tca['foreign_table'], $originalReferenceUid);
-            foreach($languageIds as $languageId) {
+
+            foreach ($languageIds as $languageId) {
 
                 $translatedColumns = [];
-
                 $translatedRecordUid = $translatedReferencesByLanguage[(int)$languageId] ?? null;
+
                 if ($translatedRecordUid === null) {
                     $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
                     $dataHandler->start([], []);
@@ -196,7 +187,6 @@ class Translator {
                     Records::updateRecord($tca['foreign_table'], $translatedRecordUid, $translatedColumns);
                 }
             }
-
         }
     }
 
@@ -211,25 +201,22 @@ class Translator {
     private function translateRecordProperties(array $record, int $targetLanguageUid, array $columns) : array
     {
         // create translation array from source record by keys from fielmap
-
         $translatedColumns = [];
 
         try {
-
             // prepare translated record with source record
             // create translation array from source record by keys from fielmap
             $toTranslateObject = array_intersect_key($record, array_flip($columns));
 
             $toTranslate = array_filter($toTranslateObject, fn($value) => !is_null($value) && $value !== '');
-            $target = $this->language($targetLanguageUid);
-
-            if (count($toTranslate) > 0 && !empty($target['deeplTargetLang'])) {
+            $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
+            if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
                 $translator = new \DeepL\Translator($this->apiKey);
-                $result = $translator->translateText($toTranslate, null , $target['deeplTargetLang']);
+                $result = $translator->translateText($toTranslate, null , $deeplTargetLang);
             }
 
             $keys = array_keys($toTranslate);
-            if(!empty($result)) {
+            if (!empty($result)) {
                 foreach ($result as $k => $v) {
                     $translatedColumns[$keys[$k]] = $v->text;
                 }
@@ -237,8 +224,9 @@ class Translator {
 
             // synchronized properties
             $translatedColumns['hidden'] = $record['hidden'];
+            $translatedColumns[self::AUTOTRANSLATE_LAST] = time();
 
-            $this->logger->info(sprintf('Successful translated to target language %s.', $target['title']));
+            $this->logger->info(sprintf('Successful translated to target language %s.', $deeplTargetLang));
 
         } catch (\Exception $e) {
             $this->logger->info(sprintf('Translation Error: %s',$e->getMessage()));
@@ -249,13 +237,13 @@ class Translator {
 
     /**
      * @param int $languageId
-     * @return array|null
+     * @return string|null
      */
-    private function language(int $languageId) : ?array
+    private function deeplTargetLanguage(int $languageId) : ?string
     {
         foreach ($this->siteLanguages as $language) {
             if ($language['languageId'] == $languageId) {
-                return $language;
+                return $language['deeplTargetLang'] ?? null;
             }
         }
 
@@ -275,6 +263,7 @@ class Translator {
         if (!empty($slugFields)) {
             $record = Records::getRecord($table, $uid);
             $fieldsToUpdate = [];
+
             foreach (array_keys($slugFields) as $field) {
                 $slug = SlugUtility::generateSlug($record, $table, $field);
                 if ($slug === null) {
@@ -282,6 +271,7 @@ class Translator {
                 }
                 $fieldsToUpdate[$field] = $slug;
             }
+
             if (!empty($fieldsToUpdate)) {
                 Records::updateRecord($table, $uid, $fieldsToUpdate);
             }
