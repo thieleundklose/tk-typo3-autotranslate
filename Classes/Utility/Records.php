@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Utility;
 
+use Doctrine\DBAL\Driver\Exception;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\EndTimeRestriction;
@@ -50,7 +51,7 @@ class Records {
      * @param int $uid
      * @param string|null $column
      * @return mixed|mixed[]|null
-     * @throws \Doctrine\DBAL\Driver\Exception
+     * @throws Exception
      */
     public static function getRecord(string $table, int $uid, ?string $column = null)
     {
@@ -84,7 +85,7 @@ class Records {
      * @param int $langUid
      * @param string|null $column
      * @return mixed|mixed[]|null
-     * @throws \Doctrine\DBAL\Driver\Exception
+     * @throws Exception
      */
     public static function getRecordTranslation(string $table, int $uid, int $langUid, ?string $column = null)
     {
@@ -145,7 +146,7 @@ class Records {
      * @param string $table
      * @param int $uid
      * @return array|mixed[]
-     * @throws \Doctrine\DBAL\Driver\Exception
+     * @throws Exception
      */
     public static function getLocalizedUids(string $table, int $uid) : array
     {
@@ -176,7 +177,7 @@ class Records {
      * @param string $fields
      * @param array $constraints
      * @return array|mixed[]
-     * @throws \Doctrine\DBAL\Driver\Exception
+     * @throws Exception
      */
     public static function getRecords(string $table, string $fields, array $constraints = []) : array
     {

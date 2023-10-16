@@ -16,6 +16,8 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\UserFunction\FormEngine;
 
+use Doctrine\DBAL\Driver\Exception;
+use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use ThieleUndKlose\Autotranslate\Utility\Records;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -29,8 +31,8 @@ class AutotranslateLanguagesItems {
      * @param array $config
      * @param $pObj
      * @return void
-     * @throws \Doctrine\DBAL\Driver\Exception
-     * @throws \TYPO3\CMS\Core\Exception\SiteNotFoundException
+     * @throws Exception
+     * @throws SiteNotFoundException
      */
     public function itemsProcFunc(array &$config, &$pObj)
     {

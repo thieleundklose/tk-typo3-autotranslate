@@ -16,10 +16,14 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Utility;
 
+use TYPO3\CMS\Core\Exception\SiteNotFoundException;
+use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 
 class TranslationHelper {
 
@@ -55,31 +59,43 @@ class TranslationHelper {
             if ($table == 'sys_file_reference' && in_array($k, ['tablenames', 'fieldname', 'table_local'])) {
                 return;
             }
+
             $config = $v['config'];
-            if (isset($config['renderType']) || isset($config['softref'])) {
+            if (isset($config['renderType'])) {
                 return;
             }
+
             if (!in_array($config['type'], self::COLUMN_TRANSLATEABLE_TYPES)) {
                 return;
             }
+
             $evalList = GeneralUtility::trimExplode(',', $config['eval'] ?? '', true);
             $evalIntersect = array_intersect($evalList, self::COLUMN_TRANSLATEABLE_EXCLUDE_EVALS);
             if (!empty($evalIntersect)) {
                 return;
             }
+
             return true;
         }, ARRAY_FILTER_USE_BOTH);
 
         $fileReferenceColumns = array_filter($GLOBALS['TCA'][$table]['columns'], function($v) {
             $config = $v['config'];
-            if (
-                isset($config['type']) && $config['type'] == 'inline' &&
-                isset($config['foreign_table']) && $config['foreign_table'] == 'sys_file_reference'
-            ) {
-                return true;
+
+            if (!isset($config['type']) || !isset($config['foreign_table']) || $config['foreign_table'] != 'sys_file_reference') {
+                return false;
             }
 
-            return;
+            if (VersionNumberUtility::convertVersionStringToArray((new Typo3Version())->getVersion())['version_main'] > 11) {
+                if ($config['type'] != 'file') {
+                    return false;
+                }
+            } else {
+                if ($config['type'] != 'inline') {
+                    return false;
+                }
+            }
+
+            return true;
         });
 
         return [
@@ -110,7 +126,7 @@ class TranslationHelper {
      * @param int $type
      * @return array
      */
-    public static function unusedTranslateableColumns(string $table, string $value, int $type = 0) : array
+    public static function unusedTranslateableColumns(string $table, string $value, int $type) : array
     {
         $translateableColumns = self::translateableColumns($table);
         $valueList = GeneralUtility::trimExplode(',', $value, true);
@@ -150,18 +166,19 @@ class TranslationHelper {
     public static function translationSettingsDefaults(array $siteConfiguration, string $table) : ?array
     {
         $fieldnameAutotranslateEnabled = self::configurationFieldname($table,'enabled');
+
+        if ($table != 'sys_file_reference' && (!isset($siteConfiguration[$fieldnameAutotranslateEnabled]) || $siteConfiguration[$fieldnameAutotranslateEnabled] === FALSE)) {
+            return null;
+        }
+
         $fieldnameAutotranslateLanguages = self::configurationFieldname($table,'languages');
         $fieldnameAutotranslateTextFields = self::configurationFieldname($table,'textfields');
         $fieldnameAutotranslateFileReferences = self::configurationFieldname($table,'fileReferences');
 
-        if (!isset($siteConfiguration[$fieldnameAutotranslateEnabled]) || $siteConfiguration[$fieldnameAutotranslateEnabled] === FALSE || $table == 'sys_file_reference') {
-            return null;
-        }
-
         return [
-            'autotranslateLanguages' => $siteConfiguration[$fieldnameAutotranslateLanguages],
-            'autotranslateTextfields' => $siteConfiguration[$fieldnameAutotranslateTextFields],
-            'autotranslateFileReferences' => $siteConfiguration[$fieldnameAutotranslateFileReferences],
+            'autotranslateLanguages' => $siteConfiguration[$fieldnameAutotranslateLanguages] ?? '',
+            'autotranslateTextfields' => $siteConfiguration[$fieldnameAutotranslateTextFields] ?? '',
+            'autotranslateFileReferences' => $siteConfiguration[$fieldnameAutotranslateFileReferences] ?? '',
         ];
     }
 
@@ -171,18 +188,16 @@ class TranslationHelper {
      * @param int $pageId
      * @param string $table
      * @return array|null
-     * @throws \TYPO3\CMS\Core\Exception\SiteNotFoundException
+     * @throws SiteNotFoundException
      */
     public static function translationTextfields(int $pageId, string $table) : ?array {
-
         if ($pageId === 0) {
             return null;
         }
 
         $siteConfiguration = self::siteConfigurationValue($pageId);
         $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
-
-        return GeneralUtility::trimExplode(',', $translationSettings['autotranslateTextfields'], true);
+        return GeneralUtility::trimExplode(',', $translationSettings['autotranslateTextfields'] ?? '', true);
     }
 
     /**
@@ -191,7 +206,7 @@ class TranslationHelper {
      * @param int $pageId
      * @param string $table
      * @return array|null
-     * @throws \TYPO3\CMS\Core\Exception\SiteNotFoundException
+     * @throws SiteNotFoundException
      */
     public static function translationFileReferences(int $pageId, string $table) : ?array {
 
@@ -201,7 +216,7 @@ class TranslationHelper {
 
         $siteConfiguration = self::siteConfigurationValue($pageId);
         $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
-        return GeneralUtility::trimExplode(',', $translationSettings['autotranslateFileReferences'], true);
+        return GeneralUtility::trimExplode(',', $translationSettings['autotranslateFileReferences'] ?? '', true);
     }
 
     /**
@@ -213,10 +228,16 @@ class TranslationHelper {
      */
     public static function configurationFieldname(string $table, string $fieldname) : string
     {
-        $tableUpperCamelCase = GeneralUtility::underscoredToUpperCamelCase($table);
-        $fieldnameUpperCamelCase = GeneralUtility::underscoredToUpperCamelCase($fieldname);
+        $parts = implode(
+            '_',
+            [
+                'autotranslate',
+                GeneralUtility::camelCaseToLowerCaseUnderscored($table),
+                GeneralUtility::camelCaseToLowerCaseUnderscored($fieldname)
+            ]
+        );
 
-        return 'autotranslate' . $tableUpperCamelCase . $fieldnameUpperCamelCase;
+        return GeneralUtility::underscoredToLowerCamelCase($parts);
     }
 
     /**
@@ -225,7 +246,7 @@ class TranslationHelper {
      * @param int $pageId
      * @param array|null $keyPath
      * @return array|mixed|null
-     * @throws \TYPO3\CMS\Core\Exception\SiteNotFoundException
+     * @throws SiteNotFoundException
      */
     public static function siteConfigurationValue(int $pageId, array $keyPath = null)
     {
@@ -249,7 +270,7 @@ class TranslationHelper {
      *
      * @param int|null $pageId
      * @return string|null
-     * @throws \TYPO3\CMS\Core\Exception\SiteNotFoundException
+     * @throws SiteNotFoundException
      */
     public static function apiKey(int $pageId = null) : ?string
     {
@@ -274,10 +295,10 @@ class TranslationHelper {
     /**
      * Receive possible languages by page.
      *
-     * @return \TYPO3\CMS\Core\Site\Entity\SiteLanguage[]
-     * @throws \TYPO3\CMS\Core\Exception\SiteNotFoundException
+     * @return SiteLanguage[]
+     * @throws SiteNotFoundException
      */
-    public static function fetchSysLanguages() 
+    public static function fetchSysLanguages()
     {
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
 

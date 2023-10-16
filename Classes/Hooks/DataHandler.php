@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Hooks;
 
+use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -44,21 +45,45 @@ class DataHandler implements SingletonInterface
         array $fields,
         \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject
     ) {
+
         // Skip auto translation if hook is suspended. @see processCmdmap() for detailed description.
         if ($this->suspended) {
             return;
         }
 
+        // Skip auto translation if page created on root level.
+        if ($table == 'pages' && $status == 'new' && $fields['pid'] === 0) {
+            return;
+        }
+
         // replace real record uid if is new record
-        if (isset($parentObject->substNEWwithIDs[$recordUid]))
+        if (isset($parentObject->substNEWwithIDs[$recordUid])) {
             $recordUid = $parentObject->substNEWwithIDs[$recordUid];
+        }
 
         $pid = $parentObject->getPID($table, $recordUid);
-        $sitePid = ($pid === 0 && $table === 'pages') ? $recordUid : $pid;
+        $pageId = ($pid === 0 && $table === 'pages') ? $recordUid : $pid;
+        $translator = GeneralUtility::makeInstance(Translator::class, $pageId);
 
         if (in_array($table, TranslationHelper::translateableTables())) {
-            $translator = GeneralUtility::makeInstance(Translator::class);
-            $translator->translate($table, $recordUid, $sitePid);
+            $translator->translate($table, (int)$recordUid);
+        }
+
+        if ($table == 'sys_file_reference') {
+            $record = Records::getRecord($table, $recordUid);
+
+            if (in_array($record['tablenames'], TranslationHelper::translateableTables())) {
+                $translateableColumnsForeignTable = TranslationHelper::translationFileReferences((int)$pageId, $record['tablenames']);
+  
+                if (in_array($record['fieldname'], $translateableColumnsForeignTable)) {
+                    $recordParent = Records::getRecord($record['tablenames'], $record['uid_foreign']);
+                    $languages = $recordParent[Translator::AUTOTRANSLATE_LANGUAGES] ?? '';
+
+                    if (!empty($languages)) {
+                        $translator->translateSysFileReference($record['tablenames'], $record['uid_foreign'], $record['fieldname'], $languages);
+                    }
+                }
+            }
         }
 
     }
