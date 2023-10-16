@@ -34,7 +34,7 @@ class Translator {
 
     /**
      * object constructor
-     * 
+     *
      * @param int $pageId
      * @return void
      */
@@ -263,7 +263,7 @@ class Translator {
         if (!empty($slugFields)) {
             $record = Records::getRecord($table, $uid);
             $fieldsToUpdate = [];
-            
+
             foreach (array_keys($slugFields) as $field) {
                 $slug = SlugUtility::generateSlug($record, $table, $field);
                 if ($slug === null) {

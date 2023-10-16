@@ -4,7 +4,7 @@ use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 
-$siteConfiguration = $_REQUEST['site'] ? GeneralUtility::makeInstance(SiteFinder::class)->getSiteByIdentifier($_REQUEST['site'])->getConfiguration() : null;
+$siteConfiguration = isset($_REQUEST['site']) ? GeneralUtility::makeInstance(SiteFinder::class)->getSiteByIdentifier($_REQUEST['site'])->getConfiguration() : null;
 
 // add deepl auth key
 $GLOBALS['SiteConfiguration']['site']['columns']['deeplAuthKey'] = [
@@ -24,7 +24,7 @@ if (!empty($translateableTables)) {
 
     $possibleTranslationLanguages = array_map(function ($v) {
         return $v['languageId'] . ' => ' . ( isset($v['title']) ? $v['title'] : 'no title defined' );
-    }, TranslationHelper::possibleTranslationLanguages($siteConfiguration['languages']));
+    }, TranslationHelper::possibleTranslationLanguages($siteConfiguration['languages'] ?? []));
     $possibleTranslationLanguagesDescription = !empty($possibleTranslationLanguages) ? 'Comma seperated list of language uids. (' . implode(', ', $possibleTranslationLanguages) . ')' : 'First define Languages in Site Configuration.';
 
     $palettes = [];

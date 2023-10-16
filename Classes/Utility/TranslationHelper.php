@@ -176,9 +176,9 @@ class TranslationHelper {
         $fieldnameAutotranslateFileReferences = self::configurationFieldname($table,'fileReferences');
 
         return [
-            'autotranslateLanguages' => $siteConfiguration[$fieldnameAutotranslateLanguages],
-            'autotranslateTextfields' => $siteConfiguration[$fieldnameAutotranslateTextFields],
-            'autotranslateFileReferences' => $siteConfiguration[$fieldnameAutotranslateFileReferences] ?? NULL,
+            'autotranslateLanguages' => $siteConfiguration[$fieldnameAutotranslateLanguages] ?? '',
+            'autotranslateTextfields' => $siteConfiguration[$fieldnameAutotranslateTextFields] ?? '',
+            'autotranslateFileReferences' => $siteConfiguration[$fieldnameAutotranslateFileReferences] ?? '',
         ];
     }
 
@@ -197,7 +197,7 @@ class TranslationHelper {
 
         $siteConfiguration = self::siteConfigurationValue($pageId);
         $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
-        return GeneralUtility::trimExplode(',', $translationSettings['autotranslateTextfields'], true);
+        return GeneralUtility::trimExplode(',', $translationSettings['autotranslateTextfields'] ?? '', true);
     }
 
     /**
@@ -216,7 +216,7 @@ class TranslationHelper {
 
         $siteConfiguration = self::siteConfigurationValue($pageId);
         $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
-        return GeneralUtility::trimExplode(',', $translationSettings['autotranslateFileReferences'], true);
+        return GeneralUtility::trimExplode(',', $translationSettings['autotranslateFileReferences'] ?? '', true);
     }
 
     /**
