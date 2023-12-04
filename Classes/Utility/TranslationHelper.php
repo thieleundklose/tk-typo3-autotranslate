@@ -314,7 +314,13 @@ class TranslationHelper {
             $pid = $parsedBody['effectivePid'];
         }
 
-        if (empty($pid) && is_array($parsedBody['data']) && is_array($parsedBody['data']['pages'])) { // on page insert
+        if (
+            empty($pid) && 
+            isset($parsedBody['data']) && 
+            isset($parsedBody['data']['pages']) && 
+            is_array($parsedBody['data']) && 
+            is_array($parsedBody['data']['pages'])
+        ) { // on page insert
             $pageRecord = current($parsedBody['data']['pages']);
             if (isset($pageRecord['pid'])) {
                 $pid = $pageRecord['pid'];
@@ -324,7 +330,13 @@ class TranslationHelper {
         // on page update
         if (empty($pid)) {
             $queryParams = $request->getQueryParams();
-            if (is_array($queryParams) && is_array($queryParams['data']) && is_array($queryParams['data']['pages'])) {
+            if (
+                is_array($queryParams) && 
+                isset($queryParams['data']) && 
+                isset($queryParams['data']['pages']) && 
+                is_array($queryParams['data']) && 
+                is_array($queryParams['data']['pages'])
+            ) {
                 $pid = current(array_keys($queryParams['data']['pages']));
             }
         }
