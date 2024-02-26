@@ -2,7 +2,7 @@
 
 $EM_CONF[$_EXTKEY] = [
     'title' => 'Thiele & Klose - Autotranslate',
-    'description' => 'Integration of automatic translations into the backend process when maintaining pages and content elements by editors.',
+    'description' => 'This extension provides automatic translation of pages and content elements via DeepL API.',
     'category' => 'be',
     'author' => 'Mike Zimmer',
     'author_company' => 'Thiele & Klose GmbH',
