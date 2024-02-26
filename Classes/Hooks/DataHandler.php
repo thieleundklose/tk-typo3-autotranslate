@@ -142,7 +142,7 @@ class DataHandler implements SingletonInterface
                             foreach ($targetLanguages as $language) {
                                 $translatedColumns = [];
                                 $translatedColumns += $translator->translateRecordProperties($sysFileRecord, (int)$language, $columnsSysFileLanguage);
-                                if (count($translatedColumns)) {
+                                if (count($translatedColumns) && isset($translatedReferencesByLanguage[(int)$language])) {
                                     Records::updateRecord('sys_file_reference', $translatedReferencesByLanguage[(int)$language], $translatedColumns);
                                 }
                             }
