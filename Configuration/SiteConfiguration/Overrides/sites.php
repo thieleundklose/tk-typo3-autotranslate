@@ -4,7 +4,7 @@ use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 
-$siteConfiguration = isset($_REQUEST['site']) ? GeneralUtility::makeInstance(SiteFinder::class)->getSiteByIdentifier($_REQUEST['site'])->getConfiguration() : null;
+$siteConfiguration = isset($_REQUEST['site']) ? GeneralUtility::makeInstance(SiteFinder::class)->getSiteByIdentifier($_REQUEST['site'])->getConfiguration(): null;
 
 // add deepl auth key
 $GLOBALS['SiteConfiguration']['site']['columns']['deeplAuthKey'] = [
