@@ -33,7 +33,8 @@ class Records {
      * @param string $table tablename
      * @return QueryBuilder
      */
-    public static function getQueryBuilder(string $table) : QueryBuilder {
+    public static function getQueryBuilder(string $table): QueryBuilder 
+    {
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
         $queryBuilder->getRestrictions()
@@ -148,7 +149,7 @@ class Records {
      * @return array|mixed[]
      * @throws Exception
      */
-    public static function getLocalizedUids(string $table, int $uid) : array
+    public static function getLocalizedUids(string $table, int $uid): array
     {
         $queryBuilder = self::getQueryBuilder($table);
 
@@ -179,7 +180,7 @@ class Records {
      * @return array|mixed[]
      * @throws Exception
      */
-    public static function getRecords(string $table, string $fields, array $constraints = []) : array
+    public static function getRecords(string $table, string $fields, array $constraints = []): array
     {
         $queryBuilder = self::getQueryBuilder($table);
         $query = $queryBuilder->select($fields)

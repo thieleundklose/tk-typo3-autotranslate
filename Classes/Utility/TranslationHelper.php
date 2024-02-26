@@ -38,7 +38,7 @@ class TranslationHelper {
      *
      * @return string[]
      */
-    public static function translateableTables() : array
+    public static function translateableTables(): array
     {
         return array_merge(
             self::COLUMN_TRANSLATEABLE_TABLES,
@@ -52,7 +52,7 @@ class TranslationHelper {
      * @param string $table
      * @return array
      */
-    public static function translateableColumns(string $table) : array
+    public static function translateableColumns(string $table): array
     {
         $textColumns = array_filter($GLOBALS['TCA'][$table]['columns'], function($v, $k) use ($table) {
 
@@ -110,7 +110,7 @@ class TranslationHelper {
      * @param string $table
      * @return string|null
      */
-    public static function translationOrigPointerField(string $table) : ?string
+    public static function translationOrigPointerField(string $table): ?string
     {
         $tableTca = $GLOBALS['TCA'][$table] ?? null;
         $tableCtrl = $tableTca['ctrl'] ?? null;
@@ -126,7 +126,7 @@ class TranslationHelper {
      * @param int $type
      * @return array
      */
-    public static function unusedTranslateableColumns(string $table, string $value, int $type) : array
+    public static function unusedTranslateableColumns(string $table, string $value, int $type): array
     {
         $translateableColumns = self::translateableColumns($table);
         $valueList = GeneralUtility::trimExplode(',', $value, true);
@@ -139,7 +139,7 @@ class TranslationHelper {
      * @param array|null $siteLanguages
      * @return array
      */
-    public static function possibleTranslationLanguages(?array $siteLanguages) : array
+    public static function possibleTranslationLanguages(?array $siteLanguages): array
     {
         if (empty($siteLanguages)) {
             return [];
@@ -163,7 +163,7 @@ class TranslationHelper {
      * @param string $table
      * @return array|true[]|null
      */
-    public static function translationSettingsDefaults(array $siteConfiguration, string $table) : ?array
+    public static function translationSettingsDefaults(array $siteConfiguration, string $table): ?array
     {
         $fieldnameAutotranslateEnabled = self::configurationFieldname($table,'enabled');
 
@@ -190,7 +190,7 @@ class TranslationHelper {
      * @return array|null
      * @throws SiteNotFoundException
      */
-    public static function translationTextfields(int $pageId, string $table) : ?array {
+    public static function translationTextfields(int $pageId, string $table): ?array {
         if ($pageId === 0) {
             return null;
         }
@@ -208,7 +208,7 @@ class TranslationHelper {
      * @return array|null
      * @throws SiteNotFoundException
      */
-    public static function translationFileReferences(int $pageId, string $table) : ?array {
+    public static function translationFileReferences(int $pageId, string $table): ?array {
 
         if ($pageId === 0) {
             return null;
@@ -226,7 +226,7 @@ class TranslationHelper {
      * @param string $fieldname
      * @return string
      */
-    public static function configurationFieldname(string $table, string $fieldname) : string
+    public static function configurationFieldname(string $table, string $fieldname): string
     {
         $parts = implode(
             '_',
@@ -272,7 +272,7 @@ class TranslationHelper {
      * @return string|null
      * @throws SiteNotFoundException
      */
-    public static function apiKey(int $pageId = null) : ?string
+    public static function apiKey(int $pageId = null): ?string
     {
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
         if (is_null($pageId)) {
@@ -314,7 +314,13 @@ class TranslationHelper {
             $pid = $parsedBody['effectivePid'];
         }
 
-        if (empty($pid) && is_array($parsedBody['data']) && is_array($parsedBody['data']['pages'])) { // on page insert
+        if (
+            empty($pid) && 
+            isset($parsedBody['data']) && 
+            isset($parsedBody['data']['pages']) && 
+            is_array($parsedBody['data']) && 
+            is_array($parsedBody['data']['pages'])
+        ) { // on page insert
             $pageRecord = current($parsedBody['data']['pages']);
             if (isset($pageRecord['pid'])) {
                 $pid = $pageRecord['pid'];
@@ -324,7 +330,13 @@ class TranslationHelper {
         // on page update
         if (empty($pid)) {
             $queryParams = $request->getQueryParams();
-            if (is_array($queryParams) && is_array($queryParams['data']) && is_array($queryParams['data']['pages'])) {
+            if (
+                is_array($queryParams) && 
+                isset($queryParams['data']) && 
+                isset($queryParams['data']['pages']) && 
+                is_array($queryParams['data']) && 
+                is_array($queryParams['data']['pages'])
+            ) {
                 $pid = current(array_keys($queryParams['data']['pages']));
             }
         }
