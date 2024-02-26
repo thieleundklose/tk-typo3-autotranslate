@@ -47,7 +47,8 @@ class DataHandler implements SingletonInterface
         $recordUid,
         array $fields,
         \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject
-    ) {
+    ) 
+    {
 
         // Skip auto translation if hook is suspended. @see processCmdmap() for detailed description.
         if ($this->suspended) {
@@ -70,13 +71,12 @@ class DataHandler implements SingletonInterface
         $pageId = ($pid === 0 && $table === 'pages') ? $recordUid : $pid;
         $translator = GeneralUtility::makeInstance(Translator::class, $pageId);
 
-        if (in_array($table, TranslationHelper::translateableTables()) ) { // && $fields['sys_language_uid'] ==='0'
+        if (in_array($table, TranslationHelper::translateableTables())) {
             $translator->translate($table, (int)$recordUid);
         }
 
         $columnsSysFileLanguage = TranslationHelper::translationTextfields($pageId, 'sys_file_reference');
         $parentFieldSysFileReference = TranslationHelper::translationOrigPointerField('sys_file_reference');
-
 
         // TODO beim update eines content elements wird eine neu angelegte referenz nicht in die translation übernommen
         // TODO das image feld bei tt_content wird beim ergänzen sys_file_reference nicht mit den counts gesetzt
@@ -123,7 +123,7 @@ class DataHandler implements SingletonInterface
                                 $localizedUid = $dataHandler->localize('sys_file_reference', $newUid, $targetLanguage);
 
                                 // update foreign field after localize to move translation of sys_file_reference to translated content element
-                                if($localizedUid === false) {
+                                if ($localizedUid === false) {
                                     continue;
                                 }
                                 $parentRecordUid = Records::getRecord('sys_file_reference', $localizedUid, 'uid_foreign');
@@ -139,13 +139,12 @@ class DataHandler implements SingletonInterface
                             $tca = BackendUtility::getTcaFieldConfiguration($table, $tableColumn);
                             $translatedReferencesByLanguage = Records::getLocalizedUids($tca['foreign_table'], $newUid);
 
-                            foreach ($targetLanguages as $language){
+                            foreach ($targetLanguages as $language) {
                                 $translatedColumns = [];
                                 $translatedColumns += $translator->translateRecordProperties($sysFileRecord, (int)$language, $columnsSysFileLanguage);
                                 if (count($translatedColumns)) {
                                     Records::updateRecord('sys_file_reference', $translatedReferencesByLanguage[(int)$language], $translatedColumns);
                                 }
-
                             }
                         }
                     }
@@ -210,7 +209,8 @@ class DataHandler implements SingletonInterface
      * @param $pasteUpdate
      * @return void
      */
-    public function processCmdmap(string $command, $table, $id, $value, $commandIsProcessed, \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler, $pasteUpdate) {
+    public function processCmdmap(string $command, $table, $id, $value, $commandIsProcessed, \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler, $pasteUpdate)
+    {
         // Disable auto translation for copy actions.
         if ($command === 'copy') {
             $this->suspended = true;
@@ -229,7 +229,8 @@ class DataHandler implements SingletonInterface
      * @param $pasteDatamap
      * @return void
      */
-    public function processCmdmap_postProcess(string $command, $table, $id, $value, \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler, $pasteUpdate, $pasteDatamap) {
+    public function processCmdmap_postProcess(string $command, $table, $id, $value, \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler, $pasteUpdate, $pasteDatamap)
+    {
         // Reenable auto translation after copy cammond has finished.
         if ($command === 'copy') {
             $this->suspended = false;

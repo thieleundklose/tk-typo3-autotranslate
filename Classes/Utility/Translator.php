@@ -54,7 +54,7 @@ class Translator {
      * @return void
      * @throws \Doctrine\DBAL\Driver\Exception
      */
-    public function translate(string $table, int $recordUid) : void
+    public function translate(string $table, int $recordUid): void
     {
         if ($this->apiKey === null) {
             return;
@@ -290,7 +290,7 @@ class Translator {
      * @param array $columns
      * @return array
      */
-    public function translateRecordProperties(array $record, int $targetLanguageUid, array $columns) : array
+    public function translateRecordProperties(array $record, int $targetLanguageUid, array $columns): array
     {
         // create translation array from source record by keys from fielmap
         $translatedColumns = [];
@@ -331,7 +331,7 @@ class Translator {
      * @param int $languageId
      * @return string|null
      */
-    private function deeplTargetLanguage(int $languageId) : ?string
+    private function deeplTargetLanguage(int $languageId): ?string
     {
         foreach ($this->siteLanguages as $language) {
             if ($language['languageId'] == $languageId) {
@@ -349,7 +349,7 @@ class Translator {
      * @param integer $uid
      * @return void
      */
-    private function generateSlugs(string $table, int $uid) : void
+    private function generateSlugs(string $table, int $uid): void
     {
         $slugFields = SlugUtility::slugFields($table);
         if (!empty($slugFields)) {

@@ -29,7 +29,8 @@ class SlugUtility
      * @param string $table
      * @return array|null
      */
-    public static function slugFields(string $table) : ?array {
+    public static function slugFields(string $table): ?array 
+    {
 
         $slugFields = array_filter($GLOBALS['TCA'][$table]['columns'], function($v) {
             return isset($v['config']['type']) && $v['config']['type'] == 'slug' ? true : false;
@@ -44,7 +45,7 @@ class SlugUtility
      * @param string $field
      * @return string|null
      */
-    public static function generateSlug(array $record, string $tableName, string $field) : ?string
+    public static function generateSlug(array $record, string $tableName, string $field): ?string
     {
         $slugFields = self::slugFields($tableName);
 
