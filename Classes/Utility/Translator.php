@@ -122,6 +122,98 @@ class Translator {
         ]);
     }
 
+    public function checkToTranslateUpdatedSysFileReference(array &$datamap, string $table, int $uid)
+    {
+        if ($this->apiKey === null) {
+            return;
+        }
+
+        // load translation columns for table
+        $sysFileReferenceColumnsToTranslate = TranslationHelper::translationTextfields($this->pageId, 'sys_file_reference');
+        if ($sysFileReferenceColumnsToTranslate === null) {
+            return;
+        }
+
+        $translateableTables = TranslationHelper::translateableTables();
+
+        $datamapTranslateable = array_intersect_key($datamap, array_flip($translateableTables));
+
+        if (empty($datamapTranslateable)) {
+            return;
+        }
+
+        $parentFieldSysFileReference = TranslationHelper::translationOrigPointerField('sys_file_reference');
+
+        foreach ($datamapTranslateable as $datamapTable => $datamapRecords) {
+
+            $sysFileReferencesToTranslate = TranslationHelper::translationFileReferences($this->pageId, $datamapTable);
+            $parentFieldSysFileReference = TranslationHelper::translationOrigPointerField('sys_file_reference');
+           
+            if (empty($sysFileReferencesToTranslate)) {
+                continue;
+            }
+
+            // keep only records with language uid 0
+            // $datamapRecordsOriginalLanguages = array_filter($datamapRecords, fn($record) => $record['sys_language_uid'] === '0');
+
+            $datamapRecordsSourceLanguageUids = Records::getRecords($datamapTable, 'uid', ['uid IN('.implode(',', array_keys($datamapRecords)).')', 'sys_language_uid = 0']);
+
+            foreach ($datamapRecordsSourceLanguageUids as $datamapTableUid) {
+                $datamapTableRecord = $datamapRecords[$datamapTableUid];
+
+                foreach ($sysFileReferencesToTranslate as $sysFileReferencesToTranslateColumnKey) {
+                    $sysFileReferencesToTranslateColumnUids = GeneralUtility::trimExplode(',', $datamapTableRecord[$sysFileReferencesToTranslateColumnKey] ?? '', true);
+                    foreach($sysFileReferencesToTranslateColumnUids as $sysFileReferencesToTranslateColumnUid) {
+
+                        if ((int)$sysFileReferencesToTranslateColumnUid !== $uid) {
+                            continue;
+                        }
+
+                        $targetLanguages = $datamapTableRecord['autotranslate_languages'];
+                        foreach ($targetLanguages as $targetLanguage) {
+                            $translatedRecords = Records::getRecords('sys_file_reference', 'uid', [$parentFieldSysFileReference . ' = ' . $uid, 'sys_language_uid = '.$targetLanguage]);
+                            $translatedColumns = [];
+
+                            $localizedUids = Records::getLocalizedUids($datamapTable, $datamapTableUid);
+
+
+                            if (empty($translatedRecords)) {
+
+                                $tca = BackendUtility::getTcaFieldConfiguration($datamapTable, $sysFileReferencesToTranslateColumnKey);
+                               
+                                $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+                                $dataHandler->start([], []);
+                                $translatedRecordUid = $dataHandler->localize('sys_file_reference', $uid, $targetLanguage);
+                                
+                                // set foreign field otherwise translation should be visible on original tt_content element
+                                $translatedColumns += [$tca['foreign_field'] => $localizedUids[(int)$targetLanguage]];
+
+                                // update field on record because otherwise translation should not be visible
+                                Records::updateRecord($datamapTable, $localizedUids[(int)$targetLanguage], [$sysFileReferencesToTranslateColumnKey => count($sysFileReferencesToTranslateColumnUids)]);
+                                // translate columns and update relation column
+
+                            } else {
+                                $translatedRecordUid = current($translatedRecords);
+                                // $datamap['sys_file_reference'][$translatedRecordUid] = ['alternative' => 'testtranslated static text'];
+                                // translate columns and save to db
+                                // translate content and write to datamap
+                            }
+                            $translatedColumns += $this->translateRecordProperties($datamap[$table][$uid], (int)$targetLanguage, $sysFileReferenceColumnsToTranslate);
+
+
+                            if (count($translatedColumns)) {
+                                Records::updateRecord('sys_file_reference', $translatedRecordUid, $translatedColumns);
+                            }
+                        }
+                    }
+                }
+            }
+            
+        }
+
+        return $uid;
+
+    }
     /**
      * @param string $table
      * @param int $uid
@@ -198,7 +290,7 @@ class Translator {
      * @param array $columns
      * @return array
      */
-    private function translateRecordProperties(array $record, int $targetLanguageUid, array $columns) : array
+    public function translateRecordProperties(array $record, int $targetLanguageUid, array $columns) : array
     {
         // create translation array from source record by keys from fielmap
         $translatedColumns = [];
