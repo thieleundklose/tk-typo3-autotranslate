@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<xliff version="1.0">
+	<file source-language="en" datatype="plaintext" original="messages" date="2016-12-12T11:07:00Z" product-name="autotranslate">
+		<header/>
+		<body>
+			<trans-unit id="autotranslate_batch.record_label" xml:space="preserve">
+				<source>Autotranslate Batch Item</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.priority_label" xml:space="preserve">
+				<source>Priority</source>
+			</trans-unit>
+		</body>
+	</file>
+</xliff>

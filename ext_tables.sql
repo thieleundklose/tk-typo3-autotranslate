@@ -36,3 +36,8 @@ CREATE TABLE sys_file_reference (
     autotranslate_exclude tinyint(4) DEFAULT '0' NOT NULL,
     autotranslate_last int(11) DEFAULT '0' NOT NULL,
 );
+
+CREATE TABLE tx_autotranslate_batch_items (
+    priority int(11) DEFAULT '0' NOT NULL, 
+
+);
