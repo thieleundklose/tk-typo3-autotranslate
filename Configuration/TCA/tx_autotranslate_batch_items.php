@@ -2,7 +2,8 @@
 return [
     'ctrl' => [
         'title' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_tca.xlf:autotranslate_batch',
-        'label' => 'title',
+        'label' => 'uid',
+        'label_userFunc' => \ThieleUndKlose\Autotranslate\UserFunction\Tca::class . '->batchLabel',
         'iconfile' => 'EXT:autotranslate/Resources/Public/Icons/batch_record_icon.svg',
         'hideTable' => false,
         'crdate' => 'crdate',
@@ -10,10 +11,9 @@ return [
         'enablecolumns' => [
             'disabled' => 'hidden',
         ],
-        'searchFields' => 'title',
     ],
     'types' => [
-        ['showitem' => 'title, priority, sys_language_uid, hidden, crdate, tstamp, translate, translated, type, frequency, error'],
+        ['showitem' => 'priority, sys_language_uid, hidden, crdate, tstamp, translate, translated, type, frequency, error'],
     ],
     'columns' => [
         'priority' => [
@@ -34,22 +34,19 @@ return [
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
-                'foreign_table' => 'sys_language',
-                'items' => [
-                    ['LLL:EXT:core/Resources/Private/Language/locallang_general.xlf:LGL.allLanguages', -1],
-                    ['LLL:EXT:core/Resources/Private/Language/locallang_general.xlf:LGL.default_value', 0]
-                ],
+                'required' => true,
                 'default' => 0,
+                'itemsProcFunc' => \ThieleUndKlose\Autotranslate\Utility\BatchLanguages::class . '->populateLanguagesFromSiteConfiguration',
             ],
         ],
         'hidden' => [
             'exclude' => 1,
-            'label' => 'LLL:EXT:core/Resources/Private/Language/locallang_general.xlf:LGL.hidden',
+            'label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_tca.xlf:autotranslate_batch.disabled',
             'config' => [
                 'type' => 'check',
                 'items' => [
-                    '1' => [
-                        '0' => 'LLL:EXT:lang/locallang_core.xlf:labels.enabled'
+                    [
+                        ''
                     ]
                 ]
             ],
@@ -78,7 +75,8 @@ return [
                 'type' => 'input',
                 'renderType' => 'inputDateTime',
                 'eval' => 'datetime',
-                'default' => 0,
+                'required' => true,
+                'default' => time(),
             ],
         ],
         'translated' => [
@@ -100,6 +98,8 @@ return [
                     ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_tca.xlf:autotranslate_batch.type.add', 0],
                     ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_tca.xlf:autotranslate_batch.type.override', 1],
                 ],
+                'default' => 0,
+                'required' => true
             ],
         ],
         'frequency' => [
@@ -113,6 +113,8 @@ return [
                     ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_tca.xlf:autotranslate_batch.frequency.weekly', 1],
                     ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_tca.xlf:autotranslate_batch.frequency.daily', 2],
                 ],
+                'default' => 0,
+                'required' => true
             ],
         ],
         'error' => [

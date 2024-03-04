@@ -18,6 +18,9 @@
 			<trans-unit id="autotranslate_batch.priority.high" xml:space="preserve">
 				<source>High</source>
 			</trans-unit>
+			<trans-unit id="autotranslate_batch.disabled" xml:space="preserve">
+				<source>Translation disabled</source>
+			</trans-unit>
 			<trans-unit id="autotranslate_batch.translate" xml:space="preserve">
 				<source>Translate</source>
 			</trans-unit>

@@ -38,18 +38,11 @@ CREATE TABLE sys_file_reference (
 );
 
 CREATE TABLE tx_autotranslate_batch_items (
-    tstamp int(11) unsigned DEFAULT '0' NOT NULL,
-    crdate int(11) unsigned DEFAULT '0' NOT NULL,
-    hidden tinyint(4) DEFAULT '0' NOT NULL,
     sys_language_uid int(11) DEFAULT '0' NOT NULL,
     priority int(11) DEFAULT '0' NOT NULL,
     translate int(11) unsigned DEFAULT '0' NOT NULL,
-    translated int(11) unsigned DEFAULT '0' NOT NULL,
+    translated int(11) unsigned,
     type int(11) DEFAULT '0' NOT NULL,
     frequency int(11) DEFAULT '0' NOT NULL,
     error text,
-    KEY tstamp (tstamp),
-    KEY crdate (crdate),
-    KEY sys_language_uid (sys_language_uid),
-    KEY hidden (hidden)
 );

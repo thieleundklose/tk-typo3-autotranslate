@@ -23,7 +23,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler as DataHandlerOriginal;
-
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
 class DataHandler implements SingletonInterface
 {
@@ -234,6 +235,53 @@ class DataHandler implements SingletonInterface
         // Reenable auto translation after copy cammond has finished.
         if ($command === 'copy') {
             $this->suspended = false;
+        }
+    }
+
+    /**
+     * Check that the target language is unique per page
+     *
+     * @param \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler
+     * @return void
+     */
+    public function processDatamap_beforeStart(\TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler) {
+        foreach ($dataHandler->datamap as $table => $idArray) {
+            if ($table === 'tx_autotranslate_batch_items') {
+                foreach ($idArray as $id => $fieldArray) {
+                    if (isset($fieldArray['sys_language_uid'])) {
+                        $value = $fieldArray['sys_language_uid'];
+                        $pid = $fieldArray['pid'] ?: $dataHandler->checkValue_currentRecord['pid'];
+                        $connection = GeneralUtility::makeInstance(ConnectionPool::class)->getConnectionForTable($table);
+                        $queryBuilder = $connection->createQueryBuilder();
+                        $count = $queryBuilder->select('*')
+                            ->from($table)
+                            ->where(
+                                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, \PDO::PARAM_INT)),
+                                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($value, \PDO::PARAM_STR))
+                            )
+                            ->andWhere(
+                                $queryBuilder->expr()->neq('uid', $queryBuilder->createNamedParameter($id, \PDO::PARAM_INT))
+                            )
+                            ->execute()
+                            ->rowCount();
+
+                        if ($count > 0) {
+                            $dataHandler->log(
+                                $table,
+                                $id,
+                                2,
+                                0,
+                                1,
+                                'A translation record for this target language already exists on this page.',
+                                -1,
+                                [],
+                                [$value]
+                            );
+                            unset($dataHandler->datamap[$table][$id]);
+                        }
+                    }
+                }
+            }
         }
     }
 }
