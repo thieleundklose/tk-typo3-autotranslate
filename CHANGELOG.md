@@ -1,5 +1,10 @@
 # Changelog
- 
+
+## [1.0.0] - 2024-03-22
+
+### Fixed
+- Translation mechanism restructured and errors in the translation process fixed
+
 ## [0.9.3] - 2024-02-26
  
 ### Fixed

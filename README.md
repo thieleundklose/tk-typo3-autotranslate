@@ -17,7 +17,7 @@ DeepL autotranslator is a powerful tool for editors with many features, especial
 
 ## Compatibility
 
-The DeepL Autotranslate extension is available in the version for TYPO3 v10 and v11. Translations for news articles of the extension [News](https://extensions.typo3.org/extension/news) are also already integrated.
+The DeepL Autotranslate extension is available in the version for TYPO3 v10, v11 and v12. Translations for news articles of the extension [News](https://extensions.typo3.org/extension/news) are also already integrated.
 
 ## Documentation
 
