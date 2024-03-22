@@ -142,36 +142,6 @@ class Records {
     }
 
     /**
-     * Get all localized item uids by languages.
-     *
-     * @param string $table
-     * @param int $uid
-     * @return array|mixed[]
-     * @throws Exception
-     */
-    public static function getLocalizedUids(string $table, int $uid): array
-    {
-        $queryBuilder = self::getQueryBuilder($table);
-
-        $query = $queryBuilder->select('sys_language_uid','uid')
-            ->from($table)
-            ->where($queryBuilder->expr()->eq(TranslationHelper::translationOrigPointerField($table), $uid));
-
-        if (GeneralUtility::makeInstance(Typo3Version::class)->getMajorVersion() > 10) {
-            return $query->execute()->fetchAllKeyValue();
-        } else {
-            $res = $query->execute()->fetchAll();
-        
-            $resKeyValue = [];
-            foreach ($res as $item) {
-                $resKeyValue[$item['sys_language_uid']] = $item['uid'];
-            }
-
-            return $resKeyValue;
-        }
-    }
-
-    /**
      * Get record fields by table and constraints.
      *
      * @param string $table
