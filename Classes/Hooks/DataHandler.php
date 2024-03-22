@@ -16,14 +16,10 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Hooks;
 
-use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\DataHandling\DataHandler as DataHandlerOriginal;
-
 
 class DataHandler implements SingletonInterface
 {

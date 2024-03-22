@@ -119,20 +119,6 @@ class TranslationHelper {
     }
 
     /**
-     * Get setting from TCA.
-     *
-     * @param string $table
-     * @return string|null
-     */
-    public static function translationSource(string $table): ?string
-    {
-        $tableTca = $GLOBALS['TCA'][$table] ?? null;
-        $tableCtrl = $tableTca['ctrl'] ?? null;
-
-        return $tableCtrl['translationSource'] ?? null;
-    }
-
-    /**
      * Filter not used translateable columns.
      *
      * @param string $table
