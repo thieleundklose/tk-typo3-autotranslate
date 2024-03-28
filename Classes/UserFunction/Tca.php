@@ -39,19 +39,19 @@ class Tca {
         $languageId = $record['sys_language_uid'];
         $translationTimestamp = $record['translate'];       
         $translationDate = date('d-m-Y H:i', $translationTimestamp);
-        
+
+        $pageId = (int)$parameters['row']['pid'];
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-        $sites = $siteFinder->getAllSites();
-        
-        foreach ($sites as $site) {
-            foreach ($site->getAllLanguages() as $siteLanguage) {
-                if ($siteLanguage->getLanguageId() === $languageId) {
-                    $language = $siteLanguage->getTitle();
-                }
+        $site = $siteFinder->getSiteByPageId($pageId);
+
+        $parameters['title'] = $translationDate;
+
+        foreach ($site->getAllLanguages() as $siteLanguage) {
+            if ($siteLanguage->getLanguageId() === $languageId) {
+                $parameters['title'] = $siteLanguage->getTitle() . ' - ' . $parameters['title'];
+                break;
             }
         }
 
-        $newTitle = $language . ' - ' . $translationDate;
-        $parameters['title'] = $newTitle;
     }
 }
