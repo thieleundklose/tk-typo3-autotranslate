@@ -1,7 +1,7 @@
 {
     "name": "thieleundklose/autotranslate",
     "type": "typo3-cms-extension",
-    "description": "Integration of automatic translations into the backend process when maintaining pages and content elements by editors.",
+    "description": "This extension provides automatic translation of pages and content elements via DeepL API.",
     "authors": [
         {
             "name": "Mike Zimmer",
@@ -14,7 +14,7 @@
     "require": {
         "typo3/cms-core": "^10.4 || ^11.5 || ^12.4",
         "deeplcom/deepl-php": "v1.4.0",
-        "php": ">= 7.4 < 8.2"
+        "php": ">= 7.4 < 8.4"
     },
     "require-dev": {
         "typo3/testing-framework": "^6.8"

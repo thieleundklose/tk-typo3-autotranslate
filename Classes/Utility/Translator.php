@@ -16,7 +16,6 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Utility;
 
-use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -47,14 +46,16 @@ class Translator {
     }
 
     /**
-     * Translate the loaded record to target languages
+     * Translate the loaded record to target languages 
+     * TODO: check to only localize
      *
      * @param string $table
      * @param int $recordUid
+     * @param \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject
      * @return void
      * @throws \Doctrine\DBAL\Driver\Exception
      */
-    public function translate(string $table, int $recordUid) : void
+    public function translate(string $table, int $recordUid, \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject): void
     {
         if ($this->apiKey === null) {
             return;
@@ -82,9 +83,11 @@ class Translator {
         // set target languages by record if null is given
         $languagesToTranslate = $record[self::AUTOTRANSLATE_LANGUAGES] ?? '';
 
+        $localizedContents = [];
         // loop over all target languages
         $languageIds = GeneralUtility::trimExplode(',', $languagesToTranslate, true);
         foreach ($languageIds as $languageId) {
+            $localizedContents[$languageId] = [];
 
             // Skip translation if language matches original record
             if ((int)$languageId === $record['sys_language_uid']) {
@@ -98,7 +101,7 @@ class Translator {
             if (isset($existingTranslation[self::AUTOTRANSLATE_LAST]) && $record['tstamp'] < $existingTranslation[self::AUTOTRANSLATE_LAST]) {
                 continue;
             }
-
+            
             if (!$existingTranslation) {
                 $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
                 $dataHandler->start([], []);
@@ -106,6 +109,55 @@ class Translator {
             } else {
                 $localizedUid = $existingTranslation['uid'];
             }
+            $localizedContents[$languageId][$recordUid] = $localizedUid;
+
+            $columnsSysFileLanguage = TranslationHelper::translationTextfields($this->pageId, 'sys_file_reference');
+            $autotranslateSysFileReferences = TranslationHelper::translationFileReferences($this->pageId, $table);
+            if (!empty($autotranslateSysFileReferences)) {
+                
+                // add deleted / hidden etc
+                $autotranslateSysFileReferencesStmt = "'" . implode("','", $autotranslateSysFileReferences) . "'";
+                $references = Records::getRecords('sys_file_reference', 'uid', [
+                    "uid_foreign = " . $recordUid,
+                    "deleted = 0",
+                    "sys_language_uid = 0",
+                    "tablenames = '{$table}'", 
+                    "fieldname IN ({$autotranslateSysFileReferencesStmt})", 
+                ]);
+
+                if (!empty($references)) {
+                    foreach ($references as $referenceUid) {
+
+                        $referenceTranslation = Records::getRecordTranslation('sys_file_reference', $referenceUid, (int)$languageId);
+                        
+                        if (empty($referenceTranslation)) {
+                            $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+                            $dataHandler->start([], []);
+                            $translatedSysFileReferenceUid = $dataHandler->localize('sys_file_reference', $referenceUid, $languageId);
+
+                            Records::updateRecord(
+                                'sys_file_reference', 
+                                $translatedSysFileReferenceUid, 
+                                [
+                                    'uid_foreign' => $localizedContents[$languageId][$recordUid],
+                                ]
+                            );
+
+                        } else {
+                            $translatedSysFileReferenceUid = $referenceTranslation['uid'];
+                        }
+
+                        if (count($columnsSysFileLanguage)) {
+                            $recordSysFileReference = $parentObject->datamap['sys_file_reference'][$referenceUid] ?? Records::getRecord('sys_file_reference', $referenceUid);
+                            $translatedColumns = $this->translateRecordProperties($recordSysFileReference, (int)$languageId, $columnsSysFileLanguage);
+                            if (count($translatedColumns)) {
+                                Records::updateRecord('sys_file_reference', $translatedSysFileReferenceUid, $translatedColumns);
+                            }
+                        }
+                    }
+                }
+            }
+
 
             // Translate properties with given service
             $translatedColumns = $this->translateRecordProperties($record, (int)$languageId, $columns);
@@ -120,74 +172,7 @@ class Translator {
         Records::updateRecord($table, $recordUid, [
             self::AUTOTRANSLATE_LAST => time()
         ]);
-    }
 
-    /**
-     * @param string $table
-     * @param int $uid
-     * @param string $column
-     * @param string $languages
-     * @return void
-     * @throws \Doctrine\DBAL\Driver\Exception
-     */
-    public function translateSysFileReference(string $table, int $uid, string $column, string $languages): void
-    {
-        if ($this->apiKey === null) {
-            return;
-        }
-
-        // load translation columns for table
-        $columns = TranslationHelper::translationTextfields($this->pageId, 'sys_file_reference');
-        if ($columns === null) {
-            return;
-        }
-
-        $localizedUids = Records::getLocalizedUids($table, $uid);
-        $languageIds = GeneralUtility::trimExplode(',', $languages, true);
-
-        // get original references
-        $tca = BackendUtility::getTcaFieldConfiguration($table, $column);
-        if (empty($tca)) {
-            return;
-        }
-
-        $constraints = [
-            "{$tca['foreign_table_field']} = '{$table}'",
-            "fieldname = '{$column}'",
-            "sys_language_uid = 0",
-            "{$tca['foreign_field']} = {$uid}"
-        ];
-
-        foreach ($tca['foreign_match_fields'] as $k => $v) {
-            $constraints[] = "{$k} = '{$v}'";
-        }
-
-        $originalReferences = Records::getRecords($tca['foreign_table'], 'uid', $constraints);
-
-        foreach ($originalReferences as $originalReferenceUid) {
-            $record = Records::getRecord('sys_file_reference', $originalReferenceUid);
-
-            $translatedReferencesByLanguage = Records::getLocalizedUids($tca['foreign_table'], $originalReferenceUid);
-
-            foreach ($languageIds as $languageId) {
-
-                $translatedColumns = [];
-                $translatedRecordUid = $translatedReferencesByLanguage[(int)$languageId] ?? null;
-
-                if ($translatedRecordUid === null) {
-                    $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-                    $dataHandler->start([], []);
-                    $translatedRecordUid = $dataHandler->localize($tca['foreign_table'], $originalReferenceUid, $languageId);
-                    $translatedColumns += [$tca['foreign_field'] => $localizedUids[(int)$languageId]];
-                }
-
-                $translatedColumns += $this->translateRecordProperties($record, (int)$languageId, $columns);
-
-                if (count($translatedColumns)) {
-                    Records::updateRecord($tca['foreign_table'], $translatedRecordUid, $translatedColumns);
-                }
-            }
-        }
     }
 
     /**
@@ -198,7 +183,7 @@ class Translator {
      * @param array $columns
      * @return array
      */
-    private function translateRecordProperties(array $record, int $targetLanguageUid, array $columns) : array
+    public function translateRecordProperties(array $record, int $targetLanguageUid, array $columns): array
     {
         // create translation array from source record by keys from fielmap
         $translatedColumns = [];
@@ -239,7 +224,7 @@ class Translator {
      * @param int $languageId
      * @return string|null
      */
-    private function deeplTargetLanguage(int $languageId) : ?string
+    private function deeplTargetLanguage(int $languageId): ?string
     {
         foreach ($this->siteLanguages as $language) {
             if ($language['languageId'] == $languageId) {
@@ -257,7 +242,7 @@ class Translator {
      * @param integer $uid
      * @return void
      */
-    private function generateSlugs(string $table, int $uid) : void
+    private function generateSlugs(string $table, int $uid): void
     {
         $slugFields = SlugUtility::slugFields($table);
         if (!empty($slugFields)) {
