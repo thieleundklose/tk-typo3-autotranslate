@@ -4,7 +4,7 @@ return [
         'title' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch',
         'label' => 'uid',
         'label_userFunc' => \ThieleUndKlose\Autotranslate\UserFunction\Tca::class . '->batchLabel',
-        'iconfile' => 'EXT:autotranslate/Resources/Public/Icons/batch_record_icon.svg',
+        'iconfile' => 'EXT:autotranslate/Resources/Public/Icons/Extension.png',
         'hideTable' => false,
         'crdate' => 'crdate',
         'tstamp' => 'tstamp',
