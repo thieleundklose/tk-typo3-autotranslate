@@ -28,10 +28,13 @@
 				<source>High</source>
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.disabled" xml:space="preserve">
-				<source>Translation disabled</source>
+				<source>Disable item execution</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.sys_language_uid" xml:space="preserve">
+				<source>Target language</source>
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.translate" xml:space="preserve">
-				<source>Translate</source>
+				<source>Execution date</source>
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.translated" xml:space="preserve">
 				<source>Translated</source>

@@ -33,12 +33,11 @@ return [
         ],
         'sys_language_uid' => [
             'exclude' => 0,
-            'label' => 'LLL:EXT:core/Resources/Private/Language/locallang_general.xlf:LGL.language',
+            'label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.sys_language_uid',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
                 'required' => true,
-                'default' => 0,
                 'itemsProcFunc' => \ThieleUndKlose\Autotranslate\Utility\BatchLanguages::class . '->populateLanguagesFromSiteConfiguration',
             ],
         ],
@@ -95,8 +94,8 @@ return [
                 'renderType' => 'selectSingle',
                 'items' => [
                     ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.once', 0],
-                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.weekly', 1],
-                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.daily', 2],
+                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.weekly', '7d'],
+                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.daily', '1d'],
                 ],
                 'default' => 0,
                 'required' => true

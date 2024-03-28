@@ -21,12 +21,13 @@ class BatchLanguages
         $pageId = (int)$parameters['row']['pid'];
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
         $site = $siteFinder->getSiteByPageId($pageId);
-        $languages = $site->getLanguages();
-
+        $siteConfiguration = $site->getConfiguration();
+        $possibleTranslationLanguages = TranslationHelper::possibleTranslationLanguages($siteConfiguration['languages'] ?? []);
+        
         $parameters['items'] = [];
-
-        foreach ($languages as $language) {
-            $parameters['items'][] = [$language->getTitle(), $language->getLanguageId()];
+        foreach ($possibleTranslationLanguages as $languageId => $language) {
+            $parameters['items'][] = [$language['title'], $languageId];
         }
+
     }
 }
