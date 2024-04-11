@@ -37,7 +37,7 @@ CREATE TABLE sys_file_reference (
     autotranslate_last int(11) DEFAULT '0' NOT NULL,
 );
 
-CREATE TABLE tx_autotranslate_batch_items (
+CREATE TABLE tx_autotranslate_batch_item (
     sys_language_uid int(11) DEFAULT '0' NOT NULL,
     priority int(11) DEFAULT '0' NOT NULL,
     translate int(11) unsigned DEFAULT '0' NOT NULL,

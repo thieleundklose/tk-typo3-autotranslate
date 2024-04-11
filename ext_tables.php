@@ -9,6 +9,6 @@ $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
 
 if ($versionInformation->getMajorVersion() < 12) {
     ExtensionManagementUtility::allowTableOnStandardPages(
-        'tx_autotranslate_batch_items',
+        'tx_autotranslate_batch_item',
     );
 }
