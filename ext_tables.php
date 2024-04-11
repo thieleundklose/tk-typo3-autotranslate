@@ -12,3 +12,19 @@ if ($versionInformation->getMajorVersion() < 12) {
         'tx_autotranslate_batch_item',
     );
 }
+
+\TYPO3\CMS\Extbase\Utility\ExtensionUtility::registerModule(
+    'autotranslate',
+    'web',
+    'm1',
+    '',
+    [
+        \ThieleUndKlose\Autotranslate\Controller\BatchTranslationModuleController::class =>
+            'list'
+    ],
+    [
+        'access' => 'user,group',
+        'icon' => 'EXT:autotranslate/Resources/Public/Icons/Extension.png',
+        'labels' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf',
+    ]
+);
