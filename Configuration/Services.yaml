@@ -7,5 +7,11 @@ services:
   ThieleUndKlose\Autotranslate\EventListener\PageTsConfigListener:
     tags:
       - name: event.listener
-        method: 'onModifyLoadedPageTsConfig'
+        method: "onModifyLoadedPageTsConfig"
         event: TYPO3\CMS\Core\Configuration\Event\ModifyLoadedPageTsConfigEvent
+
+  ThieleUndKlose\Autotranslate\Command\Autotranslate:
+    tags:
+      - name: console.command
+        command: "autotranslate:translate"
+        description: "Command for automatic translation."
