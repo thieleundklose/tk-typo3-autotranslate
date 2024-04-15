@@ -10,8 +10,8 @@ services:
         method: "onModifyLoadedPageTsConfig"
         event: TYPO3\CMS\Core\Configuration\Event\ModifyLoadedPageTsConfigEvent
 
-  ThieleUndKlose\Autotranslate\Command\Autotranslate:
+  ThieleUndKlose\Autotranslate\Command\BatchTranslation:
     tags:
       - name: console.command
-        command: "autotranslate:translate"
-        description: "Command for automatic translation."
+        command: "autotranslate:batchtranslationrun"
+        description: "Command for automatic translation of a number of elements."
