@@ -1,0 +1,11 @@
+<f:be.pageRenderer
+    includeJavaScriptModules="{
+        0: '@thieleundklose/autotranslate/BackendModule.js'
+    }"
+    includeCssFiles="{
+        0: '{f:uri.resource(path: \'Css/Backend.css\')}'
+    }"
+    pageTitle="Autotranslate - Batch Translations"
+/>
+
+<f:render partial="BatchTranslation/Content" arguments="{_all}" />
