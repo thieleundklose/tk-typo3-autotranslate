@@ -30,7 +30,7 @@ final class BatchItemRepository extends Repository {
      */
     public function initializeObject(): void
     {
-        $querySettings = $this->objectManager->get(Typo3QuerySettings::class);
+        $querySettings = GeneralUtility::makeInstance(Typo3QuerySettings::class);
         $querySettings->setRespectStoragePage(false);
         // $querySettings->setIgnoreEnableFields(true);
         $this->setDefaultQuerySettings($querySettings);
@@ -41,7 +41,7 @@ final class BatchItemRepository extends Repository {
      * @param int $levels
      * @return QueryResultInterface|array|null
      */
-    public function findAllRecursive(int $levels = 0): QueryResultInterface|array|null
+    public function findAllRecursive(int $levels = 0)
     {
         $pageId = (int)GeneralUtility::_GP('id');
         if ($pageId === 0) {
@@ -58,7 +58,12 @@ final class BatchItemRepository extends Repository {
         return $this->findAllByPids($pageIds);
     }
 
-    public function findAllByPids(array $pids): QueryResultInterface|array|null
+    /**
+     * find all pages by given page ids
+     * @param array $pids
+     * @return QueryResultInterface|array|null
+     */
+    public function findAllByPids(array $pids)
     {
         $query = $this->createQuery();
         $query->matching(
