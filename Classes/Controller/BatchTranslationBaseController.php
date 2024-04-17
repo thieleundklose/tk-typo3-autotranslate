@@ -12,23 +12,21 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 class BatchTranslationBaseController extends ActionController
 {
     /**
-     * Fill view data for backend module
-     * @return void
+     * get batch translation data
+     * @return array
      */    
-    public function loadViewData()
+    public function getBatchTranslationData(): array
     {   
         $levels = 1;
 
         $batchItems = $this->batchItemRepository->findAll();
         $batchItemsRecursive = $this->batchItemRepository->findAllRecursive($levels);
 
-        $this->view->assignMultiple(
-            [
-                'levels' => $levels,
-                'batchItems' => $batchItems,
-                'batchItemsRecursive' => $batchItemsRecursive,
-            ]
-        );
+        return [
+            'levels' => $levels,
+            'batchItems' => $batchItems,
+            'batchItemsRecursive' => $batchItemsRecursive,
+        ];
 
     }
 }
