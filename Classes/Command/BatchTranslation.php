@@ -12,30 +12,18 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Psr\Log\LoggerInterface;
 use TYPO3\CMS\Core\Log\Channel;
 
+#[Channel('ThieleUndKlose.Autotranslate.Command.BatchTranslation')]
 final class BatchTranslation extends Command
 {
-
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
 
     /**
      * @return void
      */
 
-    public function __construct()
+    public function __construct(
+        private readonly LoggerInterface $logger,
+    )
     {
-        $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Command']['BatchTranslation'] = [
-            'writerConfiguration' => [
-                \Psr\Log\LogLevel::INFO => [
-                    \TYPO3\CMS\Core\Log\Writer\DatabaseWriter::class => [
-                        'logTable' => 'sys_log',
-                    ],
-                ],
-            ],
-        ];
-        $this->logger = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Log\LogManager::class)->getLogger('ThieleUndKlose.Autotranslate.Command.BatchTranslation');
         parent::__construct();
     }
 
