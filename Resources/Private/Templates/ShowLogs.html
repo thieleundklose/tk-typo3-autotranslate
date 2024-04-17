@@ -6,6 +6,7 @@
 <f:layout name="Module" />
 
 <f:section name="Content">
+    
     <f:be.pageRenderer
         includeJavaScriptModules="{
             0: '@thieleundklose/autotranslate/BackendModule.js'
@@ -17,15 +18,6 @@
     />
 
     <f:render partial="BatchTranslation/Content" arguments="{_all}" />
-
-    <f:if condition="{pageUid}">
-        <p> 
-            <be:link.newRecord table="tx_autotranslate_batch_item" returnUrl="{f:be.uri(route: 'web_autotranslate', parameters:'{id:pageUid}')}" pid="{pageUid}">
-                <core:icon identifier="actions-variable-add"/>
-                <f:translate key="function_links_add_item"/>
-            </be:link.newRecord>
-        </p>
-    </f:if>
 
 </f:section>
 
