@@ -37,6 +37,21 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
     }
 
     /**
+     * Log the number of completed and failed translations.
+     *
+     * @param int $successfulTranslations
+     * @param int $translationsPerRun
+     * @return void
+     */
+    protected function logTranslationStats(int $successfulTranslations, int $translationsPerRun): void
+    {
+        $this->logger->info('{completed} Tasks completed and {failed} Tasks failed', [
+            'completed' => $successfulTranslations,
+            'failed' => $translationsPerRun - $successfulTranslations,
+        ]);
+    }
+
+    /**
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int
@@ -47,10 +62,7 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
         $translationsPerRun = (int)$translationsPerRun;
         $successfulTranslations = rand(0, $translationsPerRun);
 
-        $this->logger->info('{completed} Tasks completed and {failed} Tasks failed', [
-            'completed' => $successfulTranslations,
-            'failed' => $translationsPerRun - $successfulTranslations,
-        ]);
+        $this->logTranslationStats($successfulTranslations, $translationsPerRun);
 
         $output->writeln($successfulTranslations . ' translation(s) completed successfully!');
         $output->writeln(($translationsPerRun - $successfulTranslations) . ' translation(s) failed.');
