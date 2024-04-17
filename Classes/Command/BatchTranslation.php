@@ -8,24 +8,17 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 
-use Psr\Log\LoggerInterface;
-use TYPO3\CMS\Core\Log\Channel;
-
-#[Channel('ThieleUndKlose.Autotranslate.Command.BatchTranslation')]
-final class BatchTranslation extends Command
+// final class BatchTranslation extends Command
+final class BatchTranslation extends Command implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
 
     /**
      * @return void
      */
-
-    public function __construct(
-        private readonly LoggerInterface $logger,
-    )
-    {
-        parent::__construct();
-    }
 
     protected function configure(): void
     {
@@ -58,19 +51,6 @@ final class BatchTranslation extends Command
             'completed' => $successfulTranslations,
             'failed' => $translationsPerRun - $successfulTranslations,
         ]);
-
-        // $GLOBALS['BE_USER']->writeLog(
-        //     4,  // Type (4 = message)
-        //     0,  // Action (0 = message)
-        //     0,  // Error level (0 = OK)
-        //     0,  // Details number
-        //     '{completed} Tasks completed and {failed} Tasks failed',  // Details
-        //     [
-        //         'completed' => $successfulTranslations,
-        //         'failed' => $translationsPerRun - $successfulTranslations,
-        //     ],  // Data
-        //     'channel' => 'test'
-        // );
 
         $output->writeln($successfulTranslations . ' translation(s) completed successfully!');
         $output->writeln(($translationsPerRun - $successfulTranslations) . ' translation(s) failed.');
