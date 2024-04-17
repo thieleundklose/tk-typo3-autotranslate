@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Controller;
 
+use ThieleUndKlose\Autotranslate\Domain\Repository\BatchItemRepository;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 /**
@@ -11,6 +14,23 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
  */
 class BatchTranslationBaseController extends ActionController
 {
+
+    /**
+     * @var BatchItemRepository
+     */
+    protected $batchItemRepository;
+        
+    /**
+     * @param BatchItemRepository $batchItemRepository
+     * @return void
+     */
+    public function injectBatchItemRepository(BatchItemRepository $batchItemRepository): void
+    {
+        $this->batchItemRepository = $batchItemRepository;
+    }
+    
+    protected int $pageUid = 0;
+
     /**
      * get batch translation data
      * @return array
@@ -28,5 +48,15 @@ class BatchTranslationBaseController extends ActionController
             'batchItemsRecursive' => $batchItemsRecursive,
         ];
 
+    }
+
+    protected function getLanguageService(): LanguageService
+    {
+        return $GLOBALS['LANG'];
+    }
+
+    protected function getBackendUserAuthentication(): BackendUserAuthentication
+    {
+        return $GLOBALS['BE_USER'];
     }
 }

@@ -5,16 +5,11 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Controller;
 
 use Psr\Http\Message\ServerRequestInterface;
-use ThieleUndKlose\Autotranslate\Domain\Repository\BatchItemRepository;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
-use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Http\HtmlResponse;
-use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use Psr\Http\Message\ResponseInterface;
-use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -23,24 +18,25 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
  */
 class BatchTranslationController extends BatchTranslationBaseController
 {
+    /**
+     * @var \TYPO3\CMS\Backend\Template\ModuleTemplateFactory|null
+     */
+    protected $moduleTemplateFactory = null;
 
-    private int $pageUid;
+    function __construct()
+    {
+        // Initialize without dependency injection to throw no error in TYPO3 v10
+        $this->moduleTemplateFactory = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\ModuleTemplateFactory');
+    }
 
-    public function __construct(
-        protected readonly ModuleTemplateFactory $moduleTemplateFactory,
-        protected readonly BatchItemRepository $batchItemRepository
-    ) {}
-    
     /**
      * @return HtmlResponse
      */
     public function batchTranslationAction(): ResponseInterface
     {
-
         $view = $this->initializeModuleTemplate($this->request);
         $view->assignMultiple($this->getBatchTranslationData());
         return $view->renderResponse();
-
     }
 
     /**
@@ -117,29 +113,8 @@ class BatchTranslationController extends BatchTranslationBaseController
             );
         }
 
-        if ($this->pageUid > 0) {
-            // create new item at selected page
-            $backendUriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
-            $uriParameters = [
-                'edit' => [
-                    'tx_autotranslate_batch_item' => [
-                        $this->pageUid => 'new',
-                    ],
-                ],
-                'returnUrl' => $backendUriBuilder->buildUriFromRoute(
-                    'web_autotranslate', 
-                    [
-                        'id' => $this->pageUid
-                    ]
-                ),
-            ];
-            $createNewItemLink = $backendUriBuilder->buildUriFromRoute(
-                'record_edit',
-                $uriParameters
-            );
-            $view->assign('createNewItemLink', $createNewItemLink);
-        }
-        
+        $view->assign('pageUid', $this->pageUid);
+
         return $view;
     }
 
@@ -150,15 +125,5 @@ class BatchTranslationController extends BatchTranslationBaseController
     {
         $this->pageUid = (int)($this->request->getQueryParams()['id'] ?? 0);
         parent::initializeAction();
-    }
-
-    protected function getLanguageService(): LanguageService
-    {
-        return $GLOBALS['LANG'];
-    }
-
-    protected function getBackendUserAuthentication(): BackendUserAuthentication
-    {
-        return $GLOBALS['BE_USER'];
     }
 }
