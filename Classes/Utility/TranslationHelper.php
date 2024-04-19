@@ -250,19 +250,29 @@ class TranslationHelper {
      */
     public static function siteConfigurationValue(int $pageId, array $keyPath = null)
     {
-        $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-        $site = $siteFinder->getSiteByPageId($pageId);
-        $configuration = $site->getConfiguration();
+        if (empty($pageId)) {
+            return null;
+        }
 
-        if ($keyPath === null) {
+        try {
+            $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
+            $site = $siteFinder->getSiteByPageId($pageId);
+            $configuration = $site->getConfiguration();
+
+            if ($keyPath === null) {
+                return $configuration;
+            }
+
+            foreach ($keyPath as $key) {
+                $configuration = $configuration[$key] ?? null;
+            }
+            
             return $configuration;
+            
+        } catch (SiteNotFoundException $e) {
+            return null;
         }
-
-        foreach ($keyPath as $key) {
-            $configuration = $configuration[$key] ?? null;
-        }
-
-        return $configuration;
+        
     }
 
     /**
@@ -275,7 +285,8 @@ class TranslationHelper {
     public static function apiKey(int $pageId = null): ?string
     {
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-        if (is_null($pageId)) {
+
+        if (empty($pageId)) {
             // get first apiKey from site configuration
             $sites = $siteFinder->getAllSites();
             foreach ($sites as $site) {
@@ -284,12 +295,17 @@ class TranslationHelper {
                     return $configuration['deeplAuthKey'];
                 }
             }
-        } else {
+            return null;
+        } 
+
+        try {
             $site = $siteFinder->getSiteByPageId($pageId);
             $configuration = $site->getConfiguration();
+            return $configuration['deeplAuthKey'] ?? null;
+        } catch (SiteNotFoundException $e) {
+            return null;
         }
-
-        return $configuration['deeplAuthKey'] ?? null;
+        
     }
 
     /**
