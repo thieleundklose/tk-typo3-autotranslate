@@ -2,6 +2,7 @@
 
 $EM_CONF[$_EXTKEY] = [
     'title' => 'Autotranslate',
+    'title' => 'Autotranslate content with DeepL',
     'description' => 'This extension provides automatic translation of pages and content elements via DeepL API.',
     'category' => 'be',
     'author' => 'Mike Zimmer',
