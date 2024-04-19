@@ -22,6 +22,7 @@ class BatchTranslationController extends BatchTranslationBaseController
      * @var \TYPO3\CMS\Backend\Template\ModuleTemplateFactory|null
      */
     protected $moduleTemplateFactory = null;
+    protected $levels = 0;
 
     function __construct()
     {
@@ -35,7 +36,7 @@ class BatchTranslationController extends BatchTranslationBaseController
     public function batchTranslationAction(): ResponseInterface
     {
         $view = $this->initializeModuleTemplate($this->request);
-        $view->assignMultiple($this->getBatchTranslationData());
+        $view->assignMultiple($this->getBatchTranslationData($this->levels));
         return $view->renderResponse();
     }
 
@@ -45,6 +46,15 @@ class BatchTranslationController extends BatchTranslationBaseController
     public function showLogsAction(): ResponseInterface
     {
         $view = $this->initializeModuleTemplate($this->request);
+        return $view->renderResponse();
+    }
+
+    public function setLevelsAction(int $levels): ResponseInterface
+    {
+        $this->levels = $levels;
+        $view = $this->initializeModuleTemplate($this->request);
+        $view->assignMultiple($this->getBatchTranslationData($this->levels));
+
         return $view->renderResponse();
     }
 
@@ -66,9 +76,43 @@ class BatchTranslationController extends BatchTranslationBaseController
                 'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_show_logs'),
             ],
         ];
+        $menuLevelItems = [
+            'Level0' => [
+                'controller' => 'BatchTranslation',
+                'action' => 'setLevels',
+                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level0'),
+            ],
+            'Level1' => [
+                'controller' => 'BatchTranslation',
+                'action' => 'setLevels',
+                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level1'),
+            ],
+            'Level2' => [
+                'controller' => 'BatchTranslation',
+                'action' => 'setLevels',
+                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level2'),
+            ],
+            'Level3' => [
+                'controller' => 'BatchTranslation',
+                'action' => 'setLevels',
+                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level3'),
+            ],
+            'Level4' => [
+                'controller' => 'BatchTranslation',
+                'action' => 'setLevels',
+                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level4'),
+            ],
+            'LevelINF' => [
+                'controller' => 'BatchTranslation',
+                'action' => 'setLevels',
+                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_levelINF'),
+            ],
+        ];
         $view = $this->moduleTemplateFactory->create($request);
 
         $menu = $view->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
+        $menu2 = $view->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
+        $menu2->setIdentifier('BatchTranslationLevels');
         $menu->setIdentifier('BatchTranslationMenu');
 
         $context = '';
@@ -88,7 +132,30 @@ class BatchTranslationController extends BatchTranslationBaseController
             }
         }
 
+        // Recursive Level Items
+        $levelContext = '';
+        foreach ($menuLevelItems as $menuItemConfig) {
+            $isActive = $this->request->getControllerActionName() === $menuItemConfig['action'];
+            $menuItem = $menu2->makeMenuItem()
+                ->setTitle($menuItemConfig['label'])
+                ->setHref($this->uriBuilder->reset()->uriFor(
+                    $menuItemConfig['action'],
+                    ['levels' => $menuItemConfig['label'] === 'LevelINF' ? 250 : (int)str_replace('Level', '', $menuItemConfig['label'])],
+                    $menuItemConfig['controller']
+                ))
+                ->setActive($isActive);
+            $menu2->addMenuItem($menuItem);
+            if ($isActive) {
+                $levelContext = $menuItemConfig['label'];
+            }
+        }
+
         $view->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
+
+        if ($context === 'Batch Translation list'){
+            $view->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu2);
+        }
+        $view->assign('selected Context', $context);
 
         $view->setTitle(
             $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab'),

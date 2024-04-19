@@ -15,7 +15,7 @@ return [
         'icon' => 'EXT:autotranslate/Resources/Public/Icons/Extension.png',
         'controllerActions' => [
             BatchTranslationController::class => [
-                'batchTranslation', 'showLogs'
+                'batchTranslation', 'showLogs', 'setLevels'
             ]
         ],
     ],

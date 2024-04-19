@@ -35,10 +35,8 @@ class BatchTranslationBaseController extends ActionController
      * get batch translation data
      * @return array
      */    
-    public function getBatchTranslationData(): array
+    public function getBatchTranslationData(int $levels = 0): array
     {   
-        $levels = 1;
-
         $batchItems = $this->batchItemRepository->findAll();
         $batchItemsRecursive = $this->batchItemRepository->findAllRecursive($levels);
 

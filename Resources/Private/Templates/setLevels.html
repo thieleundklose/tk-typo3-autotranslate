@@ -1,0 +1,32 @@
+<html data-namespace-typo3-fluid="true"
+			xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+			xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+			xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
+>
+<f:layout name="Module" />
+
+<f:section name="Content">
+    <f:be.pageRenderer
+        includeJavaScriptModules="{
+            0: '@thieleundklose/autotranslate/BackendModule.js'
+        }"
+        includeCssFiles="{
+            0: '{f:uri.resource(path: \'Css/Backend.css\')}'
+        }"
+        pageTitle="Autotranslate - Batch Translations"
+    />
+
+    <f:render partial="BatchTranslation/Content" arguments="{_all}" />
+
+    <f:if condition="{pageUid}">
+        <p> 
+            <be:link.newRecord table="tx_autotranslate_batch_item" returnUrl="{f:be.uri(route: 'web_autotranslate', parameters:'{id:pageUid}')}" pid="{pageUid}">
+                <core:icon identifier="actions-variable-add"/>
+                <f:translate key="function_links_add_item"/>
+            </be:link.newRecord>
+        </p>
+    </f:if>
+
+</f:section>
+
+</html>
