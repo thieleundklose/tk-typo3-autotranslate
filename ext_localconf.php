@@ -12,7 +12,7 @@ defined('TYPO3') || die();
     $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Command']['BatchTranslation']['writerConfiguration'] = [
         \Psr\Log\LogLevel::INFO => [
             \TYPO3\CMS\Core\Log\Writer\DatabaseWriter::class => [
-                'logTable' => 'batchtranslation_log',
+                'logTable' => 'tx_autotranslate_log',
             ],
         ],
     ];

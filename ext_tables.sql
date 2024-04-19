@@ -47,7 +47,7 @@ CREATE TABLE tx_autotranslate_batch_item (
     error text,
 );
 
-CREATE TABLE batchtranslation_log (
+CREATE TABLE tx_autotranslate_log (
     request_id varchar(13) DEFAULT '' NOT NULL,
     time_micro double(16, 4) NOT NULL default '0.0000',
     component varchar(255) DEFAULT '' NOT NULL,
