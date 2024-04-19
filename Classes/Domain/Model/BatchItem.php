@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Domain\Model;
 
 use DateTime;
+use TYPO3\CMS\Core\Domain\Repository\PageRepository;
+use TYPO3\CMS\Core\Site\SiteFinder;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\DomainObject\AbstractEntity;
 
 /*
@@ -23,16 +26,16 @@ use TYPO3\CMS\Extbase\DomainObject\AbstractEntity;
 class BatchItem extends AbstractEntity
 {
 
-    public const PRIORITY_LOW = 0;
-    public const PRIORITY_MEDIUM = 1;
-    public const PRIORITY_HIGH = 2;
+    public const PRIORITY_LOW = 'low';
+    public const PRIORITY_MEDIUM = 'medium';
+    public const PRIORITY_HIGH = 'high';
 
     public const TYPE_TRANSLATION_ADD_NEW = 0;
     public const TYPE_TRANSLATION_OVERWRITE_EXISTING = 1;
 
-    public const FREQUENCY_ONCE = 0;
-    public const FREQUENCY_WEEKLY = '7d';
-    public const FREQUENCY_DAILY = '1d';
+    public const FREQUENCY_ONCE = 'once';
+    public const FREQUENCY_WEEKLY = 'weekly';
+    public const FREQUENCY_DAILY = 'daily';
 
     /**
      * @var int
@@ -40,9 +43,9 @@ class BatchItem extends AbstractEntity
     protected int $sysLanguageUid = 0;
 
     /**
-     * @var int
+     * @var string
      */
-    protected int $priority = 0;
+    protected string $priority = self::PRIORITY_MEDIUM;
 
     /**
      * @var \DateTime
@@ -98,9 +101,9 @@ class BatchItem extends AbstractEntity
     /**
      * Get the value of priority
      *
-     * @return int
+     * @return string
      */
-    public function getPriority(): int
+    public function getPriority(): string
     {
         return $this->priority;
     }
@@ -108,10 +111,10 @@ class BatchItem extends AbstractEntity
     /**
      * Set the value of priority
      *
-     * @param int $priority
+     * @param string $priority
      * @return void
      */
-    public function setPriority(int $priority): void
+    public function setPriority(string $priority): void
     {
         $this->priority = $priority;
     }
@@ -140,9 +143,9 @@ class BatchItem extends AbstractEntity
     /**
      * Get the value of translated
      *
-     * @return \DateTime
+     * @return \DateTime|null
      */
-    public function getTranslated(): \DateTime
+    public function getTranslated(): ?\DateTime
     {
         return $this->translated;
     }
@@ -240,5 +243,53 @@ class BatchItem extends AbstractEntity
     {
         $this->hidden = $hidden;
     }
-    
+
+    /**
+     * Get the page title of pid
+     *
+     * @return string
+     */
+    public function getPageTitle(): string
+    {
+        $pageRepository = GeneralUtility::makeInstance(PageRepository::class);
+        $page = $pageRepository->getPage($this->pid);
+        return $page['title'];
+    }
+
+    /**
+     * Get the title of sysLanguageUid
+     *
+     * @return string
+     */
+    public function getSysLanguageTitle(): string
+    {
+        $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
+        $site = $siteFinder->getSiteByPageId($this->pid);
+
+        foreach ($site->getAllLanguages() as $siteLanguage) {
+            if ($siteLanguage->getLanguageId() === $this->getSysLanguageUid()) {
+                return $siteLanguage->getTitle();
+            }
+        }
+        return 'not found';
+    }
+
+    /**
+     * Get the value of frequency
+     *
+     * @return string|null
+     */
+    public function getFrequencyDateInterval(): ?string
+    {
+        // TODO make this extensible
+        switch ($this->getFrequency()) {
+            case self::FREQUENCY_DAILY:
+                return '1d';
+            break;
+            case self::FREQUENCY_WEEKLY:
+                return '1w';
+            break;
+        }
+        return null;
+    }
 }
