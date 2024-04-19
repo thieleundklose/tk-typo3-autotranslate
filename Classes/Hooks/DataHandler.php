@@ -63,6 +63,12 @@ class DataHandler implements SingletonInterface
 
         $pid = $parentObject->getPID($table, $recordUid);
         $pageId = ($pid === 0 && $table === 'pages') ? $recordUid : $pid;
+        
+        // Skip auto translation if page id is not set, because no site configuration could be exist on root page 0.
+        if (empty($pageId)) {
+            return;
+        }
+
         $translator = GeneralUtility::makeInstance(Translator::class, $pageId);
 
         if (in_array($table, TranslationHelper::translateableTables())) {
