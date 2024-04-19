@@ -8,13 +8,18 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 
-final class BatchTranslation extends Command
+// final class BatchTranslation extends Command
+final class BatchTranslation extends Command implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
 
     /**
      * @return void
      */
+
     protected function configure(): void
     {
         $this
@@ -32,6 +37,21 @@ final class BatchTranslation extends Command
     }
 
     /**
+     * Log the number of completed and failed translations.
+     *
+     * @param int $successfulTranslations
+     * @param int $translationsPerRun
+     * @return void
+     */
+    protected function logTranslationStats(int $successfulTranslations, int $translationsPerRun): void
+    {
+        $this->logger->info('{completed} Tasks completed and {failed} Tasks failed', [
+            'completed' => $successfulTranslations,
+            'failed' => $translationsPerRun - $successfulTranslations,
+        ]);
+    }
+
+    /**
      * @param InputInterface $input
      * @param OutputInterface $output
      * @return int
@@ -41,6 +61,9 @@ final class BatchTranslation extends Command
         $translationsPerRun = $input->getArgument('translationsPerRun');
         $translationsPerRun = (int)$translationsPerRun;
         $successfulTranslations = rand(0, $translationsPerRun);
+
+        $this->logTranslationStats($successfulTranslations, $translationsPerRun);
+
         $output->writeln($successfulTranslations . ' translation(s) completed successfully!');
         $output->writeln(($translationsPerRun - $successfulTranslations) . ' translation(s) failed.');
         return Command::SUCCESS;
