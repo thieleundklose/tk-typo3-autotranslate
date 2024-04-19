@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.1] - 2024-04-19
+
+### Fixed
+- Fixed Exception on DataHandler if no page or root page is selected
+
 ## [1.0.0] - 2024-03-22
 
 ### Fixed
