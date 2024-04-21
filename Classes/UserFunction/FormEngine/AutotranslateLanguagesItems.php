@@ -44,16 +44,16 @@ class AutotranslateLanguagesItems {
             return;
         }
 
-        $sitePid = $row['pid'];
+        $sitePid = (int)$row['pid'];
         // pid < 0 respects the record (content or page) to insert after
         // pid > 0 and numeric represent the page uid to insert on
         if (is_numeric($row['pid']) && $row['pid']<0) {
-            $sitePid = Records::getRecord($table, abs($row['pid']), 'pid');
+            $sitePid = (int)Records::getRecord($table, abs($row['pid']), 'pid');
         }
 
         // set site pid on editing pages
         if ($row['pid'] == 0 && $table == 'pages' && is_numeric($row['uid'])) {
-            $sitePid = $row['uid'];
+            $sitePid = (int)$row['uid'];
         }
 
         // step out on create pages on root level
