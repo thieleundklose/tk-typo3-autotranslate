@@ -38,12 +38,12 @@
                     <td title="{rcord.frequencyDateInterval}"><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.{record.frequency}"/></td>
                     <td>
                         <div class="btn-group">
-                            <be:link.editRecord uid="{record.uid}" table="tx_autotranslate_batch_item" returnUrl="{f:be.uri(route: 'web_autotranslate', parameters:'{id:pageUid}')}" class="btn btn-default">
+                            <be:link.editRecord uid="{record.uid}" table="tx_autotranslate_batch_item" returnUrl="{f:be.uri(route: routeBackendModule, parameters:'{id:pageUid}')}" class="btn btn-default">
                                 <core:icon identifier="actions-edit-unhide"/><core:icon identifier="actions-edit-hide"/>
                             </be:link.editRecord>
                             
 
-                            <be:link.editRecord uid="{record.uid}" table="tx_autotranslate_batch_item" returnUrl="{f:be.uri(route: 'web_autotranslate', parameters:'{id:pageUid}')}" class="btn btn-default">
+                            <be:link.editRecord uid="{record.uid}" table="tx_autotranslate_batch_item" returnUrl="{f:be.uri(route: routeBackendModule, parameters:'{id:pageUid}')}" class="btn btn-default">
                                 <core:icon identifier="actions-file-edit"/>
                             </be:link.editRecord>
                             <button
