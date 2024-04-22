@@ -36,7 +36,8 @@ class BatchTranslationController extends BatchTranslationBaseController
     public function batchTranslationAction(): ResponseInterface
     {
         $view = $this->initializeModuleTemplate($this->request);
-        $view->assignMultiple($this->getBatchTranslationData($this->levels));
+        $levels = (int)$this->getBackendUserAuthentication()->getSessionData('batchTranslation.levels');
+        $view->assignMultiple($this->getBatchTranslationData($levels));
         return $view->renderResponse();
     }
 
@@ -51,9 +52,10 @@ class BatchTranslationController extends BatchTranslationBaseController
 
     public function setLevelsAction(int $levels): ResponseInterface
     {
-        $this->levels = $levels;
+        $this->getBackendUserAuthentication()->setAndSaveSessionData('batchTranslation.levels', $levels);
+
         $view = $this->initializeModuleTemplate($this->request);
-        $view->assignMultiple($this->getBatchTranslationData($this->levels));
+        $view->assignMultiple($this->getBatchTranslationData($levels));
 
         return $view->renderResponse();
     }
@@ -135,12 +137,17 @@ class BatchTranslationController extends BatchTranslationBaseController
         // Recursive Level Items
         $levelContext = '';
         foreach ($menuLevelItems as $menuItemConfig) {
-            $isActive = $this->request->getControllerActionName() === $menuItemConfig['action'];
+            $sessionLevel = (int)$this->getBackendUserAuthentication()->getSessionData('batchTranslation.levels');
+            $itemLevel = 0;
+            if (preg_match('/\[(\d+)\]/', $menuItemConfig['label'], $matches)) {
+                $itemLevel = (int)$matches[1];
+            }
+            $isActive = $sessionLevel === $itemLevel;
             $menuItem = $menu2->makeMenuItem()
                 ->setTitle($menuItemConfig['label'])
                 ->setHref($this->uriBuilder->reset()->uriFor(
                     $menuItemConfig['action'],
-                    ['levels' => $menuItemConfig['label'] === 'LevelINF' ? 250 : (int)str_replace('Level', '', $menuItemConfig['label'])],
+                    ['levels' => $itemLevel],
                     $menuItemConfig['controller']
                 ))
                 ->setActive($isActive);
@@ -152,10 +159,11 @@ class BatchTranslationController extends BatchTranslationBaseController
 
         $view->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
 
-        if ($context === 'Batch Translation list'){
+        $currentMenuPoint = $this->request->getControllerActionName();
+        // $view->assign('currentMenuPoint', $currentMenuPoint);
+        if ($currentMenuPoint === 'batchTranslation' || $currentMenuPoint === 'setLevels'){
             $view->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu2);
         }
-        $view->assign('selected Context', $context);
 
         $view->setTitle(
             $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab'),
