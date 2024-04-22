@@ -30,6 +30,11 @@ class Tca {
      */
     public function batchLabel(&$parameters)
     {
+        if (!isset($parameters['row']['uid'])) {
+            $parameters['title'] = 'item deleted from backend module';
+            return;
+        }
+
         $record = BackendUtility::getRecord($parameters['table'], $parameters['row']['uid']);
 
         if (!$record) {
@@ -39,6 +44,10 @@ class Tca {
         $languageId = $record['sys_language_uid'];
         $translationTimestamp = $record['translate'];       
         $translationDate = date('d-m-Y H:i', $translationTimestamp);
+        if (!isset($parameters['row']['pid'])) {
+            $parameters['title'] = $parameters['row']['uid'];
+            return;
+        }
 
         $pageId = (int)$parameters['row']['pid'];
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);

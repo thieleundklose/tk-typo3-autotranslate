@@ -6,6 +6,9 @@
 			<trans-unit id="function_links_add_item" resname="function_links_add_item">
 				<source>Add new batch translation item at this page</source>
 			</trans-unit>
+			<trans-unit id="confirm" resname="confirm">
+				<source>Are you sure you want to delete the batch translation item '%s'?</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>

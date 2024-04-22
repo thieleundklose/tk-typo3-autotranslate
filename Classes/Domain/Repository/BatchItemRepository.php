@@ -32,7 +32,7 @@ final class BatchItemRepository extends Repository {
     {
         $querySettings = GeneralUtility::makeInstance(Typo3QuerySettings::class);
         $querySettings->setRespectStoragePage(false);
-        // $querySettings->setIgnoreEnableFields(true);
+        $querySettings->setIgnoreEnableFields(true);
         $this->setDefaultQuerySettings($querySettings);
     }
 

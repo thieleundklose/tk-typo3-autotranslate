@@ -83,9 +83,9 @@ return [
                 'renderType' => 'selectSingle',
                 'items' => [
                     ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.type.add', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::TYPE_TRANSLATION_ADD_NEW],
-                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.type.override', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::TYPE_TRANSLATION_OVERWRITE_EXISTING],
+                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.type.override', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::TYPE_TRANSLATION_OVERRIDE_EXISTING],
                 ],
-                'default' => 0,
+                'default' => \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::TYPE_TRANSLATION_ADD_NEW,
                 'required' => true
             ],
         ],
@@ -100,7 +100,7 @@ return [
                     ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.weekly', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::FREQUENCY_WEEKLY],
                     ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.daily', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::FREQUENCY_DAILY],
                 ],
-                'default' => 0,
+                'default' => \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::FREQUENCY_ONCE,
                 'required' => true
             ],
         ],
