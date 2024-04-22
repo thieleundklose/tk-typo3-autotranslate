@@ -16,22 +16,22 @@
 				<source>Show Logs</source>
 			</trans-unit>
 			<trans-unit id="mlang_labels_menu_level0" resname="mlang_labels_menu_level0">
-				<source>0 levels (only selected page) [0]</source>
+				<source>0 levels (only selected page)</source>
 			</trans-unit>
 			<trans-unit id="mlang_labels_menu_level1" resname="mlang_labels_menu_level1">
-				<source>1 level [1]</source>
+				<source>1 level</source>
 			</trans-unit>
 			<trans-unit id="mlang_labels_menu_level2" resname="mlang_labels_menu_level2">
-				<source>2 levels [2]</source>
+				<source>2 levels</source>
 			</trans-unit>
 			<trans-unit id="mlang_labels_menu_level3" resname="mlang_labels_menu_level3">
-				<source>3 levels [3]</source>
+				<source>3 levels</source>
 			</trans-unit>
 			<trans-unit id="mlang_labels_menu_level4" resname="mlang_labels_menu_level4">
-				<source>4 levels [4]</source>
+				<source>4 levels</source>
 			</trans-unit>
 			<trans-unit id="mlang_labels_menu_levelINF" resname="mlang_labels_menu_levelINF">
-				<source>Infinite [250]</source>
+				<source>Infinite</source>
 			</trans-unit>
 			<trans-unit id="function_links_add_item" resname="function_links_add_item">
 				<source>Add New Item</source>
