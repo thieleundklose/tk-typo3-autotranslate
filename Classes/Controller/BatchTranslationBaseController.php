@@ -35,8 +35,9 @@ class BatchTranslationBaseController extends ActionController
      * get batch translation data
      * @return array
      */    
-    public function getBatchTranslationData(int $levels = 0): array
+    public function getBatchTranslationData(): array
     {   
+        $levels = (int)$this->getBackendUserAuthentication()->getSessionData('autotranslate.levels');
         $batchItems = $this->batchItemRepository->findAll();
         $batchItemsRecursive = $this->batchItemRepository->findAllRecursive($levels);
 
@@ -57,4 +58,8 @@ class BatchTranslationBaseController extends ActionController
     {
         return $GLOBALS['BE_USER'];
     }
+    
+    // protected function createMenu(): void {
+    //     $menu = $view->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
+    // }
 }

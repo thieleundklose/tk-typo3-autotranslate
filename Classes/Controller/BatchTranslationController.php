@@ -36,8 +36,7 @@ class BatchTranslationController extends BatchTranslationBaseController
     public function batchTranslationAction(): ResponseInterface
     {
         $view = $this->initializeModuleTemplate($this->request);
-        $levels = (int)$this->getBackendUserAuthentication()->getSessionData('batchTranslation.levels');
-        $view->assignMultiple($this->getBatchTranslationData($levels));
+        $view->assignMultiple($this->getBatchTranslationData());
         return $view->renderResponse();
     }
 
@@ -52,7 +51,7 @@ class BatchTranslationController extends BatchTranslationBaseController
 
     public function setLevelsAction(int $levels): ResponseInterface
     {
-        $this->getBackendUserAuthentication()->setAndSaveSessionData('batchTranslation.levels', $levels);
+        $this->getBackendUserAuthentication()->setAndSaveSessionData('autotranslate.levels', $levels);
 
         $view = $this->initializeModuleTemplate($this->request);
         $view->assignMultiple($this->getBatchTranslationData($levels));
@@ -137,11 +136,8 @@ class BatchTranslationController extends BatchTranslationBaseController
         // Recursive Level Items
         $levelContext = '';
         foreach ($menuLevelItems as $menuItemConfig) {
-            $sessionLevel = (int)$this->getBackendUserAuthentication()->getSessionData('batchTranslation.levels');
-            $itemLevel = 0;
-            if (preg_match('/\[(\d+)\]/', $menuItemConfig['label'], $matches)) {
-                $itemLevel = (int)$matches[1];
-            }
+            $sessionLevel = (int)$this->getBackendUserAuthentication()->getSessionData('autotranslate.levels');
+            $itemLevel = $menuItemConfig['label'] === "Infinite" ? 250 : (int)str_replace('levels', '', $menuItemConfig['label']);
             $isActive = $sessionLevel === $itemLevel;
             $menuItem = $menu2->makeMenuItem()
                 ->setTitle($menuItemConfig['label'])

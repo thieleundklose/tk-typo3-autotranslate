@@ -24,8 +24,17 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
      */
     public function showLogsLegacyAction()
     {
+    }
+
+    /**
+     * 
+     * @return void
+     */
+    public function setLevelsLegacyAction()
+    {
 
     }
+
     /**
      * 
      * @return void
@@ -64,43 +73,59 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
         // Make localized labels available in JavaScript context
         // $pageRenderer->addInlineLanguageLabelFile('EXT:examples/Resources/Private/Language/locallang.xlf');
 
-        // Add action menu
-        /** @var Menu $menu */
-        $menu = GeneralUtility::makeInstance(Menu::class);
-        $menu->setIdentifier('BatchTranslationMenu');
+        $menu = $this->createMenu(
+            'BatchTranslationMenu',
+            [
+                'batchTranslationLegacy' => [
+                    'controller' => 'BatchTranslationLegacy',
+                    'action' => 'batchTranslationLegacy',
+                    'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_tablabel'),
+                ],
+                'showLogsLegacy' => [
+                    'controller' => 'BatchTranslationLegacy',
+                    'action' => 'showLogsLegacy',
+                    'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_show_logs'),
+                ],
+            ]
+        ); 
+        $this->view->getModuleTemplate()->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
 
-        /** @var UriBuilder $uriBuilder */
-        $uriBuilder = $this->objectManager->get(UriBuilder::class);
-        $uriBuilder->setRequest($this->request);
-
-        // Add menu items
-        /** @var MenuItem $menuItem */
-        $menuItem = GeneralUtility::makeInstance(MenuItem::class);
-        $menuItems = [
-            'batchTranslationLegacy' => [
-                'controller' => 'BatchTranslationLegacy',
-                'action' => 'batchTranslationLegacy',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_tablabel'),
+        $menu = $this->createMenu(
+            'BatchTranslationLevels',
+            [
+                'Level0' => [
+                    'controller' => 'BatchTranslation',
+                    'action' => 'setLevels',
+                    'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level0'),
+                ],
+                'Level1' => [
+                    'controller' => 'BatchTranslation',
+                    'action' => 'setLevels',
+                    'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level1'),
+                ],
+                'Level2' => [
+                    'controller' => 'BatchTranslation',
+                    'action' => 'setLevels',
+                    'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level2'),
+                ],
+                'Level3' => [
+                    'controller' => 'BatchTranslation',
+                    'action' => 'setLevels',
+                    'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level3'),
+                ],
+                'Level4' => [
+                    'controller' => 'BatchTranslation',
+                    'action' => 'setLevels',
+                    'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level4'),
+                ],
+                'LevelINF' => [
+                    'controller' => 'BatchTranslation',
+                    'action' => 'setLevels',
+                    'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_levelINF'),
+                ],
             ],
-            'showLogsLegacy' => [
-                'controller' => 'BatchTranslationLegacy',
-                'action' => 'showLogsLegacy',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_show_logs'),
-            ],
-        ];
-        foreach ($menuItems as $menuItemConfig) {
-            $isActive = $this->actionMethodName === $menuItemConfig['action'] . 'Action';
-            $menuItem->setTitle(
-                $menuItemConfig['label']
-            );
-            $uri = $uriBuilder->reset()->uriFor(
-                $menuItemConfig['action'],
-                [],
-                $menuItemConfig['controller']
-            );
-            $menuItem->setActive($isActive)->setHref($uri);
-            $menu->addMenuItem($menuItem);
-        }
+            true
+        );
 
         $this->view->getModuleTemplate()->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
     }
@@ -111,8 +136,52 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
     protected function initializeAction()
     {
         $this->defaultViewObjectName = BackendTemplateView::class;
-        $this->pageUid = (int)$GLOBALS['_GET']['id'] ?? 0;
+        $this->pageUid = (isset($GLOBALS['_GET']) && isset($GLOBALS['_GET']['id'])) ? (int)$GLOBALS['_GET']['id'] : 0;
         parent::initializeAction();
     }
 
+    protected function createMenu($identifier, $menuItems, $isLevels = false) {
+        // Add action menu
+        /** @var Menu $menu */
+        $menu = GeneralUtility::makeInstance(Menu::class);
+        $menu->setIdentifier($identifier);
+
+        /** @var UriBuilder $uriBuilder */
+        $uriBuilder = $this->objectManager->get(UriBuilder::class);
+        $uriBuilder->setRequest($this->request);
+
+        // Add menu items
+        /** @var MenuItem $menuItem */
+        $menuItem = GeneralUtility::makeInstance(MenuItem::class);
+
+        foreach ($menuItems as $menuItemConfig) {
+            if ($isLevels) {
+                $sessionLevel = (int)$this->getBackendUserAuthentication()->getSessionData('autotranslate.levels');
+                $itemLevel = $menuItemConfig['label'] === "Infinite" ? 250 : (int)str_replace('levels', '', $menuItemConfig['label']);
+            }
+            $isActive = $isLevels
+                ? $sessionLevel === $itemLevel
+                : $this->actionMethodName === $menuItemConfig['action'] . 'Action';
+            $menuItem->setTitle(
+                $menuItemConfig['label']
+            );
+            if ($isLevels) {
+                $uri = $uriBuilder->reset()->uriFor(
+                    $menuItemConfig['action'],
+                    [],
+                    $menuItemConfig['controller']
+                );
+            } else {
+                $uri = $uriBuilder->reset()->uriFor(
+                    $menuItemConfig['action'],
+                    [],
+                    $menuItemConfig['controller']
+                );
+            }
+            $menuItem->setActive($isActive)->setHref($uri);
+            $menu->addMenuItem($menuItem);
+        }
+
+        return $menu;
+    }
 }
