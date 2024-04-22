@@ -43,6 +43,7 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
         }
 
         $this->view->assign('pageUid', $this->pageUid);
+        $this->view->assign('routeBackendModule', 'web_AutotranslateM1');
 
     }
 

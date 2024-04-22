@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.2] - 2024-04-21
+
+### Fixed
+- Strict var type php definition in helper function to avoid exception
+
 ## [1.0.1] - 2024-04-19
 
 ### Fixed
