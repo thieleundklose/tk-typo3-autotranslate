@@ -20,7 +20,7 @@
             <f:for each="{batchItemsRecursive}" as="record">
                 <tr class="{record.class} {f:if(condition:record.hidden, then:'t3-form-field-container-inline-hidden')} {f:if(condition:record.error, then:'danger')}" title="id={record.uid}">
                     <td><input type="checkbox"></td>
-                    <td class="nowrap" title="id={record.pid}">{record.page}  {record.pageTitle}</td>
+                    <td class="nowrap" title="id={record.pid}">[{record.pid}] {record.pageTitle}</td>
                     <td><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.{record.priority}"/></td>
                     <td title="id={record.sysLanguageUid}">{record.sysLanguageTitle}</td>
                     <td><f:format.date format="d.m.Y - H:i">{record.translate}</f:format.date></td>
