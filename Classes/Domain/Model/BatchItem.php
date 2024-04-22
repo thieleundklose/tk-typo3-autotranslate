@@ -30,8 +30,8 @@ class BatchItem extends AbstractEntity
     public const PRIORITY_MEDIUM = 'medium';
     public const PRIORITY_HIGH = 'high';
 
-    public const TYPE_TRANSLATION_ADD_NEW = 0;
-    public const TYPE_TRANSLATION_OVERWRITE_EXISTING = 1;
+    public const TYPE_TRANSLATION_ADD_NEW = 'add';
+    public const TYPE_TRANSLATION_OVERRIDE_EXISTING = 'override';
 
     public const FREQUENCY_ONCE = 'once';
     public const FREQUENCY_WEEKLY = 'weekly';
@@ -58,9 +58,9 @@ class BatchItem extends AbstractEntity
     protected $translated;
 
     /**
-     * @var int
+     * @var string
      */
-    protected int $type = 0;
+    protected string $type = self::TYPE_TRANSLATION_ADD_NEW;
 
     /**
      * @var string
@@ -164,9 +164,9 @@ class BatchItem extends AbstractEntity
     /**
      * Get the value of type
      *
-     * @return int
+     * @return string
      */
-    public function getType(): int
+    public function getType(): string
     {
         return $this->type;
     }
@@ -174,10 +174,10 @@ class BatchItem extends AbstractEntity
     /**
      * Set the value of type
      *
-     * @param int $type
+     * @param string $type
      * @return void
      */
-    public function setType(int $type): void
+    public function setType(string $type): void
     {
         $this->type = $type;
     }
@@ -291,5 +291,42 @@ class BatchItem extends AbstractEntity
             break;
         }
         return null;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isWaitingForRun(): bool
+    {
+        $now = new \DateTime();
+        // \TYPO3\CMS\Extbase\Utility\DebuggerUtility::var_dump([
+        //     '$now' => $now->getTimestamp(),
+        //     '$now->format' => $now->format('d.m.Y H:i:s'),
+        //     '$this->getTranslate()' => $this->getTranslate()->getTimestamp(),
+        //     '$this->getTranslate()->format' => $this->getTranslate()->format('d.m.Y H:i:s'),
+        // ] , __FILE__.':'.__LINE__);
+
+        if (!empty($this->getError())) {
+            return false;
+        }
+
+        if ($this->isFinishedRun()) {
+            return false;
+        }
+
+        return $now > $this->getTranslate();
+        
+    }
+
+    /**
+     * @return bool
+     */
+    public function isFinishedRun(): bool
+    {
+        if ($this->getTranslated() && $this->getFrequency() === self::FREQUENCY_ONCE) {
+            return true;
+        }
+
+        return false;
     }
 }
