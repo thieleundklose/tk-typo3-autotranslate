@@ -299,12 +299,6 @@ class BatchItem extends AbstractEntity
     public function isWaitingForRun(): bool
     {
         $now = new \DateTime();
-        // \TYPO3\CMS\Extbase\Utility\DebuggerUtility::var_dump([
-        //     '$now' => $now->getTimestamp(),
-        //     '$now->format' => $now->format('d.m.Y H:i:s'),
-        //     '$this->getTranslate()' => $this->getTranslate()->getTimestamp(),
-        //     '$this->getTranslate()->format' => $this->getTranslate()->format('d.m.Y H:i:s'),
-        // ] , __FILE__.':'.__LINE__);
 
         if (!empty($this->getError())) {
             return false;
