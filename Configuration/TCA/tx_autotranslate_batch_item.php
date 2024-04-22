@@ -83,7 +83,7 @@ return [
                 'renderType' => 'selectSingle',
                 'items' => [
                     ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.type.add', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::TYPE_TRANSLATION_ADD_NEW],
-                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.type.override', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::TYPE_TRANSLATION_OVERWRITE_EXISTING],
+                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.type.override', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::TYPE_TRANSLATION_OVERRIDE_EXISTING],
                 ],
                 'default' => \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::TYPE_TRANSLATION_ADD_NEW,
                 'required' => true

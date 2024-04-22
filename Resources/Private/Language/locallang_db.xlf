@@ -15,6 +15,9 @@
 			<trans-unit id="autotranslate_batch" xml:space="preserve">
 				<source>Autotranslate Batch Item</source>
 			</trans-unit>
+			<trans-unit id="autotranslate_batch.page" xml:space="preserve">
+				<source>Page to Translate</source>
+			</trans-unit>
 			<trans-unit id="autotranslate_batch.priority" xml:space="preserve">
 				<source>Priority</source>
 			</trans-unit>
@@ -37,7 +40,7 @@
 				<source>Execution date</source>
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.translated" xml:space="preserve">
-				<source>Translated</source>
+				<source>Translated (last)</source>
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.type" xml:space="preserve">
 				<source>Type</source>
