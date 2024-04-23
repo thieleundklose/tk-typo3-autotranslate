@@ -21,13 +21,13 @@
 			<trans-unit id="autotranslate_batch.priority" xml:space="preserve">
 				<source>Priority</source>
 			</trans-unit>
-			<trans-unit id="autotranslate_batch.priority.low" xml:space="preserve">
+			<trans-unit id="autotranslate_batch.priority.01_low" xml:space="preserve">
 				<source>Low</source>
 			</trans-unit>
-			<trans-unit id="autotranslate_batch.priority.medium" xml:space="preserve">
+			<trans-unit id="autotranslate_batch.priority.02_medium" xml:space="preserve">
 				<source>Medium</source>
 			</trans-unit>
-			<trans-unit id="autotranslate_batch.priority.high" xml:space="preserve">
+			<trans-unit id="autotranslate_batch.priority.03_high" xml:space="preserve">
 				<source>High</source>
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.disabled" xml:space="preserve">

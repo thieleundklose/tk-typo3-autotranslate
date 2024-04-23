@@ -26,9 +26,9 @@ use TYPO3\CMS\Extbase\DomainObject\AbstractEntity;
 class BatchItem extends AbstractEntity
 {
 
-    public const PRIORITY_LOW = 'low';
-    public const PRIORITY_MEDIUM = 'medium';
-    public const PRIORITY_HIGH = 'high';
+    public const PRIORITY_LOW = '01_low';
+    public const PRIORITY_MEDIUM = '02_medium';
+    public const PRIORITY_HIGH = '03_high';
 
     public const TYPE_TRANSLATION_ADD_NEW = 'add';
     public const TYPE_TRANSLATION_OVERRIDE_EXISTING = 'override';
@@ -317,10 +317,21 @@ class BatchItem extends AbstractEntity
      */
     public function isFinishedRun(): bool
     {
-        if ($this->getTranslated() && $this->getFrequency() === self::FREQUENCY_ONCE) {
+        if ($this->getTranslated() > $this->getTranslate()) {
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * Set the value of translated
+     *
+     * @return void
+     */
+    public function markAsTranslated(): void
+    {
+        $this->translated = new \DateTime();
+        // TODO set new translation date
     }
 }

@@ -18,12 +18,22 @@ namespace ThieleUndKlose\Autotranslate\Domain\Repository;
  */
 
 use ThieleUndKlose\Autotranslate\Utility\PageUtility;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings;
+use TYPO3\CMS\Extbase\Persistence\QueryInterface;
 use TYPO3\CMS\Extbase\Persistence\QueryResultInterface;
 use TYPO3\CMS\Extbase\Persistence\Repository;
 
 final class BatchItemRepository extends Repository {
+
+    /**
+     * @var array
+     */
+    protected $defaultOrderings = [
+        'priority' => QueryInterface::ORDER_DESCENDING,
+        'translate' => QueryInterface::ORDER_ASCENDING
+    ];
 
     /**
      * @return void
@@ -59,16 +69,80 @@ final class BatchItemRepository extends Repository {
     }
 
     /**
-     * find all pages by given page ids
+     * find all items recursively for actual given site from backend module selected tree item
+     * @param int $limit|null
+     * @return QueryResultInterface|array|null
+     */
+    public function findWaitingForRun(int $limit = null)
+    {
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_autotranslate_batch_item');
+        $queryBuilder->getRestrictions()->removeAll();
+        
+        $now = new \DateTime();
+        $statement = $queryBuilder
+            ->select('uid')
+            ->from('tx_autotranslate_batch_item')
+            ->where(
+                // only load items where translate is gerader than translated
+                $queryBuilder->expr()->orX(
+                    $queryBuilder->expr()->isNull('translated'),
+                    $queryBuilder->expr()->gt('translate', 'translated'),
+                ),
+                // only load items where error is empty
+                $queryBuilder->expr()->eq('error', $queryBuilder->createNamedParameter('')),
+                // only loaditems with next translation date in the past
+                $queryBuilder->expr()->lt('translate', $queryBuilder->createNamedParameter($now->getTimestamp())),
+                // only load active items
+                $queryBuilder->expr()->eq('hidden', $queryBuilder->createNamedParameter(false))
+            )
+            ->execute();
+
+        $uids = $statement->fetchFirstColumn();
+
+        return $this->findAllByUids($uids, $limit);
+    }
+
+
+    /**
+     * find all items by given ids
+     * @param array $uids
+     * @param int $limit|null
+     * @return QueryResultInterface|array|null
+     */
+    public function findAllByUids(array $uids, int $limit = null)
+    {
+        if (empty($uids)) {
+            return [];
+        }
+
+        $query = $this->createQuery();
+        $query->matching(
+            $query->in('uid', $uids)
+        );
+
+        if ($limit !== null) {
+            $query->setLimit($limit);
+        }
+
+        return $query->execute();
+    }
+
+    /**
+     * find all items by given page ids
      * @param array $pids
      * @return QueryResultInterface|array|null
      */
     public function findAllByPids(array $pids)
     {
+        if (empty($pids)) {
+            return null;
+        }
+
         $query = $this->createQuery();
         $query->matching(
             $query->in('pid', $pids)
         );
+
         return $query->execute();
     }
 
