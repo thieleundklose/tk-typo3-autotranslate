@@ -3,7 +3,7 @@
 ## [1.0.2] - 2024-04-21
 
 ### Fixed
-- Bugfix an variable usage exception that was thrown caused by editing elements on the root page
+- Bugfix a variable usage exception that was thrown caused by editing elements on the root page
 
 ## [1.0.1] - 2024-04-19
 
