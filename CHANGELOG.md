@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.2] - 2024-04-21
+
+### Fixed
+- Cast the variable usage to a type to catch an exception due to the use of a strict type
+
 ## [1.0.1] - 2024-04-19
 
 ### Fixed
@@ -11,16 +16,16 @@
 - Translation mechanism restructured and errors in the translation process fixed
 
 ## [0.9.3] - 2024-02-26
- 
+
 ### Fixed
 - Fixed installation with Extension Manager from TER to use DeepL Vendor Files with TYPO3 autoloader (https://forge.typo3.org/issues/102443)
 - PHP 8 bugfixes & translation stabilizations
- 
+
 ## [0.9.2] - 2023-10-15
- 
+
 ### Added
 - TYPO3 v12 support
- 
+
 ### Fixed
 - Fixed field names in site configuration
 - PHP 8 bugfixes & stabilizations
