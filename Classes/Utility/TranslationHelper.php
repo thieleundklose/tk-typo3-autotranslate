@@ -42,7 +42,7 @@ class TranslationHelper {
     {
         return array_merge(
             self::COLUMN_TRANSLATEABLE_TABLES,
-            ExtensionManagementUtility::isLoaded('tx_news') ? ['tx_news_domain_model_news'] : []
+            ExtensionManagementUtility::isLoaded('news') ? ['tx_news_domain_model_news'] : []
         );
     }
 
