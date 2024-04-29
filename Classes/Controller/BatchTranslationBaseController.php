@@ -58,8 +58,6 @@ class BatchTranslationBaseController extends ActionController
     {
         return $GLOBALS['BE_USER'];
     }
-    
-    // protected function createMenu(): void {
-    //     $menu = $view->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
-    // }
+
 }
+
