@@ -10,6 +10,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
 use ThieleUndKlose\Autotranslate\Domain\Repository\BatchItemRepository;
 use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
 
@@ -24,7 +25,7 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
      * @var BatchItemRepository
      */
     protected $batchItemRepository;
-        
+
     /**
      * @param BatchItemRepository $batchItemRepository
      * @return void
@@ -57,7 +58,7 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
     {
         $this
             ->setDescription(
-                'A command for automatic translation with feedback. 
+                'A command for automatic translation with feedback.
                 Optionally add the number of translations which is otherwise 1' . self::ITEMS_PER_RUN_DEFAULT . 'per default.'
             )
             ->setHelp('Optionally add the number of translations which is otherwise ' . self::ITEMS_PER_RUN_DEFAULT . ' per default.')
@@ -97,6 +98,7 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
 
         $batchItemsToRun = $this->batchItemRepository->findWaitingForRun($translationsPerRun);
         foreach ($batchItemsToRun as $item) {
+            /** @var BatchItem */
             $item->markAsTranslated();
             $this->batchItemRepository->update($item);
         }

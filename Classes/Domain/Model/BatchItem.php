@@ -9,6 +9,7 @@ use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\DomainObject\AbstractEntity;
+use DateInterval;
 
 /*
  * This file is part of the TYPO3 CMS project.
@@ -36,6 +37,7 @@ class BatchItem extends AbstractEntity
     public const FREQUENCY_ONCE = 'once';
     public const FREQUENCY_WEEKLY = 'weekly';
     public const FREQUENCY_DAILY = 'daily';
+    public const FREQUENCY_RECURRING = 'recurring';
 
     /**
      * @var int
@@ -275,19 +277,22 @@ class BatchItem extends AbstractEntity
     }
 
     /**
-     * Get the value of frequency
+     * Get the value of frequency and return it as DateInterval
      *
-     * @return string|null
+     * @return DateInterval|null
      */
-    public function getFrequencyDateInterval(): ?string
+    public function getFrequencyDateInterval(): ?DateInterval
     {
         // TODO make this extensible
         switch ($this->getFrequency()) {
+            case self::FREQUENCY_RECURRING:
+                return DateInterval::createFromDateString('1 second');
+            break;
             case self::FREQUENCY_DAILY:
-                return '1d';
+                return DateInterval::createFromDateString('1 days');
             break;
             case self::FREQUENCY_WEEKLY:
-                return '1w';
+                return DateInterval::createFromDateString('1 weeks');
             break;
         }
         return null;
@@ -309,7 +314,6 @@ class BatchItem extends AbstractEntity
         }
 
         return $now > $this->getTranslate();
-        
     }
 
     /**
@@ -332,6 +336,23 @@ class BatchItem extends AbstractEntity
     public function markAsTranslated(): void
     {
         $this->translated = new \DateTime();
-        // TODO set new translation date
+        $this->setNextTranslationDate();
+    }
+
+    /**
+     * Set next translation date and return true if there is a next translation date
+     *
+     * @return boolean
+     */
+    public function setNextTranslationDate(): bool
+    {
+        if ($this->getFrequencyDateInterval() !== null) {
+            $this->translate = new \DateTime();
+            $this->translate->add($this->getFrequencyDateInterval());
+
+            return true;
+        }
+
+        return false;
     }
 }

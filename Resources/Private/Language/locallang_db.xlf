@@ -60,6 +60,9 @@
 			<trans-unit id="autotranslate_batch.frequency.weekly" xml:space="preserve">
 				<source>Weekly</source>
 			</trans-unit>
+			<trans-unit id="autotranslate_batch.frequency.recurring" xml:space="preserve">
+				<source>Recurring</source>
+			</trans-unit>
 			<trans-unit id="autotranslate_batch.frequency.daily" xml:space="preserve">
 				<source>Daily</source>
 			</trans-unit>
