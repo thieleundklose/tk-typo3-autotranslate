@@ -57,6 +57,12 @@ class BatchTranslationBaseController extends ActionController
     protected $moduleName = null;
 
     /**
+     * levels for recursive menu
+     * @var array
+     */
+    protected array $menuLevelItems = [0, 1, 2, 3, 4, 250];
+
+    /**
      * get batch translation data
      * @return array
      */

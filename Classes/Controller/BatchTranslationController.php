@@ -12,6 +12,7 @@ use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Backend\Template\Components\Menu\MenuItem;
 
 /**
  * Class BatchTranslationController for backend modules used in TYPO3 V12
@@ -72,7 +73,6 @@ class BatchTranslationController extends BatchTranslationBaseController
         ];
         $menu = $view->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
         $menu->setIdentifier('BatchTranslationMenu');
-        $context = '';
         foreach ($menuItems as $menuItemConfig) {
             $isActive = $this->request->getControllerActionName() === $menuItemConfig['action'];
             $menuItem = $menu->makeMenuItem()
@@ -84,76 +84,27 @@ class BatchTranslationController extends BatchTranslationBaseController
                 ))
                 ->setActive($isActive);
             $menu->addMenuItem($menuItem);
-            if ($isActive) {
-                $context = $menuItemConfig['label'];
-            }
         }
         $view->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
 
         // Recursive Level Items
-        $menuItems = [
-            'Level0' => [
-                'controller' => 'BatchTranslation',
-                'action' => 'batchTranslation',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level0'),
-            ],
-            'Level1' => [
-                'controller' => 'BatchTranslation',
-                'action' => 'batchTranslation',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level1'),
-            ],
-            'Level2' => [
-                'controller' => 'BatchTranslation',
-                'action' => 'batchTranslation',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level2'),
-            ],
-            'Level3' => [
-                'controller' => 'BatchTranslation',
-                'action' => 'batchTranslation',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level3'),
-            ],
-            'Level4' => [
-                'controller' => 'BatchTranslation',
-                'action' => 'batchTranslation',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level4'),
-            ],
-            'LevelINF' => [
-                'controller' => 'BatchTranslation',
-                'action' => 'batchTranslation',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_levelINF'),
-            ],
-        ];
         $menu = $view->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
         $menu->setIdentifier('BatchTranslationLevels');
-        $context= '';
-        foreach ($menuItems as $menuItemConfig) {
-            $sessionLevel = (int)$this->getBackendUserAuthentication()->getSessionData('autotranslate.levels');
-            $itemLevel = $menuItemConfig['label'] === "Infinite" ? 250 : (int)str_replace('levels', '', $menuItemConfig['label']);
-            $isActive = $sessionLevel === $itemLevel;
-
+        foreach ($this->menuLevelItems as $level) {
+            /** @var MenuItem $menuItem */
             $menuItem = $menu->makeMenuItem()
-                ->setTitle($menuItemConfig['label'])
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $level))
                 ->setHref($this->uriBuilder->reset()->uriFor(
-                    $menuItemConfig['action'],
-                    ['levels' => $itemLevel],
-                    $menuItemConfig['controller']
+                    'batchTranslation',
+                    ['levels' => $level],
+                    'BatchTranslation'
                 ))
-                ->setActive($isActive);
+                ->setActive($this->levels === $level);
 
             $menu->addMenuItem($menuItem);
-            if ($isActive) {
-                $context = $menuItemConfig['label'];
-            }
-        }
-        $currentMenuPoint = $this->request->getControllerActionName();
-        if ($currentMenuPoint === 'batchTranslation' || $currentMenuPoint === 'setLevels'){
-            $view->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
         }
 
-        $view->setTitle(
-            $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab'),
-            $context
-        );
+        $view->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
 
         $permissionClause = $this->getBackendUserAuthentication()->getPagePermsClause(Permission::PAGE_SHOW);
         $pageRecord = BackendUtility::readPageAccess(

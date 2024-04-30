@@ -90,7 +90,6 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
         $this->view->getModuleTemplate()->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
 
         // Recursive Level Items
-        // Add action menu
         /** @var Menu $menu */
         $menu = GeneralUtility::makeInstance(Menu::class);
         $menu->setIdentifier("BatchTranslationMenuLevels");
@@ -102,57 +101,19 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
         // Add menu items
         /** @var MenuItem $menuItem */
         $menuItem = GeneralUtility::makeInstance(MenuItem::class);
-        $menuItems = [
-            'Level0' => [
-                'controller' => 'BatchTranslationLegacy',
-                'action' => 'batchTranslationLegacy',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level0'),
-            ],
-            'Level1' => [
-                'controller' => 'BatchTranslationLegacy',
-                'action' => 'batchTranslationLegacy',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level1'),
-            ],
-            'Level2' => [
-                'controller' => 'BatchTranslationLegacy',
-                'action' => 'batchTranslationLegacy',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level2'),
-            ],
-            'Level3' => [
-                'controller' => 'BatchTranslationLegacy',
-                'action' => 'batchTranslationLegacy',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level3'),
-            ],
-            'Level4' => [
-                'controller' => 'BatchTranslationLegacy',
-                'action' => 'batchTranslationLegacy',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level4'),
-            ],
-            'LevelINF' => [
-                'controller' => 'BatchTranslationLegacy',
-                'action' => 'batchTranslationLegacy',
-                'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_levelINF'),
-            ],
-        ];
-        foreach ($menuItems as $menuItemConfig) {
-            $sessionLevel = (int)$this->getBackendUserAuthentication()->getSessionData('autotranslate.levels');
-            $itemLevel = $menuItemConfig['label'] === "Infinite" ? 250 : (int)str_replace('levels', '', $menuItemConfig['label']);
-            $isActive = $sessionLevel === $itemLevel;
+        foreach ($this->menuLevelItems as $level) {
             $menuItem->setTitle(
-                $menuItemConfig['label']
+                $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $level)
             );
             $uri = $uriBuilder->reset()->uriFor(
-                $menuItemConfig['action'],
-                ['levels' => $itemLevel],
-                $menuItemConfig['controller']
+                'batchTranslationLegacy',
+                ['levels' => $level],
+                'BatchTranslationLegacy'
             );
-            $menuItem->setActive($isActive)->setHref($uri);
+            $menuItem->setActive($this->levels === $level)->setHref($uri);
             $menu->addMenuItem($menuItem);
         }
-        $currentMenuPoint = $this->request->getControllerActionName();
-        if ($currentMenuPoint === 'batchTranslationLegacy' || $currentMenuPoint === 'setLevels') {
-            $this->view->getModuleTemplate()->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
-        }
+        $this->view->getModuleTemplate()->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
 
         if ($this->pageUid === 0) {
             $this->addFlashMessage(
