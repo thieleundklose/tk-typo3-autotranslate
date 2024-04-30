@@ -20,7 +20,7 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
 {
 
     /**
-     * 
+     *
      * @return void
      */
     public function showLogsLegacyAction()
@@ -28,7 +28,7 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
     }
 
     /**
-     * 
+     *
      * @return void
      */
     public function batchTranslationLegacyAction()
@@ -181,7 +181,7 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
         $this->view->assign('pageUid', $this->pageUid);
         $this->view->assign('routeBackendModule', 'web_AutotranslateM1');
     }
-    
+
     /**
      * Function will be called before every other action
      */

@@ -144,7 +144,7 @@ class BatchTranslationController extends BatchTranslationBaseController
                     $menuItemConfig['controller']
                 ))
                 ->setActive($isActive);
-                
+
             $menu->addMenuItem($menuItem);
             if ($isActive) {
                 $context = $menuItemConfig['label'];
