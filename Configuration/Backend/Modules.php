@@ -1,4 +1,4 @@
-<?php 
+<?php
 // used in TYPO3 v12
 
 use ThieleUndKlose\Autotranslate\Controller\BatchTranslationController;
