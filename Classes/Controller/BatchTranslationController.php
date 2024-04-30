@@ -12,6 +12,7 @@ use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Backend\Template\Components\Menu\MenuItem;
 
 /**
  * Class BatchTranslationController for backend modules used in TYPO3 V12
@@ -36,6 +37,7 @@ class BatchTranslationController extends BatchTranslationBaseController
     {
         $view = $this->initializeModuleTemplate($this->request);
         $view->assignMultiple($this->getBatchTranslationData());
+
         return $view->renderResponse();
     }
 
@@ -54,6 +56,9 @@ class BatchTranslationController extends BatchTranslationBaseController
     protected function initializeModuleTemplate(
         ServerRequestInterface $request
     ): ModuleTemplate {
+        $view = $this->moduleTemplateFactory->create($request);
+
+        // Main Menu Items
         $menuItems = [
             'batchTranslation' => [
                 'controller' => 'BatchTranslation',
@@ -66,12 +71,8 @@ class BatchTranslationController extends BatchTranslationBaseController
                 'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_show_logs'),
             ],
         ];
-        $view = $this->moduleTemplateFactory->create($request);
-
         $menu = $view->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
         $menu->setIdentifier('BatchTranslationMenu');
-
-        $context = '';
         foreach ($menuItems as $menuItemConfig) {
             $isActive = $this->request->getControllerActionName() === $menuItemConfig['action'];
             $menuItem = $menu->makeMenuItem()
@@ -83,17 +84,27 @@ class BatchTranslationController extends BatchTranslationBaseController
                 ))
                 ->setActive($isActive);
             $menu->addMenuItem($menuItem);
-            if ($isActive) {
-                $context = $menuItemConfig['label'];
-            }
+        }
+        $view->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
+
+        // Recursive Level Items
+        $menu = $view->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
+        $menu->setIdentifier('BatchTranslationLevels');
+        foreach ($this->menuLevelItems as $level) {
+            /** @var MenuItem $menuItem */
+            $menuItem = $menu->makeMenuItem()
+                ->setTitle($this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $level))
+                ->setHref($this->uriBuilder->reset()->uriFor(
+                    'batchTranslation',
+                    ['levels' => $level],
+                    'BatchTranslation'
+                ))
+                ->setActive($this->levels === $level);
+
+            $menu->addMenuItem($menuItem);
         }
 
         $view->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
-
-        $view->setTitle(
-            $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab'),
-            $context
-        );
 
         $permissionClause = $this->getBackendUserAuthentication()->getPagePermsClause(Permission::PAGE_SHOW);
         $pageRecord = BackendUtility::readPageAccess(
@@ -103,8 +114,8 @@ class BatchTranslationController extends BatchTranslationBaseController
         if ($pageRecord) {
             $view->getDocHeaderComponent()->setMetaInformation($pageRecord);
         }
-        $view->setFlashMessageQueue($this->getFlashMessageQueue());
 
+        $view->setFlashMessageQueue($this->getFlashMessageQueue());
         if ($this->pageUid === 0) {
             $this->addFlashMessage(
                 'Please select a page first.',
@@ -113,18 +124,7 @@ class BatchTranslationController extends BatchTranslationBaseController
             );
         }
 
-        $view->assign('pageUid', $this->pageUid);
-        $view->assign('routeBackendModule', 'web_autotranslate');
-
         return $view;
     }
 
-    /**
-     * Function will be called before every other action
-     */
-    protected function initializeAction()
-    {
-        $this->pageUid = (int)($this->request->getQueryParams()['id'] ?? 0);
-        parent::initializeAction();
-    }
 }
