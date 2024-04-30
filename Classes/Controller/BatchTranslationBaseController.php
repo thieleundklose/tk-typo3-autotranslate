@@ -47,27 +47,44 @@ class BatchTranslationBaseController extends ActionController
     protected int $pageUid = 0;
 
     /**
+     * @var integer
+     */
+    protected int $levels = 0;
+
+    /**
+     * used for legacy version to set moduleName manually
+     */
+    protected $moduleName = null;
+
+    /**
      * get batch translation data
      * @return array
      */
     public function getBatchTranslationData(): array
     {
-        $levels = (int)$this->getBackendUserAuthentication()->getSessionData('autotranslate.levels');
-        $batchItems = $this->batchItemRepository->findAll();
-        $batchItemsRecursive = $this->batchItemRepository->findAllRecursive($levels);
+        $data = [];
 
-        $data = [
-            'levels' => $levels,
-            'batchItems' => $batchItems,
-            'batchItemsRecursive' => $batchItemsRecursive,
-            'pageUid' => $this->pageUid,
-            'queryParams' =>  $this->queryParams
-        ];
 
-        // define moduleName for legacy version
-        if ($this->typo3Version->getMajorVersion() < 12) {
-            $data['moduleName'] = str_replace(['/module/', '/'], ['', '_'], $this->queryParams['route']);
+        if ($this->moduleName !== null) {
+            $data['moduleName'] = $this->moduleName;
         }
+
+
+
+        $batchItems = $this->batchItemRepository->findAll();
+        $batchItemsRecursive = $this->batchItemRepository->findAllRecursive($this->levels);
+
+        // merge modified params
+        $data = array_merge(
+            $data,
+            [
+                'batchItems' => $batchItems,
+                'batchItemsRecursive' => $batchItemsRecursive,
+                'pageUid' => $this->pageUid,
+                'levels' => $this->levels,
+                'queryParams' =>  $this->queryParams
+            ]
+        );
 
         return $data;
 
@@ -98,6 +115,30 @@ class BatchTranslationBaseController extends ActionController
 
         if (isset($this->queryParams['id'])){
             $this->pageUid = (int)$this->queryParams['id'];
+        }
+
+        if ($this->typo3Version->getMajorVersion() < 12) {
+            // define moduleName for legacy version
+            $this->moduleName = str_replace(['/module/', '/'], ['', '_'], $this->queryParams['route']);
+
+            // merge query params for legacy modules
+            $moduleQueryKey = strtolower('tx_autotranslate_' . $this->moduleName);
+            if (isset($this->queryParams[$moduleQueryKey])) {
+                $this->queryParams = array_merge($this->queryParams, $this->queryParams[$moduleQueryKey]);
+                unset($this->queryParams[$moduleQueryKey]);
+            }
+        }
+
+        // get levels from session
+        $levelsFromSession = $this->getBackendUserAuthentication()->getSessionData('autotranslate.levels');
+        if ($levelsFromSession !== null) {
+            $this->levels = $levelsFromSession;
+        }
+
+        // check query params for given levels and store it in session
+        if (isset($this->queryParams['levels'])) {
+            $this->levels = (int)$this->queryParams['levels'];
+            $this->getBackendUserAuthentication()->setAndSaveSessionData('autotranslate.levels', $this->levels);
         }
 
         parent::initializeAction();

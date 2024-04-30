@@ -22,7 +22,6 @@ class BatchTranslationController extends BatchTranslationBaseController
      * @var \TYPO3\CMS\Backend\Template\ModuleTemplateFactory|null
      */
     protected $moduleTemplateFactory = null;
-    protected $levels = 0;
 
     function __construct()
     {
@@ -35,10 +34,6 @@ class BatchTranslationController extends BatchTranslationBaseController
      */
     public function batchTranslationAction(): ResponseInterface
     {
-        // Save selected level in session
-        $selectedLevel = (int)($this->request->getQueryParams()['levels'] ?? 0);
-        $this->getBackendUserAuthentication()->setAndSaveSessionData('autotranslate.levels', $selectedLevel);
-
         $view = $this->initializeModuleTemplate($this->request);
         $view->assignMultiple($this->getBatchTranslationData());
 

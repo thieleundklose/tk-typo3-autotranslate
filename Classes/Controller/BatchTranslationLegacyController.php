@@ -31,34 +31,16 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
      */
     public function batchTranslationLegacyAction()
     {
-        // Get and Save selected level in session
-        if (version_compare(TYPO3_version, '11.0', '>')) {
-            $selectedLevel = (int)($this->request->getQueryParams()['tx_autotranslate_web_autotranslatem1']['levels'] ?? 0);
-        } else {
-            $selectedLevel = (int)($this->request->getArguments()['tx_autotranslate_web_autotranslatem1']['levels'] ?? 0);
-        }
-        $req = $this->request;
-        $this->view->assign('request', $req);
-        $this->getBackendUserAuthentication()->setAndSaveSessionData('autotranslate.levels', $selectedLevel);
-
+        $this->initializeModuleTemplate();
         $this->view->assignMultiple($this->getBatchTranslationData());
-
-        $this->initializeView($this->view);
     }
 
-        /**
-     * Initializes the view before invoking an action method.
-     *
-     * @param ViewInterface $view The view to be initialized
+    /**
      * @return void
-     * @api
      */
-    protected function initializeView(ViewInterface $view)
+    protected function initializeModuleTemplate()
     {
-        if ($view instanceof BackendTemplateView) {
-            parent::initializeView($view);
-        }
-        $pageRenderer = $view->getModuleTemplate()->getPageRenderer();
+        $pageRenderer = $this->view->getModuleTemplate()->getPageRenderer();
         $pageRenderer->loadRequireJsModule('TYPO3/CMS/Autotranslate/BackendLegacyModule');
         // Make localized labels available in JavaScript context
         // $pageRenderer->addInlineLanguageLabelFile('EXT:examples/Resources/Private/Language/locallang.xlf');
