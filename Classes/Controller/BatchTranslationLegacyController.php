@@ -9,6 +9,7 @@ use TYPO3\CMS\Backend\Template\Components\Menu\Menu;
 use TYPO3\CMS\Backend\Template\Components\Menu\MenuItem;
 use TYPO3\CMS\Backend\View\BackendTemplateView;
 use TYPO3\CMS\Core\Messaging\AbstractMessage;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
@@ -40,8 +41,10 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
      */
     protected function initializeModuleTemplate()
     {
+        /** @var PageRenderer */
         $pageRenderer = $this->view->getModuleTemplate()->getPageRenderer();
         $pageRenderer->loadRequireJsModule('TYPO3/CMS/Autotranslate/BackendLegacyModule');
+        $pageRenderer->addCssFile('EXT:autotranslate/Resources/Public/Css/Backend.css');
         // Make localized labels available in JavaScript context
         // $pageRenderer->addInlineLanguageLabelFile('EXT:examples/Resources/Private/Language/locallang.xlf');
 
