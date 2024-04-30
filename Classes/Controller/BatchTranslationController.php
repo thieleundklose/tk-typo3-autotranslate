@@ -178,18 +178,7 @@ class BatchTranslationController extends BatchTranslationBaseController
             );
         }
 
-        $view->assign('pageUid', $this->pageUid);
-        $view->assign('routeBackendModule', 'web_autotranslate');
-
         return $view;
     }
 
-    /**
-     * Function will be called before every other action
-     */
-    protected function initializeAction()
-    {
-        $this->pageUid = (int)($this->request->getQueryParams()['id'] ?? 0);
-        parent::initializeAction();
-    }
 }

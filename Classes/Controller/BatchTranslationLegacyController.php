@@ -10,8 +10,6 @@ use TYPO3\CMS\Backend\Template\Components\Menu\MenuItem;
 use TYPO3\CMS\Backend\View\BackendTemplateView;
 use TYPO3\CMS\Core\Messaging\AbstractMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Extbase\Mvc\View\ViewInterface;
-use Psr\Http\Message\ResponseInterface;
 
 /**
  * Class BatchTranslationLegacyController for backend modules used in TYPO3 V10 + V11
@@ -177,9 +175,9 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
                 'No page selected',
                 AbstractMessage::WARNING
             );
+
         }
-        $this->view->assign('pageUid', $this->pageUid);
-        $this->view->assign('routeBackendModule', 'web_AutotranslateM1');
+
     }
 
     /**
@@ -188,7 +186,6 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
     protected function initializeAction()
     {
         $this->defaultViewObjectName = BackendTemplateView::class;
-        $this->pageUid = (isset($GLOBALS['_GET']) && isset($GLOBALS['_GET']['id'])) ? (int)$GLOBALS['_GET']['id'] : 0;
         parent::initializeAction();
     }
 }

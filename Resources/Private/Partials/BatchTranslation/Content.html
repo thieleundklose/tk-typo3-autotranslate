@@ -52,7 +52,7 @@
                                 </f:else>
                             </f:if>
 
-                            <be:link.editRecord uid="{record.uid}" table="tx_autotranslate_batch_item" returnUrl="{f:be.uri(route: routeBackendModule, parameters:'{id:pageUid}')}" class="btn btn-default">
+                            <be:link.editRecord uid="{record.uid}" table="tx_autotranslate_batch_item" returnUrl="{f:be.uri(route: moduleName, parameters:'{id:pageUid}')}" class="btn btn-default">
                                 <core:icon identifier="actions-file-edit"/>
                             </be:link.editRecord>
                             <button
