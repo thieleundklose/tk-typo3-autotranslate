@@ -70,12 +70,9 @@ class BatchTranslationBaseController extends ActionController
     {
         $data = [];
 
-
         if ($this->moduleName !== null) {
             $data['moduleName'] = $this->moduleName;
         }
-
-
 
         $batchItems = $this->batchItemRepository->findAll();
         $batchItemsRecursive = $this->batchItemRepository->findAllRecursive($this->levels);
@@ -93,7 +90,6 @@ class BatchTranslationBaseController extends ActionController
         );
 
         return $data;
-
     }
 
     protected function getLanguageService(): LanguageService

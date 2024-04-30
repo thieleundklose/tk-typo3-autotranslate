@@ -52,7 +52,7 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
         // Add action menu
         /** @var Menu $menu */
         $menu = GeneralUtility::makeInstance(Menu::class);
-        $menu->setIdentifier("BatchTranslationMenu");
+        $menu->setIdentifier('BatchTranslationMenu');
 
         /** @var UriBuilder $uriBuilder */
         $uriBuilder = $this->objectManager->get(UriBuilder::class);

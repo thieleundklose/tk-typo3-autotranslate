@@ -1,4 +1,4 @@
-<?php 
+<?php
 // used in TYPO3 v12
 
 use ThieleUndKlose\Autotranslate\Controller\BatchTranslationController;
@@ -15,7 +15,7 @@ return [
         'icon' => 'EXT:autotranslate/Resources/Public/Icons/Extension.png',
         'controllerActions' => [
             BatchTranslationController::class => [
-                'batchTranslation', 'showLogs', 'setLevels'
+                'batchTranslation', 'showLogs'
             ]
         ],
     ],
