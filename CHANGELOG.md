@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.0.x] - 2024-05-02
+## [1.0.3] - 2024-05-02
 
 ### Feature
 - Improved translations with tag_handling in DeepL
