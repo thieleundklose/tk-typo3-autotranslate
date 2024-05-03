@@ -21,7 +21,7 @@
                 <f:for each="{batchItemsRecursive}" as="record">
                     <tr class="{record.class} {f:if(condition:record.hidden, then:'t3-form-field-container-inline-hidden')} {f:if(condition:record.waitingForRun, then:'warning')} {f:if(condition:record.finishedRun, then:'success')} {f:if(condition:record.error, then:'danger')}" title="id={record.uid}">
                         <td><input type="checkbox"></td>
-                        <td class="nowrap" title="id={record.pid}">[{record.pid}] {record.pageTitle}</td>
+                        <td class="nowrap" title="id={record.pid}">{record.pageTitle}</td>
                         <td><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.{record.priority}"/></td>
                         <td title="id={record.sysLanguageUid}">{record.sysLanguageTitle}</td>
                         <td><f:format.date format="d.m.Y - H:i">{record.translate}</f:format.date></td>
@@ -85,3 +85,56 @@
         </table>
     </div>
 </div>
+
+<h1><f:translate key="function_links_add_item"/></h1>
+<f:form action="create" name="batchItem" method="post" object="{createForm.batchItem}">
+    <div class="form-group">
+        <label>
+            <f:translate key="mlang_labels_page"/>
+        </label>
+        <f:form.select property="pid" options="{createForm.pages}" class="form-control"/>
+    </div>
+    <div class="form-group">
+        <label>
+            <f:translate key="mlang_labels_recursive"/>
+        </label>
+        <f:form.select name="recursive" options="{createForm.recursive}" class="form-control"/>
+    </div>
+    <div class="form-group">
+        <label>
+            <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority"/>
+        </label>
+        <f:form.select property="priority" options="{createForm.priority}" class="form-control"/>
+    </div>
+    <div class="form-group">
+        <label>
+            <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.sys_language_uid"/>
+        </label>
+        <f:form.select property="sysLanguageUid" options="{createForm.targetLanguage}" class="form-control"/>
+    </div>
+    <div class="form-group">
+        <label>
+            <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.translate"/>
+        </label>
+        <f:form.textfield property="translate" value="{createForm.batchItem.translate -> f:format.date(format: 'H:i d-m-Y')}" type="datetime"  class="form-control t3js-datetimepicker t3js-clearable" data="{date-type:'datetime',date-offset:'0'}" id="batchItemTranslate" />
+        <span class="input-group-btn">
+            <label class="btn btn-default" for="batchItemTranslate">
+                <span class="fa fa-calendar"></span>
+            </label>
+        </span>
+    </div>
+    <div class="form-group">
+        <label>
+            <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode"/>
+        </label>
+        <f:form.select property="mode" options="{createForm.mode}" class="form-control"/>
+    </div>
+    <div class="form-group">
+        <label>
+            <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency"/>
+        </label>
+        <f:form.select property="frequency" options="{createForm.frequency}" class="form-control"/>
+    </div>
+    <f:form.hidden name="redirectAction" value="{createForm.redirectAction}"/>
+    <f:form.submit value="{f:translate(key:'function_links_add_items')}" name="create" class="btn btn-default"/>
+</f:form>
