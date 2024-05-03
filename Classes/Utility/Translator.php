@@ -26,6 +26,10 @@ class Translator {
     const AUTOTRANSLATE_EXCLUDE = 'autotranslate_exclude';
     const AUTOTRANSLATE_LANGUAGES = 'autotranslate_languages';
 
+    const TRANSLATE_MODE_BOTH = 'create_update';
+    const TRANSLATE_MODE_UPDATE_ONLY = 'update_only';
+    const TRANSLATE_MODE_CREATE_ONLY = 'create_only';
+
     public $languages = [];
     public $siteLanguages = [];
     public $logger = null;

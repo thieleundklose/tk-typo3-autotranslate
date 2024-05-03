@@ -10,6 +10,7 @@ use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\DomainObject\AbstractEntity;
 use DateInterval;
+use ThieleUndKlose\Autotranslate\Utility\Translator;
 
 /*
  * This file is part of the TYPO3 CMS project.
@@ -30,9 +31,6 @@ class BatchItem extends AbstractEntity
     public const PRIORITY_LOW = '01_low';
     public const PRIORITY_MEDIUM = '02_medium';
     public const PRIORITY_HIGH = '03_high';
-
-    public const TYPE_TRANSLATION_ADD_NEW = 'add';
-    public const TYPE_TRANSLATION_OVERRIDE_EXISTING = 'override';
 
     public const FREQUENCY_ONCE = 'once';
     public const FREQUENCY_WEEKLY = 'weekly';
@@ -62,7 +60,7 @@ class BatchItem extends AbstractEntity
     /**
      * @var string
      */
-    protected string $type = self::TYPE_TRANSLATION_ADD_NEW;
+    protected string $mode = Translator::TRANSLATE_MODE_BOTH;
 
     /**
      * @var string
@@ -164,24 +162,24 @@ class BatchItem extends AbstractEntity
     }
 
     /**
-     * Get the value of type
+     * Get the value of mode
      *
      * @return string
      */
-    public function getType(): string
+    public function getMode(): string
     {
-        return $this->type;
+        return $this->mode;
     }
 
     /**
-     * Set the value of type
+     * Set the value of mode
      *
-     * @param string $type
+     * @param string $mode
      * @return void
      */
-    public function setType(string $type): void
+    public function setMode(string $mode): void
     {
-        $this->type = $type;
+        $this->mode = $mode;
     }
 
     /**

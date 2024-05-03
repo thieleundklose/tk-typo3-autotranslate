@@ -42,14 +42,17 @@
 			<trans-unit id="autotranslate_batch.translated" xml:space="preserve">
 				<source>Translated (last)</source>
 			</trans-unit>
-			<trans-unit id="autotranslate_batch.type" xml:space="preserve">
-				<source>Type</source>
+			<trans-unit id="autotranslate_batch.mode" xml:space="preserve">
+				<source>Translation Mode</source>
 			</trans-unit>
-			<trans-unit id="autotranslate_batch.type.add" xml:space="preserve">
-				<source>Add new translation</source>
+			<trans-unit id="autotranslate_batch.mode.create_update" xml:space="preserve">
+				<source>Create and update translations</source>
 			</trans-unit>
-			<trans-unit id="autotranslate_batch.type.override" xml:space="preserve">
-				<source>Override existing translations</source>
+			<trans-unit id="autotranslate_batch.mode.update_only" xml:space="preserve">
+				<source>Update translation only</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.mode.create_only" xml:space="preserve">
+				<source>Create new (missing) translation only</source>
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.frequency" xml:space="preserve">
 				<source>Frequency</source>

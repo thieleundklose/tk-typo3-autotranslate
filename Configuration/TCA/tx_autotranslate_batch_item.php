@@ -19,7 +19,7 @@ return [
         ],
     ],
     'types' => [
-        ['showitem' => 'priority, sys_language_uid, hidden, crdate, tstamp, translate, translated, type, frequency, error'],
+        ['showitem' => 'priority, sys_language_uid, hidden, crdate, tstamp, translate, translated, mode, frequency, error'],
     ],
     'columns' => [
         'priority' => [
@@ -75,17 +75,19 @@ return [
                 'readOnly' => true,
             ],
         ],
-        'type' => [
+        'mode' => [
             'exclude' => 0,
-            'label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.type',
+            'label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
                 'items' => [
-                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.type.add', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::TYPE_TRANSLATION_ADD_NEW],
-                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.type.override', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::TYPE_TRANSLATION_OVERRIDE_EXISTING],
+                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode.' . \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_BOTH, \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_BOTH],
+                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode.' . \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_UPDATE_ONLY, \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_UPDATE_ONLY],
+                    // TODO implement create only mode
+                    // ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode.' . \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_CREATE_ONLY, \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_CREATE_ONLY],
                 ],
-                'default' => \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::TYPE_TRANSLATION_ADD_NEW,
+                'default' => \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_BOTH,
                 'required' => true
             ],
         ],
