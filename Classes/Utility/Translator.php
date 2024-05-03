@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Utility;
 
+use DeepL\TranslateTextOptions;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -197,7 +198,7 @@ class Translator {
             $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
                 $translator = new \DeepL\Translator($this->apiKey);
-                $result = $translator->translateText($toTranslate, null , $deeplTargetLang);
+                $result = $translator->translateText($toTranslate, null , $deeplTargetLang, [TranslateTextOptions::TAG_HANDLING => 'html']);
             }
 
             $keys = array_keys($toTranslate);
