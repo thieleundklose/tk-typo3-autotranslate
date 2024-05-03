@@ -51,16 +51,17 @@ class Translator {
     }
 
     /**
-     * Translate the loaded record to target languages 
-     * TODO: check to only localize
+     * Translate the loaded record to target languages
      *
      * @param string $table
      * @param int $recordUid
-     * @param \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject
+     * @param DataHandler|null $parentObject
+     * @param string|null $languagesToTranslate
+     * @param string $translateMode
      * @return void
      * @throws \Doctrine\DBAL\Driver\Exception
      */
-    public function translate(string $table, int $recordUid, \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject): void
+    public function translate(string $table, int $recordUid, DataHandler $parentObject = null, ?string $languagesToTranslate = null, string $translateMode = self::TRANSLATE_MODE_BOTH): void
     {
         if ($this->apiKey === null) {
             return;
@@ -86,7 +87,9 @@ class Translator {
         }
 
         // set target languages by record if null is given
-        $languagesToTranslate = $record[self::AUTOTRANSLATE_LANGUAGES] ?? '';
+        if (is_null($languagesToTranslate)) {
+            $languagesToTranslate = $record[self::AUTOTRANSLATE_LANGUAGES] ?? '';
+        }
 
         $localizedContents = [];
         // loop over all target languages
@@ -101,9 +104,11 @@ class Translator {
 
             $existingTranslation = Records::getRecordTranslation($table, $recordUid, (int)$languageId);
 
-            // Skip this record if source record is not updated
-            // @Todo: check if needed
-            if (isset($existingTranslation[self::AUTOTRANSLATE_LAST]) && $record['tstamp'] < $existingTranslation[self::AUTOTRANSLATE_LAST]) {
+            if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && !$existingTranslation) {
+                LogUtility::log($this->logger, 'No Translation of {table} with uid {uid} because mode "update only".', [
+                    'table' => $table,
+                    'uid' => $recordUid
+                ]);
                 continue;
             }
             
@@ -135,6 +140,15 @@ class Translator {
 
                         $referenceTranslation = Records::getRecordTranslation('sys_file_reference', $referenceUid, (int)$languageId);
                         
+                        if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && empty($referenceTranslation)) {
+                            LogUtility::log($this->logger, 'No sys_file_reference {referenceUid} Translation of {table} with uid {uid} because mode "update only".', [
+                                'table' => $table,
+                                'uid' => $recordUid,
+                                'referenceUid' => $referenceUid,
+                            ]);
+                            continue;
+                        }
+
                         if (empty($referenceTranslation)) {
                             $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
                             $dataHandler->start([], []);
@@ -153,7 +167,11 @@ class Translator {
                         }
 
                         if (count($columnsSysFileLanguage)) {
-                            $recordSysFileReference = $parentObject->datamap['sys_file_reference'][$referenceUid] ?? Records::getRecord('sys_file_reference', $referenceUid);
+                            if ($parentObject !== null && isset($parentObject->datamap['sys_file_reference']) && isset($parentObject->datamap['sys_file_reference'][$referenceUid])) {
+                                $recordSysFileReference = $parentObject->datamap['sys_file_reference'][$referenceUid];
+                            } else {
+                                $recordSysFileReference = Records::getRecord('sys_file_reference', $referenceUid);
+                            }
                             $translatedColumns = $this->translateRecordProperties($recordSysFileReference, (int)$languageId, $columnsSysFileLanguage);
                             if (count($translatedColumns)) {
                                 Records::updateRecord('sys_file_reference', $translatedSysFileReferenceUid, $translatedColumns);
