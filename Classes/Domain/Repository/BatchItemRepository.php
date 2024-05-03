@@ -77,7 +77,7 @@ final class BatchItemRepository extends Repository {
     {
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_autotranslate_batch_item');
         $queryBuilder->getRestrictions()->removeAll();
-        
+
         $now = new \DateTime();
         $statement = $queryBuilder
             ->select('uid')
@@ -101,7 +101,6 @@ final class BatchItemRepository extends Repository {
 
         return $this->findAllByUids($uids, $limit);
     }
-
 
     /**
      * find all items by given ids
