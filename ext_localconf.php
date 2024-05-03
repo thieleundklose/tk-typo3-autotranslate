@@ -16,5 +16,18 @@ defined('TYPO3') || die();
             ],
         ],
     ];
+    $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Utility']['LogUtility']['writerConfiguration'] = [
+        \Psr\Log\LogLevel::INFO => [
+            \TYPO3\CMS\Core\Log\Writer\DatabaseWriter::class => [
+                'logTable' => 'tx_autotranslate_log',
+            ],
+        ],
+    ];
+    $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Utility']['Translator']['writerConfiguration'] = [
+        \Psr\Log\LogLevel::INFO => [
+            \TYPO3\CMS\Core\Log\Writer\DatabaseWriter::class => [
+                'logTable' => 'tx_autotranslate_log',
+            ],
+        ],
+    ];
 })();
-

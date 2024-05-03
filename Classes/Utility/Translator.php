@@ -19,8 +19,12 @@ namespace ThieleUndKlose\Autotranslate\Utility;
 use DeepL\TranslateTextOptions;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 
-class Translator {
+class Translator implements LoggerAwareInterface
+{
+    use LoggerAwareTrait;
 
     const AUTOTRANSLATE_LAST = 'autotranslate_last';
     const AUTOTRANSLATE_EXCLUDE = 'autotranslate_exclude';
@@ -32,7 +36,6 @@ class Translator {
 
     public $languages = [];
     public $siteLanguages = [];
-    public $logger = null;
     protected $apiKey = null;
     protected $pageId = null;
 
@@ -43,7 +46,6 @@ class Translator {
      * @return void
      */
     function __construct(int $pageId) {
-        $this->logger = GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
         $this->pageId = $pageId;
         $this->apiKey = TranslationHelper::apiKey($pageId);
         $this->languages = TranslationHelper::fetchSysLanguages();
@@ -234,10 +236,9 @@ class Translator {
             $translatedColumns['hidden'] = $record['hidden'];
             $translatedColumns[self::AUTOTRANSLATE_LAST] = time();
 
-            $this->logger->info(sprintf('Successful translated to target language %s.', $deeplTargetLang));
-
+            LogUtility::log($this->logger, 'Successful translated to target language {deeplTargetLang}.', ['deeplTargetLang' => $deeplTargetLang, 'toTranslate' => $toTranslate, 'result' => $result, 'translatedColumns' => $translatedColumns]);
         } catch (\Exception $e) {
-            $this->logger->info(sprintf('Translation Error: %s',$e->getMessage()));
+            LogUtility::log($this->logger, 'Translation Error: {error}.', ['error' => $e->getMessage()], LogUtility::MESSAGE_ERROR);
         }
 
         return $translatedColumns;
