@@ -9,6 +9,8 @@ use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\DomainObject\AbstractEntity;
+use DateInterval;
+use ThieleUndKlose\Autotranslate\Utility\Translator;
 
 /*
  * This file is part of the TYPO3 CMS project.
@@ -26,16 +28,14 @@ use TYPO3\CMS\Extbase\DomainObject\AbstractEntity;
 class BatchItem extends AbstractEntity
 {
 
-    public const PRIORITY_LOW = 'low';
-    public const PRIORITY_MEDIUM = 'medium';
-    public const PRIORITY_HIGH = 'high';
-
-    public const TYPE_TRANSLATION_ADD_NEW = 'add';
-    public const TYPE_TRANSLATION_OVERRIDE_EXISTING = 'override';
+    public const PRIORITY_LOW = '01_low';
+    public const PRIORITY_MEDIUM = '02_medium';
+    public const PRIORITY_HIGH = '03_high';
 
     public const FREQUENCY_ONCE = 'once';
     public const FREQUENCY_WEEKLY = 'weekly';
     public const FREQUENCY_DAILY = 'daily';
+    public const FREQUENCY_RECURRING = 'recurring';
 
     /**
      * @var int
@@ -60,7 +60,7 @@ class BatchItem extends AbstractEntity
     /**
      * @var string
      */
-    protected string $type = self::TYPE_TRANSLATION_ADD_NEW;
+    protected string $mode = Translator::TRANSLATE_MODE_BOTH;
 
     /**
      * @var string
@@ -162,24 +162,24 @@ class BatchItem extends AbstractEntity
     }
 
     /**
-     * Get the value of type
+     * Get the value of mode
      *
      * @return string
      */
-    public function getType(): string
+    public function getMode(): string
     {
-        return $this->type;
+        return $this->mode;
     }
 
     /**
-     * Set the value of type
+     * Set the value of mode
      *
-     * @param string $type
+     * @param string $mode
      * @return void
      */
-    public function setType(string $type): void
+    public function setMode(string $mode): void
     {
-        $this->type = $type;
+        $this->mode = $mode;
     }
 
     /**
@@ -275,19 +275,22 @@ class BatchItem extends AbstractEntity
     }
 
     /**
-     * Get the value of frequency
+     * Get the value of frequency and return it as DateInterval
      *
-     * @return string|null
+     * @return DateInterval|null
      */
-    public function getFrequencyDateInterval(): ?string
+    public function getFrequencyDateInterval(): ?DateInterval
     {
         // TODO make this extensible
         switch ($this->getFrequency()) {
+            case self::FREQUENCY_RECURRING:
+                return DateInterval::createFromDateString('1 second');
+            break;
             case self::FREQUENCY_DAILY:
-                return '1d';
+                return DateInterval::createFromDateString('1 days');
             break;
             case self::FREQUENCY_WEEKLY:
-                return '1w';
+                return DateInterval::createFromDateString('1 weeks');
             break;
         }
         return null;
@@ -309,7 +312,6 @@ class BatchItem extends AbstractEntity
         }
 
         return $now > $this->getTranslate();
-        
     }
 
     /**
@@ -317,7 +319,35 @@ class BatchItem extends AbstractEntity
      */
     public function isFinishedRun(): bool
     {
-        if ($this->getTranslated() && $this->getFrequency() === self::FREQUENCY_ONCE) {
+        if ($this->getTranslated() > $this->getTranslate()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Set the value of translated
+     *
+     * @return void
+     */
+    public function markAsTranslated(): void
+    {
+        $this->translated = new \DateTime();
+        $this->setNextTranslationDate();
+    }
+
+    /**
+     * Set next translation date and return true if there is a next translation date
+     *
+     * @return boolean
+     */
+    public function setNextTranslationDate(): bool
+    {
+        if ($this->getFrequencyDateInterval() !== null) {
+            $this->translate = new \DateTime();
+            $this->translate->add($this->getFrequencyDateInterval());
+
             return true;
         }
 

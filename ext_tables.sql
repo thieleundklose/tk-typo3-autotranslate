@@ -42,7 +42,7 @@ CREATE TABLE tx_autotranslate_batch_item (
     priority varchar(255) DEFAULT '' NOT NULL,
     translate int(11) unsigned DEFAULT '0' NOT NULL,
     translated int(11) unsigned,
-    type varchar(255) DEFAULT '' NOT NULL,
+    mode varchar(255) DEFAULT '' NOT NULL,
     frequency varchar(255) DEFAULT '' NOT NULL,
     error text,
 );

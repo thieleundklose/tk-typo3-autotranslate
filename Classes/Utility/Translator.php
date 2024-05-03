@@ -19,16 +19,23 @@ namespace ThieleUndKlose\Autotranslate\Utility;
 use DeepL\TranslateTextOptions;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 
-class Translator {
+class Translator implements LoggerAwareInterface
+{
+    use LoggerAwareTrait;
 
     const AUTOTRANSLATE_LAST = 'autotranslate_last';
     const AUTOTRANSLATE_EXCLUDE = 'autotranslate_exclude';
     const AUTOTRANSLATE_LANGUAGES = 'autotranslate_languages';
 
+    const TRANSLATE_MODE_BOTH = 'create_update';
+    const TRANSLATE_MODE_UPDATE_ONLY = 'update_only';
+    const TRANSLATE_MODE_CREATE_ONLY = 'create_only';
+
     public $languages = [];
     public $siteLanguages = [];
-    public $logger = null;
     protected $apiKey = null;
     protected $pageId = null;
 
@@ -39,7 +46,6 @@ class Translator {
      * @return void
      */
     function __construct(int $pageId) {
-        $this->logger = GeneralUtility::makeInstance('TYPO3\CMS\Core\Log\LogManager')->getLogger(__CLASS__);
         $this->pageId = $pageId;
         $this->apiKey = TranslationHelper::apiKey($pageId);
         $this->languages = TranslationHelper::fetchSysLanguages();
@@ -47,16 +53,17 @@ class Translator {
     }
 
     /**
-     * Translate the loaded record to target languages 
-     * TODO: check to only localize
+     * Translate the loaded record to target languages
      *
      * @param string $table
      * @param int $recordUid
-     * @param \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject
+     * @param DataHandler|null $parentObject
+     * @param string|null $languagesToTranslate
+     * @param string $translateMode
      * @return void
      * @throws \Doctrine\DBAL\Driver\Exception
      */
-    public function translate(string $table, int $recordUid, \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject): void
+    public function translate(string $table, int $recordUid, DataHandler $parentObject = null, ?string $languagesToTranslate = null, string $translateMode = self::TRANSLATE_MODE_BOTH): void
     {
         if ($this->apiKey === null) {
             return;
@@ -82,7 +89,9 @@ class Translator {
         }
 
         // set target languages by record if null is given
-        $languagesToTranslate = $record[self::AUTOTRANSLATE_LANGUAGES] ?? '';
+        if (is_null($languagesToTranslate)) {
+            $languagesToTranslate = $record[self::AUTOTRANSLATE_LANGUAGES] ?? '';
+        }
 
         $localizedContents = [];
         // loop over all target languages
@@ -97,9 +106,11 @@ class Translator {
 
             $existingTranslation = Records::getRecordTranslation($table, $recordUid, (int)$languageId);
 
-            // Skip this record if source record is not updated
-            // @Todo: check if needed
-            if (isset($existingTranslation[self::AUTOTRANSLATE_LAST]) && $record['tstamp'] < $existingTranslation[self::AUTOTRANSLATE_LAST]) {
+            if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && !$existingTranslation) {
+                LogUtility::log($this->logger, 'No Translation of {table} with uid {uid} because mode "update only".', [
+                    'table' => $table,
+                    'uid' => $recordUid
+                ]);
                 continue;
             }
             
@@ -131,6 +142,15 @@ class Translator {
 
                         $referenceTranslation = Records::getRecordTranslation('sys_file_reference', $referenceUid, (int)$languageId);
                         
+                        if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && empty($referenceTranslation)) {
+                            LogUtility::log($this->logger, 'No sys_file_reference {referenceUid} Translation of {table} with uid {uid} because mode "update only".', [
+                                'table' => $table,
+                                'uid' => $recordUid,
+                                'referenceUid' => $referenceUid,
+                            ]);
+                            continue;
+                        }
+
                         if (empty($referenceTranslation)) {
                             $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
                             $dataHandler->start([], []);
@@ -149,7 +169,11 @@ class Translator {
                         }
 
                         if (count($columnsSysFileLanguage)) {
-                            $recordSysFileReference = $parentObject->datamap['sys_file_reference'][$referenceUid] ?? Records::getRecord('sys_file_reference', $referenceUid);
+                            if ($parentObject !== null && isset($parentObject->datamap['sys_file_reference']) && isset($parentObject->datamap['sys_file_reference'][$referenceUid])) {
+                                $recordSysFileReference = $parentObject->datamap['sys_file_reference'][$referenceUid];
+                            } else {
+                                $recordSysFileReference = Records::getRecord('sys_file_reference', $referenceUid);
+                            }
                             $translatedColumns = $this->translateRecordProperties($recordSysFileReference, (int)$languageId, $columnsSysFileLanguage);
                             if (count($translatedColumns)) {
                                 Records::updateRecord('sys_file_reference', $translatedSysFileReferenceUid, $translatedColumns);
@@ -212,10 +236,9 @@ class Translator {
             $translatedColumns['hidden'] = $record['hidden'];
             $translatedColumns[self::AUTOTRANSLATE_LAST] = time();
 
-            $this->logger->info(sprintf('Successful translated to target language %s.', $deeplTargetLang));
-
+            LogUtility::log($this->logger, 'Successful translated to target language {deeplTargetLang}.', ['deeplTargetLang' => $deeplTargetLang, 'toTranslate' => $toTranslate, 'result' => $result, 'translatedColumns' => $translatedColumns]);
         } catch (\Exception $e) {
-            $this->logger->info(sprintf('Translation Error: %s',$e->getMessage()));
+            LogUtility::log($this->logger, 'Translation Error: {error}.', ['error' => $e->getMessage()], LogUtility::MESSAGE_ERROR);
         }
 
         return $translatedColumns;

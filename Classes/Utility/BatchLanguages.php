@@ -13,7 +13,7 @@ class BatchLanguages
      *
      * @param array &$parameters
      * @param mixed $parentObject
-     * 
+     *
      * @return void
      */
     public function populateLanguagesFromSiteConfiguration(array &$parameters, $parentObject)
@@ -23,11 +23,9 @@ class BatchLanguages
         $site = $siteFinder->getSiteByPageId($pageId);
         $siteConfiguration = $site->getConfiguration();
         $possibleTranslationLanguages = TranslationHelper::possibleTranslationLanguages($siteConfiguration['languages'] ?? []);
-        
         $parameters['items'] = [];
-        foreach ($possibleTranslationLanguages as $languageId => $language) {
-            $parameters['items'][] = [$language['title'], $languageId];
+        foreach ($possibleTranslationLanguages as $language) {
+            $parameters['items'][] = [$language['title'], $language['languageId']];
         }
-
     }
 }

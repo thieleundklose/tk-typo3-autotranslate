@@ -20,6 +20,7 @@ use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Information\Typo3Version;
+use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -154,6 +155,30 @@ class TranslationHelper {
         return $languages;
     }
 
+
+    /**
+     * Receive default language from Site.
+     * @param Site $site
+     * @return SiteLanguage
+     */
+    public static function defaultLanguageFromSiteConfiguration(Site $site): SiteLanguage
+    {
+        return self::defaultLanguage($site->getLanguages());
+    }
+
+    /**
+     * Receive default language.
+     * @param array|null $siteLanguages
+     * @return SiteLanguage
+     */
+    public static function defaultLanguage(?array $siteLanguages): SiteLanguage
+    {
+        if (empty($siteLanguages)) {
+            return [];
+        }
+
+        return $siteLanguages[0];
+    }
 
     /**
      * Receive translate configuration for a table by site configuration.

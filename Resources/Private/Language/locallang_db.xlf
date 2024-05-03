@@ -21,13 +21,13 @@
 			<trans-unit id="autotranslate_batch.priority" xml:space="preserve">
 				<source>Priority</source>
 			</trans-unit>
-			<trans-unit id="autotranslate_batch.priority.low" xml:space="preserve">
+			<trans-unit id="autotranslate_batch.priority.01_low" xml:space="preserve">
 				<source>Low</source>
 			</trans-unit>
-			<trans-unit id="autotranslate_batch.priority.medium" xml:space="preserve">
+			<trans-unit id="autotranslate_batch.priority.02_medium" xml:space="preserve">
 				<source>Medium</source>
 			</trans-unit>
-			<trans-unit id="autotranslate_batch.priority.high" xml:space="preserve">
+			<trans-unit id="autotranslate_batch.priority.03_high" xml:space="preserve">
 				<source>High</source>
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.disabled" xml:space="preserve">
@@ -42,14 +42,17 @@
 			<trans-unit id="autotranslate_batch.translated" xml:space="preserve">
 				<source>Translated (last)</source>
 			</trans-unit>
-			<trans-unit id="autotranslate_batch.type" xml:space="preserve">
-				<source>Type</source>
+			<trans-unit id="autotranslate_batch.mode" xml:space="preserve">
+				<source>Translation Mode</source>
 			</trans-unit>
-			<trans-unit id="autotranslate_batch.type.add" xml:space="preserve">
-				<source>Add new translation</source>
+			<trans-unit id="autotranslate_batch.mode.create_update" xml:space="preserve">
+				<source>Create and update translations</source>
 			</trans-unit>
-			<trans-unit id="autotranslate_batch.type.override" xml:space="preserve">
-				<source>Override existing translations</source>
+			<trans-unit id="autotranslate_batch.mode.update_only" xml:space="preserve">
+				<source>Update translation only</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.mode.create_only" xml:space="preserve">
+				<source>Create new (missing) translation only</source>
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.frequency" xml:space="preserve">
 				<source>Frequency</source>
@@ -59,6 +62,9 @@
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.frequency.weekly" xml:space="preserve">
 				<source>Weekly</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.frequency.recurring" xml:space="preserve">
+				<source>Recurring</source>
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.frequency.daily" xml:space="preserve">
 				<source>Daily</source>
