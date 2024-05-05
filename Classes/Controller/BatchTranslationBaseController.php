@@ -83,7 +83,9 @@ class BatchTranslationBaseController extends ActionController
             return [];
         }
 
-        $data = [];
+        $data = [
+            'dateTimeFormat' => 'H:i d-m-Y'
+        ];
 
         if ($this->moduleName !== null) {
             $data['moduleName'] = $this->moduleName;
@@ -234,10 +236,6 @@ class BatchTranslationBaseController extends ActionController
         if (isset($this->queryParams['levels'])) {
             $this->levels = (int)$this->queryParams['levels'];
             $this->getBackendUserAuthentication()->setAndSaveSessionData('autotranslate.levels', $this->levels);
-        }
-
-        if ($this->arguments->hasArgument('batchItem')) {
-            $this->arguments->getArgument('batchItem')->getPropertyMappingConfiguration()->forProperty('translate')->setTypeConverter(new \ThieleUndKlose\Autotranslate\Property\TypeConverter\DateTimeConverter());
         }
 
         parent::initializeAction();
