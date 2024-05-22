@@ -3,7 +3,7 @@
 ## [1.0.4] - 2024-05-22
 
 ### Fixed
-- The news extension loaded condition did not work due to an incorrect extension key, thx to SvenB
+- The news extension loaded condition did not work due to an incorrect extension key, thx to SventB
 
 ## [1.0.3] - 2024-05-02
 
