@@ -2,7 +2,7 @@
 
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
-if (ExtensionManagementUtility::isLoaded('tx_news')) {
+if (ExtensionManagementUtility::isLoaded('news')) {
     $extKey = 'autotranslate';
     $llPath = 'LLL:EXT:' . $extKey . '/Resources/Private/Language/locallang_db.xlf:';
 
