@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Controller;
 
+use Exception;
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
 use ThieleUndKlose\Autotranslate\Domain\Repository\BatchItemRepository;
 use ThieleUndKlose\Autotranslate\Utility\PageUtility;
@@ -100,8 +101,20 @@ class BatchTranslationBaseController extends ActionController
         $batchItem->setTranslate(new \DateTime());
 
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-        $siteConfiguration = $siteFinder->getSiteByPageId($this->pageUid);
-        $languages = TranslationHelper::possibleTranslationLanguages($siteConfiguration->getLanguages());
+        try {
+            $siteConfiguration = $siteFinder->getSiteByPageId($this->pageUid);
+            $data['rootPageId'] = $siteConfiguration->getRootPageId();
+        } catch(Exception $e) {
+
+            $this->addMessage(
+                'No site configuration found',
+                'Please select a configured page first or create a new configuration for this page.',
+                self::MESSAGE_WARNING
+            );
+
+        }
+
+        $languages = isset($data['rootPageId']) ? TranslationHelper::possibleTranslationLanguages($siteConfiguration->getLanguages()) : [];
 
         // merge modified params
         $data = array_merge(

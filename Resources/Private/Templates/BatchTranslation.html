@@ -16,7 +16,7 @@
         pageTitle="Autotranslate - Batch Translations"
     />
 
-    <f:if condition="{pageUid}">
+    <f:if condition="{pageUid} && {rootPageId}">
         <f:render partial="BatchTranslation/Content" arguments="{_all}" />
         <f:render partial="BatchTranslation/Form" arguments="{_all}" />
     </f:if>
