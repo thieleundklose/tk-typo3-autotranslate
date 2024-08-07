@@ -119,6 +119,33 @@ if (!empty($translateableTables)) {
     $GLOBALS['SiteConfiguration']['site']['types']['0']['showitem'] .= ', --div--;Autotranslate' . $showItem;
 }
 
+// settings for deepl translation source
+$deeplSourceLangItems = [];
+$apiKey = TranslationHelper::apiKey();
+if (empty($apiKey)) {
+    $deeplSourceLangItems[] = ['Please define deepl api key first', ''];
+} else {
+    $deeplSourceLangItems[] = ['Please Choose'];
+    $translator = new \DeepL\Translator($apiKey);
+    $sourceLanguages = $translator->getSourceLanguages();
+    foreach ($sourceLanguages as $sourceLanguage) {
+        $deeplSourceLangItems[] = [$sourceLanguage->name, $sourceLanguage->code];
+    }
+}
+
+$GLOBALS['SiteConfiguration']['site_language']['columns']['deeplSourceLang'] = [
+    'label' => 'Source language (Iso code)',
+    'description' => 'Select source languages to use for DeepL for translating a record',
+    'config' => [
+        'type' => 'select',
+        'renderType' => 'selectSingle',
+        'items' => $deeplSourceLangItems,
+        'minitems' => 0,
+        'maxitems' => 1,
+        'size' => 1,
+    ],
+];
+
 // settings for deepl translation target
 $deeplTargetLangItems = [];
 $apiKey = TranslationHelper::apiKey();
@@ -147,7 +174,7 @@ $GLOBALS['SiteConfiguration']['site_language']['columns']['deeplTargetLang'] = [
 ];
 
 $GLOBALS['SiteConfiguration']['site_language']['palettes']['autotranslate'] = [
-    'showitem' => 'deeplTargetLang',
+    'showitem' => 'deeplSourceLang,deeplTargetLang',
 ];
 
 $GLOBALS['SiteConfiguration']['site_language']['types']['1']['showitem'] = str_replace(
