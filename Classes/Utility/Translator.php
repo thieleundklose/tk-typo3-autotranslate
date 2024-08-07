@@ -195,10 +195,11 @@ class Translator {
             $toTranslateObject = array_intersect_key($record, array_flip($columns));
 
             $toTranslate = array_filter($toTranslateObject, fn($value) => !is_null($value) && $value !== '');
+            $deeplSourceLang = $this->deeplSourceLanguage($targetLanguageUid);
             $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
                 $translator = new \DeepL\Translator($this->apiKey);
-                $result = $translator->translateText($toTranslate, null , $deeplTargetLang, [TranslateTextOptions::TAG_HANDLING => 'html']);
+                $result = $translator->translateText($toTranslate, $deeplSourceLang, $deeplTargetLang, [TranslateTextOptions::TAG_HANDLING => 'html']);
             }
 
             $keys = array_keys($toTranslate);
@@ -219,6 +220,21 @@ class Translator {
         }
 
         return $translatedColumns;
+    }
+
+    /**
+     * @param int $languageId
+     * @return string|null
+     */
+    private function deeplSourceLanguage(int $languageId): ?string
+    {
+        foreach ($this->siteLanguages as $language) {
+            if ($language['languageId'] == $languageId) {
+                return $language['deeplSourceLang'] ?? null;
+            }
+        }
+
+        return null;
     }
 
     /**
