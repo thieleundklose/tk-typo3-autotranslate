@@ -72,6 +72,9 @@
 			<trans-unit id="autotranslate_batch.error" xml:space="preserve">
 				<source>Error</source>
 			</trans-unit>
+			<trans-unit id="autotranslate_batch.noselect" xml:space="preserve">
+				<source>Nothing selected</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>
