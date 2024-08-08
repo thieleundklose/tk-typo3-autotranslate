@@ -299,6 +299,28 @@ class BatchItem extends AbstractEntity
     /**
      * @return bool
      */
+    public function isRecurring(): bool
+    {
+        $now = new \DateTime();
+
+        if ($this->getTranslated() > $this->getTranslate()) {
+            return false;
+        }
+
+        if ($now > $this->getTranslate()) {
+            return false;
+        }
+
+        if ($this->getFrequency() === self::FREQUENCY_ONCE) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * @return bool
+     */
     public function isWaitingForRun(): bool
     {
         $now = new \DateTime();

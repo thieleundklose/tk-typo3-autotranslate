@@ -8,7 +8,8 @@
 <f:section name="Content">
     <f:be.pageRenderer
         includeJavaScriptModules="{
-            0: '@thieleundklose/autotranslate/BackendModule.js'
+            0: '@thieleundklose/autotranslate/BackendModule.js',
+            1: '@typo3/backend/multi-record-selection.js'
         }"
         includeCssFiles="{
             0: '{f:uri.resource(path: \'Css/Backend.css\')}'
@@ -17,7 +18,7 @@
     />
 
     <f:if condition="{pageUid} && {rootPageId}">
-        <f:render partial="BatchTranslation/Content" arguments="{_all}" />
+        <f:render partial="BatchTranslation/Table" arguments="{_all}" />
         <f:render partial="BatchTranslation/Form" arguments="{_all}" />
     </f:if>
 
