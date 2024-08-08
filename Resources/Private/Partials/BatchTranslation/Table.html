@@ -1,8 +1,8 @@
 <!-- ToDo
 ===================
-- Multiselect funktion geht noch nicht
-- Buttons in Multiselect (eigenes Partial MultiRecordSelectionActions)
-- Rename von tx_autotranslate_xyz auf tx_autotranslate_xyz -->
+- Bereinigung der Bezeichnungen (von "scheduler_xyz" auf "autotranslate_xyz")
+- Bereinigung der Sprachdateien (Entfernen aller Scheduler Sprachdateien und Erweiterung der Autotranslate Sprachdateien)
+-->
 <html
     xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
     xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
@@ -283,7 +283,7 @@
                                                     <span class="badge badge-warning" title=""><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.status.pending"/></span>
                                                 </f:if>
                                                 <f:if condition="{record.recurring}">
-                                                    <span class="badge badge-notice" title=""><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.status.recurring"/></span>
+                                                    <span class="badge badge-secondary" title=""><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.status.recurring"/></span>
                                                 </f:if>
                                             </f:else>
                                         </f:if>
@@ -330,14 +330,14 @@
                                                 value="{record.uid}"
                                                 title="{f:translate(key:'LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:action.run_task_cron')}"
                                             >
-                                                <core:icon identifier="actions-reset"/>
+                                                <core:icon identifier="actions-refresh"/>
                                             </button>
                                             <button
                                                 type="submit"
                                                 class="btn btn-default"
                                                 name="execute"
                                                 value="{record.uid}"
-                                                title="{f:translate(key:'LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:action.run_task')}"
+                                                title="{f:translate(key:'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.translate')}"
                                             >
                                                 <core:icon identifier="actions-play"/>
                                             </button>
