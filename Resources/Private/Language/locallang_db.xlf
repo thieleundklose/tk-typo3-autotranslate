@@ -75,6 +75,30 @@
 			<trans-unit id="autotranslate_batch.noselect" xml:space="preserve">
 				<source>Nothing selected</source>
 			</trans-unit>
+			<trans-unit id="autotranslate_batch.status.error" xml:space="preserve">
+				<source>error</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.status.done" xml:space="preserve">
+				<source>done</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.status.pending" xml:space="preserve">
+				<source>pending</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.status.recurring" xml:space="preserve">
+				<source>recurring</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.add" xml:space="preserve">
+				<source>New batch translation</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.delete" xml:space="preserve">
+				<source>Delete</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.disable" xml:space="preserve">
+				<source>Disable</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.execute" xml:space="preserve">
+				<source>Execute</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>
