@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Controller;
 
+use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
 use TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\Components\Menu\Menu;
 use TYPO3\CMS\Backend\Template\Components\Menu\MenuItem;
 use TYPO3\CMS\Backend\View\BackendTemplateView;
-use TYPO3\CMS\Core\Messaging\AbstractMessage;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -37,6 +37,27 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
     }
 
     /**
+     * Function will be called before every other action
+     */
+    protected function initializeAction()
+    {
+        $this->defaultViewObjectName = BackendTemplateView::class;
+        parent::initializeAction();
+    }
+
+    /**
+     * Create items for given form parameters and redirect to previous action
+     * @param BatchItem $batchItem
+     * @return void
+     */
+    public function createAction(BatchItem $batchItem)
+    {
+        $this->createActionAbstract($batchItem, (int)$this->queryParams['recursive']);
+
+        $this->redirect($this->queryParams['redirectAction']);
+    }
+
+    /**
      * @return void
      */
     protected function initializeModuleTemplate()
@@ -45,6 +66,10 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
         $pageRenderer = $this->view->getModuleTemplate()->getPageRenderer();
         $pageRenderer->loadRequireJsModule('TYPO3/CMS/Autotranslate/BackendLegacyModule');
         $pageRenderer->addCssFile('EXT:autotranslate/Resources/Public/Css/Backend.css');
+        // TODO check and fix date selector for all typo3 versions
+        $pageRenderer->loadRequireJsModule('TYPO3/CMS/Backend/DateTimePicker');
+
+
         // Make localized labels available in JavaScript context
         // $pageRenderer->addInlineLanguageLabelFile('EXT:examples/Resources/Private/Language/locallang.xlf');
 
@@ -116,22 +141,14 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
         $this->view->getModuleTemplate()->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
 
         if ($this->pageUid === 0) {
-            $this->addFlashMessage(
-                'Please select a page first.',
+            $this->addMessage(
                 'No page selected',
-                AbstractMessage::WARNING
+                'Please select a page first.',
+                self::MESSAGE_WARNING
             );
 
         }
 
     }
 
-    /**
-     * Function will be called before every other action
-     */
-    protected function initializeAction()
-    {
-        $this->defaultViewObjectName = BackendTemplateView::class;
-        parent::initializeAction();
-    }
 }

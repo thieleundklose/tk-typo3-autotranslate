@@ -181,7 +181,7 @@
                             <f:for each="{batchItemsRecursive}" as="record">
                                 <tr class="{record.class} {f:if(condition:record.hidden, then:'t3-form-field-container-inline-hidden')} {f:if(condition:record.waitingForRun, then:'warning')} {f:if(condition:record.finishedRun, then:'success')} {f:if(condition:record.error, then:'danger')}" title="id={record.uid}">
                                     <td class="col-checkbox"><span class="form-check form-check-type-toggle"><input class="form-check-input t3js-multi-record-selection-check" type="checkbox"></span></td>
-                                    <td class="nowrap" title="id={record.pid}">[{record.pid}] <strong>{record.pageTitle}</strong></td>
+                                    <td class="nowrap" title="id={record.pid}"><strong>{record.pageTitle}</strong></td>
                                     <td><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.{record.priority}"/></td>
                                     <td title="id={record.sysLanguageUid}">{record.sysLanguageTitle}</td>
                                     <td class="col-datetime"><f:format.date format="d.m.Y - H:i">{record.translate}</f:format.date></td>

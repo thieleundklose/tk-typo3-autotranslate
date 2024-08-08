@@ -17,18 +17,9 @@
         pageTitle="Autotranslate - Batch Translations"
     />
 
-    <f:render partial="BatchTranslation/Content" arguments="{_all}" />
-
-    <!-- Temporary duplicate table. Replaces the previous table later -->
-    <f:render partial="BatchTranslation/Table" arguments="{_all}" />
-
-    <f:if condition="{pageUid}">
-        <p>
-            <be:link.newRecord table="tx_autotranslate_batch_item" returnUrl="{f:be.uri(route: moduleName, parameters:'{id:pageUid}')}" pid="{pageUid}">
-                <core:icon identifier="actions-variable-add"/>
-                <f:translate key="function_links_add_item"/>
-            </be:link.newRecord>
-        </p>
+    <f:if condition="{pageUid} && {rootPageId}">
+        <f:render partial="BatchTranslation/Table" arguments="{_all}" />
+        <f:render partial="BatchTranslation/Form" arguments="{_all}" />
     </f:if>
 
 </f:section>
