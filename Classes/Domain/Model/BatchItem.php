@@ -253,7 +253,7 @@ class BatchItem extends AbstractEntity
     {
         $pageRepository = GeneralUtility::makeInstance(PageRepository::class);
         $page = $pageRepository->getPage($this->pid);
-        return $page['title'];
+        return '[' . $this->pid . '] ' . $page['title'];
     }
 
     /**

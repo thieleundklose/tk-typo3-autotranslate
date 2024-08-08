@@ -10,7 +10,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use Psr\Http\Message\ResponseInterface;
-use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
+use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Template\Components\Menu\MenuItem;
 
@@ -39,6 +39,18 @@ class BatchTranslationController extends BatchTranslationBaseController
         $view->assignMultiple($this->getBatchTranslationData());
 
         return $view->renderResponse();
+    }
+
+    /**
+     * Create items for given form parameters and redirect to previous action
+     * @param BatchItem $batchItem
+     * @return ResponseInterface
+     */
+    public function createAction(BatchItem $batchItem): ResponseInterface
+    {
+        $this->createActionAbstract($batchItem, (int)$this->queryParams['recursive']);
+
+        return $this->redirect($this->queryParams['redirectAction']);
     }
 
     /**
@@ -117,10 +129,10 @@ class BatchTranslationController extends BatchTranslationBaseController
 
         $view->setFlashMessageQueue($this->getFlashMessageQueue());
         if ($this->pageUid === 0) {
-            $this->addFlashMessage(
-                'Please select a page first.',
+            $this->addMessage(
                 'No page selected',
-                ContextualFeedbackSeverity::WARNING
+                'Please select a page first.',
+                self::MESSAGE_WARNING
             );
         }
 
