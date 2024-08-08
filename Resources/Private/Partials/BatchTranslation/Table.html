@@ -14,11 +14,6 @@
         <!-- Multiselect funktion geht noch nicht ANFANG-->
         <div class="panel-heading multi-record-selection-panel">
             <div class="panel-heading-row">
-                <!-- <f:if condition="{group.hidden}">
-                    <div class="panel-heading-badge">
-                        <span class="badge badge-secondary"><f:translate key="LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:label.group.isDisabled" /></span>
-                    </div>
-                </f:if> -->
                 <div class="panel-heading-title">
                     {f:translate(key: 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.noselect')}
                 </div>
@@ -168,16 +163,6 @@
                             </tr>
                         </thead>
                         <tbody data-multi-record-selection-row-selection="true">
-                            <!--
-                                {record.waitingForRun}
-                                {record.finishedRun}
-                                {record.error}
-                                {record.hidden}
-                                {record.translated}
-                            -->
-                            <!-- class="{record.class} {f:if(condition:record.hidden, then:'t3-form-field-container-inline-hidden')} {f:if(condition:record.waitingForRun, then:'warning')} {f:if(condition:record.finishedRun, then:'success')} {f:if(condition:record.error, then:'danger')}" title="id={record.uid}">
-                                <span class="badge badge-danger" title="">
-                            --error--</span> -->
                             <f:for each="{batchItemsRecursive}" as="record">
                                 <tr class="{record.class} {f:if(condition:record.hidden, then:'t3-form-field-container-inline-hidden')} {f:if(condition:record.waitingForRun, then:'warning')} {f:if(condition:record.finishedRun, then:'success')} {f:if(condition:record.error, then:'danger')}" title="id={record.uid}">
                                     <td class="col-checkbox"><span class="form-check form-check-type-toggle"><input class="form-check-input t3js-multi-record-selection-check" type="checkbox"></span></td>
@@ -211,7 +196,7 @@
                                                     <span class="badge badge-warning" title="">pending</span>
                                                 </f:if>
                                                 <f:if condition="{record.recurring}">
-                                                    <span class="badge badge" title="">recurring</span>
+                                                    <span class="badge badge-notice" title="">recurring</span>
                                                 </f:if>
                                             </f:else>
                                         </f:if>
@@ -253,43 +238,6 @@
                                     </td>
                                 </tr>
                             </f:for>
-
-                            <tr class="danger">
-                                <td class="col-checkbox"><span class="form-check form-check-type-toggle"><input class="form-check-input t3js-multi-record-selection-check" type="checkbox"></span></td>
-                                <td class="align-top"><div class="name"><a href=""><strong>Example Danger</strong></a></div></td>
-                                <td class="align-top"></td>
-                                <td class="align-top col-min"></td>
-                                <td class="align-top col-datetime">2024-07-17 04:53</td>
-                                <td class="align-top col-datetime">2024-07-17 04:53</td>
-                                <td class="align-top col-state">Daily</td>
-                                <td class="align-top col-state"></td>
-                                <td class="align-top col-min"><span class="badge badge-danger" title="">error</span></td>
-                                <td class="col-control align-top">Actions [Buttons]</td>
-                            </tr>
-                            <tr class="warning">
-                                <td class="col-checkbox"><span class="form-check form-check-type-toggle"><input class="form-check-input t3js-multi-record-selection-check" type="checkbox"></span></td>
-                                <td class="align-top"><div class="name"><a href=""><strong>Example Warning</strong></a></div></td>
-                                <td class="align-top"></td>
-                                <td class="align-top col-min"></td>
-                                <td class="align-top col-datetime">2024-07-17 04:53</td>
-                                <td class="align-top col-datetime">2024-07-17 04:53</td>
-                                <td class="align-top col-state">Daily</td>
-                                <td class="align-top col-state"></td>
-                                <td class="align-top col-min"><span class="badge badge-warning" title="">warning</span></td>
-                                <td class="col-control align-top">Actions [Buttons]</td>
-                            </tr>
-                            <tr class="success">
-                                <td class="col-checkbox"><span class="form-check form-check-type-toggle"><input class="form-check-input t3js-multi-record-selection-check" type="checkbox"></span></td>
-                                <td class="align-top"><div class="name"><a href=""><strong>Example Success</strong></a></div></td>
-                                <td class="align-top"></td>
-                                <td class="align-top col-min"></td>
-                                <td class="align-top col-datetime">2024-07-17 04:53</td>
-                                <td class="align-top col-datetime">2024-07-17 04:53</td>
-                                <td class="align-top col-state">Daily</td>
-                                <td class="align-top col-state"></td>
-                                <td class="align-top col-min"><span class="badge badge-success" title="">success</span></td>
-                                <td class="col-control align-top">Actions [Buttons]</td>
-                            </tr>
                         </tbody>
                         <tfoot>
                             <tr>

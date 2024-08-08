@@ -316,7 +316,6 @@ class BatchItem extends AbstractEntity
         }
 
         return true;
-
     }
 
     /**
