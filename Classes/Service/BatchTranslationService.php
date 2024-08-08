@@ -30,9 +30,9 @@ class BatchTranslationService implements LoggerAwareInterface
 
         // check if target language is in pissible translation languages
         if (!isset($languages[$item->getSysLanguageUid()])) {
-            $message = 'Target language ({targetLanguages}) not in site languages ({siteLanguages}).';
+            $message = 'Target language ({targetLanguage}) not in site languages ({siteLanguages}).';
             $messageData = [
-                'targetLanguages' => $item->getSysLanguageUid(),
+                'targetLanguage' => $item->getSysLanguageUid(),
                 'siteLanguages' => implode(',', array_keys($languages)),
             ];
 
