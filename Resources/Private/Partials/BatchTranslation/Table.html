@@ -20,25 +20,12 @@
                     </div>
                 </f:if> -->
                 <div class="panel-heading-title">
-                    <f:if condition="!{group.uid}">
-                        <f:then>
-                            {f:translate(key: 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.noselect')}
-                        </f:then>
-                        <f:else>
-                            // Wenn Selection zutreffend
-                            <!-- <typo3-scheduler-editable-group-name
-                                groupName="{group.groupName}"
-                                groupId="{group.uid}"
-                                editable="true"
-                            >
-                                {group.groupName}
-                            </typo3-scheduler-editable-group-name> -->
-                        </f:else>
-                    </f:if>
+                    {f:translate(key: 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.noselect')}
                 </div>
                 <div class="panel-heading-actions">
                     // Buttons hier
-                    <!-- <form name="tx_scheduler_form_group_toggle_hidden" id="tx_scheduler_form_group_toggle_hidden" method="post">
+                    Add New
+                    <form name="tx_autotranslate_form_group_toggle_hidden" id="tx_autotranslate_form_group_toggle_hidden" method="post">
                         <input name="action[group][uid]" type="hidden" value="{group.uid}">
                         <a
                             href="{be:moduleLink(route: 'scheduler_manage', arguments: {action: 'add', groupId: group.uid}, currentUrlParameterName: 'redirect')}"
@@ -86,19 +73,19 @@
                         <button type="button"
                                 class="btn btn-sm btn-default t3js-toggle-table"
                                 data-bs-toggle="collapse"
-                                data-bs-target="#scheduler-task-group-{groupKey}"
+                                data-bs-target="#autotranslate-task-group-{groupKey}"
                                 aria-expanded="{f:if(condition: group.taskGroupCollapsed, then: 'false', else: 'true')}"
                         >
                             <core:icon identifier="{f:if(condition: group.taskGroupCollapsed, then: 'actions-view-list-expand', else: 'actions-view-list-collapse')}" size="small" />
                         </button>
-                    </form> -->
+                    </form>
                 </div>
             </div>
             <f:render partial="BatchTranslation/MultiRecordSelectionActions" />
         </div>
         <!-- Multiselect funktion geht noch nicht ENDE-->
-        <form data-multi-record-selection-form="task-group-{groupKey}" name="tx_scheduler_form_{groupKey}" id="tx_scheduler_form_{groupKey}" method="post">
-            <div class="panel-collapse collapse {f:if(condition: '!{group.taskGroupCollapsed}', then: 'show')}" id="scheduler-task-group-{groupKey}" data-table="task-group-{groupKey}">
+        <form data-multi-record-selection-form="task-group-{groupKey}" name="tx_autotranslate_form_{groupKey}" id="tx_autotranslate_form_{groupKey}" method="post">
+            <div class="panel-collapse collapse {f:if(condition: '!{group.taskGroupCollapsed}', then: 'show')}" id="autotranslate-task-group-{groupKey}" data-table="task-group-{groupKey}">
                 <div class="table-fit">
                     <table class="table table-striped table-hover" data-scheduler-table>
                         <thead>
@@ -194,11 +181,11 @@
                             <f:for each="{batchItemsRecursive}" as="record">
                                 <tr class="{record.class} {f:if(condition:record.hidden, then:'t3-form-field-container-inline-hidden')} {f:if(condition:record.waitingForRun, then:'warning')} {f:if(condition:record.finishedRun, then:'success')} {f:if(condition:record.error, then:'danger')}" title="id={record.uid}">
                                     <td class="col-checkbox"><span class="form-check form-check-type-toggle"><input class="form-check-input t3js-multi-record-selection-check" type="checkbox"></span></td>
-                                    <td class="align-top nowrap" title="id={record.pid}">[{record.pid}] <strong>{record.pageTitle}</strong></td>
-                                    <td class="align-top"><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.{record.priority}"/></td>
-                                    <td class="align-top" title="id={record.sysLanguageUid}">{record.sysLanguageTitle}</td>
-                                    <td class="align-top col-datetime"><f:format.date format="d.m.Y - H:i">{record.translate}</f:format.date></td>
-                                    <td class="align-top col-datetime">
+                                    <td class="nowrap" title="id={record.pid}">[{record.pid}] <strong>{record.pageTitle}</strong></td>
+                                    <td><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.{record.priority}"/></td>
+                                    <td title="id={record.sysLanguageUid}">{record.sysLanguageTitle}</td>
+                                    <td class="col-datetime"><f:format.date format="d.m.Y - H:i">{record.translate}</f:format.date></td>
+                                    <td class="col-datetime">
                                         <f:if condition="{record.translated}">
                                             <f:then>
                                                 <f:format.date format="d.m.Y - H:i">{record.translated}</f:format.date>
@@ -208,14 +195,28 @@
                                             </f:else>
                                         </f:if>
                                     </td>
-                                    <td class="align-top col-state" title="{rcord.frequencyDateInterval}"><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.{record.frequency}"/></td>
-                                    <td class="align-top col-state"><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode.{record.mode}"/></td>
-                                    <td class="align-top col-min">
+                                    <td class="col-state" title="{rcord.frequencyDateInterval}"><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.{record.frequency}"/></td>
+                                    <td class="col-state"><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode.{record.mode}"/></td>
+                                    <td class="col-min">
                                         <f:if condition="{record.error}">
-                                            <span class="badge badge-danger" title="">{record.error -> f:format.crop(maxCharacters: 10)}</span></td>
+                                            <f:then>
+                                                <p><span class="badge badge-danger" title="">error</span></p>
+                                                <p>{record.error -> f:format.crop(maxCharacters: 10)}</p>
+                                            </f:then>
+                                            <f:else>
+                                                <f:if condition="{record.finishedRun}">
+                                                    <span class="badge badge-success" title="">done</span>
+                                                </f:if>
+                                                <f:if condition="{record.waitingForRun}">
+                                                    <span class="badge badge-warning" title="">pending</span>
+                                                </f:if>
+                                                <f:if condition="{record.recurring}">
+                                                    <span class="badge badge" title="">recurring</span>
+                                                </f:if>
+                                            </f:else>
                                         </f:if>
                                     </td>
-                                    <td class="nowrap col-control align-top">
+                                    <td class="nowrap col-control">
                                         <div class="btn-group">
                                             <f:if condition="{record.hidden}">
                                                 <f:then>
