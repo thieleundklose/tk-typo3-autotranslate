@@ -322,6 +322,26 @@
                                                 <input name="cmd[tx_autotranslate_batch_item][{record.uid}][delete]=1" type="hidden" value="{record.uid}">
                                             </form>
                                         </div>
+                                        <div class="btn-group" role="group">
+                                            <button
+                                                type="submit"
+                                                class="btn btn-default"
+                                                name="scheduleCron"
+                                                value="{record.uid}"
+                                                title="{f:translate(key:'LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:action.run_task_cron')}"
+                                            >
+                                                <core:icon identifier="actions-reset"/>
+                                            </button>
+                                            <button
+                                                type="submit"
+                                                class="btn btn-default"
+                                                name="execute"
+                                                value="{record.uid}"
+                                                title="{f:translate(key:'LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:action.run_task')}"
+                                            >
+                                                <core:icon identifier="actions-play"/>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             </f:for>

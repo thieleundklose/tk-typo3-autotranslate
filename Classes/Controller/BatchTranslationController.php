@@ -11,6 +11,7 @@ use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use Psr\Http\Message\ResponseInterface;
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
+use ThieleUndKlose\Autotranslate\Service\BatchTranslationService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Backend\Template\Components\Menu\MenuItem;
 
@@ -24,8 +25,17 @@ class BatchTranslationController extends BatchTranslationBaseController
      */
     protected $moduleTemplateFactory = null;
 
-    function __construct()
+    /**
+     * @var BatchTranslationService
+     */
+    protected $batchTranslationService;
+
+    /**
+     * @param BatchTranslationService $batchTranslationService
+     */
+    function __construct(BatchTranslationService $batchTranslationService)
     {
+        $this->batchTranslationService = $batchTranslationService;
         // Initialize without dependency injection to throw no error in TYPO3 v10
         $this->moduleTemplateFactory = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\ModuleTemplateFactory');
     }
@@ -35,6 +45,31 @@ class BatchTranslationController extends BatchTranslationBaseController
      */
     public function batchTranslationAction(): ResponseInterface
     {
+        if ($this->request->hasArgument('execute')) {
+            $executeUids = GeneralUtility::trimExplode(',' ,$this->request->getArgument('execute'));
+            foreach ($executeUids as $uid) {
+                $item = $this->batchItemRepository->findByUid((int)$uid);
+                if ($item instanceof BatchItem) {
+                    $res = $this->batchTranslationService->translate($item);
+                    if ($res === true) {
+                        $item->markAsTranslated();
+                        $this->addMessage(
+                            'Successfully Translated',
+                            sprintf('Item with uid %s was translated.', $item->getUid()),
+                            self::MESSAGE_OK
+                        );
+                    } else {
+                        $this->addMessage(
+                            'Error while translating',
+                            sprintf('Item with uid %s could not be translated.', $item->getUid()),
+                            self::MESSAGE_ERROR
+                        );
+                    }
+                    $this->batchItemRepository->update($item);
+                }
+            }
+        }
+
         $view = $this->initializeModuleTemplate($this->request);
         $view->assignMultiple($this->getBatchTranslationData());
 
