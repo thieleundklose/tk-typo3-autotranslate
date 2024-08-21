@@ -1,8 +1,3 @@
-<!-- ToDo
-===================
-- Bereinigung der Bezeichnungen (von "scheduler_xyz" auf "autotranslate_xyz")
-- Bereinigung der Sprachdateien (Entfernen aller Scheduler Sprachdateien und Erweiterung der Autotranslate Sprachdateien)
--->
 <html
     xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
     xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
@@ -23,87 +18,6 @@
         <f:render section="table" arguments="{_all}"/>
     </div>
 
-    <f:if condition="{errorClasses}">
-        <div class="panel panel-default">
-            <div class="panel-heading taskGroup" data-task-group-id="missing">
-                <button
-                    type="button"
-                    title="{f:translate(key: 'LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:label.errorClass')}"
-                    class="btn btn-link fw-bold pt-1 p-0"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#autotranslate-task-group-missing"
-                    aria-expanded="{f:if(condition: errorClassesCollapsed, then: 'false', else: 'true')}"
-                >
-                    <f:translate key="LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:label.errorClass"/>
-                </button>
-                <button
-                    type="button"
-                    class="btn btn-default btn-sm float-end t3js-toggle-table"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#autotranslate-task-group-missing"
-                    aria-expanded="{f:if(condition: errorClassesCollapsed, then: 'false', else: 'true')}"
-                >
-                    <core:icon identifier="{f:if(condition: errorClassesCollapsed, then: 'actions-view-list-expand', else: 'actions-view-list-collapse')}" size="small" />
-                </button>
-            </div>
-            <div class="panel-collapse collapse {f:if(condition: '!{errorClassesCollapsed}', then: 'show')}" id="autotranslate-task-group-missing" data-table="task-group-missing" >
-                <div class="table-fit">
-                    <table class="table table-striped table-hover">
-                        <tr class="taskGroup" data-task-group-id="0">
-                            <td class="nowrap-disabled"><span>{f:translate(key:'LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:msg.invalidTaskClass') -> f:format.raw()}</span></td>
-                        </tr>
-                    </table>
-                    <table class="table table-striped table-hover" data-autotranslate-table>
-                        <thead>
-                            <tr>
-                                <th><f:translate key="LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:label.id"/></th>
-                                <th><f:translate key="LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:task"/></th>
-                                <th><f:translate key="LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:msg.errorMessage"/></th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <f:for each="{errorClasses}" as="errorClass">
-                                <tr>
-                                    <td class="align-top">{errorClass.uid}</td>
-                                    <td class="align-top">{errorClass.class}</td>
-                                    <td class="align-top">{errorClass.errorMessage}</td>
-                                    <td class="align-top col-control">
-                                        <div class="btn-group float-end" role="group">
-                                            <button
-                                                type="submit"
-                                                class="btn btn-default t3js-modal-trigger"
-                                                data-target-form="tx_autotranslate_form_error_class_{errorClass.uid}"
-                                                data-severity="warning"
-                                                data-button-close-text="{f:translate(key: 'LLL:EXT:core/Resources/Private/Language/locallang_common.xlf:cancel')}"
-                                                data-bs-content="{f:translate(key: 'LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:msg.delete')}"
-                                                data-title="{f:translate(key: 'LLL:EXT:core/Resources/Private/Language/locallang_common.xlf:delete')}"
-                                                title="{f:translate(key: 'LLL:EXT:core/Resources/Private/Language/locallang_common.xlf:delete')}"
-                                            >
-                                                <core:icon identifier="actions-edit-delete"/>
-                                            </button>
-                                            <form name="tx_autotranslate_form_error_class_{errorClass.uid}" id="tx_autotranslate_form_error_class_{errorClass.uid}" method="post">
-                                                <input name="action[delete]" type="hidden" value="{errorClass.uid}">
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </f:for>
-                        </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="4">
-                                    <span class="t3js-table-total-items" title="{f:translate(key: 'LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:label.errorClass.taskCount')}">{errorClasses -> f:count()}</span>
-                                    <f:translate key="LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:label.errorClass"/>
-                                </td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </f:if>
-
     <f:section name="table">
 
         <h1><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_tablabel"/></h1>
@@ -112,42 +26,21 @@
             data-multi-record-selection-identifier="task-group-list"
             {f:if(condition: '{group.uid}', then: 'data-task-group-id="{group.uid}"')}
         >
-        <!-- Bedienelemente Table Header - Multiselect etc. -->
-        <!-- Multiselect funktion geht noch nicht ANFANG-->
+
         <div class="panel-heading multi-record-selection-panel">
             <div class="panel-heading-row">
-                <f:if condition="{group.hidden}">
-                    <div class="panel-heading-badge">
-                        <span class="badge badge-secondary"><f:translate key="LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:label.group.isDisabled" /></span>
-                    </div>
-                </f:if>
                 <div class="panel-heading-title">
                     {f:translate(key: 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.noselect')}
                 </div>
                 <div class="panel-heading-actions">
                     <form name="tx_autotranslate_form_group_toggle_hidden" id="tx_autotranslate_form_group_toggle_hidden" method="post">
                         <!-- <a
-                            href="{be:moduleLink(route: 'scheduler_manage', arguments: {action: 'add', groupId: group.uid}, currentUrlParameterName: 'redirect')}"
-                            class="btn btn-sm btn-default"
-                        > -->
-                        <a
                             href=""
                             class="btn btn-sm btn-default"
                         >
                             <core:icon identifier="actions-plus" />
                             <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.add"/>
-                        </a>
-                        <!-- Geht noch nicht -->
-                        <f:if condition="{group.uid}">
-                            <f:if condition="{group.hidden}">
-                                <f:then>
-                                    // Wenn Selection aktiv, dann disable button
-                                </f:then>
-                                <f:else>
-                                    // Wenn Selection aktiv, dann enable button
-                                </f:else>
-                            </f:if>
-                        </f:if>
+                        </a> -->
                         <button type="button"
                                 class="btn btn-sm btn-default t3js-toggle-table"
                                 data-bs-toggle="collapse"
@@ -161,7 +54,7 @@
             </div>
             <f:render partial="BatchTranslation/MultiRecordSelectionActions" />
         </div>
-        <!-- Multiselect funktion geht noch nicht ENDE-->
+
         <form data-multi-record-selection-form="task-group-list" name="tx_autotranslate_form_list" id="tx_autotranslate_form_list" method="post">
             <div class="panel-collapse collapse {f:if(condition: '!{group.taskGroupCollapsed}', then: 'show')}" id="autotranslate-task-group-list" data-table="task-group-list">
                 <div class="table-fit">
@@ -326,9 +219,9 @@
                                             <button
                                                 type="submit"
                                                 class="btn btn-default"
-                                                name="scheduleCron"
+                                                name="reset"
                                                 value="{record.uid}"
-                                                title="{f:translate(key:'LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:action.run_task_cron')}"
+                                                title="{f:translate(key:'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.reset')}"
                                             >
                                                 <core:icon identifier="actions-refresh"/>
                                             </button>

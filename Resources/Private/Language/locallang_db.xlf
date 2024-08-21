@@ -99,6 +99,9 @@
 			<trans-unit id="autotranslate_batch.function.translate" xml:space="preserve">
 				<source>Translate</source>
 			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.reset" xml:space="preserve">
+				<source>Reset</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>
