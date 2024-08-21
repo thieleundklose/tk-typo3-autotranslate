@@ -127,6 +127,7 @@
                                         </ul>
                                     </div>
                                 </th>
+                                <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.uid"/></th>
                                 <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.page"/></th>
                                 <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority"/></th>
                                 <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.sys_language_uid"/></th>
@@ -134,7 +135,7 @@
                                 <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.translated"/></th>
                                 <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency"/></th>
                                 <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode"/></th>
-                                <th>Status</th>
+                                <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.state"/></th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -146,6 +147,7 @@
                                     data-multi-record-selection-element="true"
                                 >
                                     <td class="col-checkbox"><span class="form-check form-check-type-toggle"><input class="form-check-input t3js-multi-record-selection-check" type="checkbox"></span></td>
+                                    <td>{record.uid}</td>
                                     <td class="nowrap" title="id={record.pid}">{record.pageTitle}</td>
                                     <td><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.{record.priority}"/></td>
                                     <td title="id={record.sysLanguageUid}">{record.sysLanguageTitle}</td>
