@@ -4,16 +4,6 @@
     data-namespace-typo3-fluid="true"
 >
 
-    <f:if condition="{errorClasses}">
-        <f:variable name="errorClassesCount" value="{errorClasses -> f:count()}"/>
-        <f:be.infobox
-            title="{f:translate(key:'LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:msg.invalidTaskClass.infobox.title', arguments: {0: errorClassesCount})}"
-            state="2"
-        >
-            <f:format.raw><f:translate key="LLL:EXT:scheduler/Resources/Private/Language/locallang.xlf:msg.invalidTaskClass.infobox.message" /></f:format.raw>
-        </f:be.infobox>
-    </f:if>
-
     <div class="t3js-group-draggable-container">
         <f:render section="table" arguments="{_all}"/>
     </div>
