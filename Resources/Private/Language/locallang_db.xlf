@@ -15,6 +15,9 @@
 			<trans-unit id="autotranslate_batch" xml:space="preserve">
 				<source>Autotranslate Batch Item</source>
 			</trans-unit>
+			<trans-unit id="autotranslate_batch.uid" xml:space="preserve">
+				<source>UID</source>
+			</trans-unit>
 			<trans-unit id="autotranslate_batch.page" xml:space="preserve">
 				<source>Page to Translate</source>
 			</trans-unit>
@@ -35,6 +38,9 @@
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.sys_language_uid" xml:space="preserve">
 				<source>Target language</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.state" xml:space="preserve">
+				<source>State</source>
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.translate" xml:space="preserve">
 				<source>Execution date</source>
@@ -74,6 +80,33 @@
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.noselect" xml:space="preserve">
 				<source>Nothing selected</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.status.error" xml:space="preserve">
+				<source>error</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.status.done" xml:space="preserve">
+				<source>done</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.status.pending" xml:space="preserve">
+				<source>pending</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.status.recurring" xml:space="preserve">
+				<source>recurring</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.add" xml:space="preserve">
+				<source>New batch translation</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.delete" xml:space="preserve">
+				<source>Delete</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.disable" xml:space="preserve">
+				<source>Disable</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.translate" xml:space="preserve">
+				<source>Translate</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.reset" xml:space="preserve">
+				<source>Reset</source>
 			</trans-unit>
 		</body>
 	</file>
