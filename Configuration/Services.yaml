@@ -18,3 +18,9 @@ services:
       - name: console.command
         command: "autotranslate:batchtranslationrun"
         description: "Command for automatic translation of a number of elements."
+
+  ThieleUndKlose\Autotranslate\Command\BatchTranslationExecuteCommand:
+    tags:
+      - name: 'console.command'
+        command: 'autotranslate:execute'
+        description: 'Execute tasks.'
