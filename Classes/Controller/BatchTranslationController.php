@@ -70,6 +70,23 @@ class BatchTranslationController extends BatchTranslationBaseController
             }
         }
 
+        if ($this->request->hasArgument('reset')) {
+            $executeUids = GeneralUtility::trimExplode(',' ,$this->request->getArgument('reset'));
+            foreach ($executeUids as $uid) {
+                $item = $this->batchItemRepository->findByUid((int)$uid);
+                if ($item instanceof BatchItem) {
+                    $item->setTranslated();
+                    $item->setError('');
+                    $this->addMessage(
+                        'Reset successful',
+                        sprintf('Translated date for item with uid %s was removed.', $item->getUid()),
+                        self::MESSAGE_OK
+                    );
+                    $this->batchItemRepository->update($item);
+                }
+            }
+        }
+
         $view = $this->initializeModuleTemplate($this->request);
         $view->assignMultiple($this->getBatchTranslationData());
 
