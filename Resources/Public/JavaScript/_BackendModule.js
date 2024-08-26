@@ -4,7 +4,7 @@ import DateTimePicker from '@typo3/backend/date-time-picker.js';
 class Form {
     constructor() {
         DocumentService.ready().then(() => {
-        this.initializeDateTimePickers();
+            this.initializeDateTimePickers();
         });
     }
 
