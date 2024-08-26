@@ -9,7 +9,7 @@
         <strong><f:translate key="LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.selection"/></strong>
     </div>
     <div class="panel-heading-actions">
-        <button type="button" class="btn btn-default btn-sm" data-multi-record-selection-action="go_cron" data-multi-record-selection-action-config='{"idField": "taskId"}'>
+        <button type="button" class="btn btn-default btn-sm" data-multi-record-selection-action="execute" data-multi-record-selection-action-config='{"idField": "taskId"}'>
             <span title="{f:translate(key: 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.translate')}">
                 <core:icon identifier="actions-play" /> <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.translate"/>
             </span>
@@ -19,11 +19,17 @@
                 <core:icon identifier="actions-edit-unhide" /> <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.disable"/>
             </span>
         </button>
-        <button type="button" class="btn btn-default btn-sm" data-multi-record-selection-action="delete" data-multi-record-selection-action-config='{"idField": "taskId"}'>
-            <span title="{f:translate(key: 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.delete')}">
-                <core:icon identifier="actions-delete" /> <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.delete"/>
-            </span>
-        </button>
+
+        <f:for each="{actions}" as="action">
+            <button class="btn btn-default btn-sm"
+                    data-multi-record-selection-action="{action.name}"
+                    data-multi-record-selection-action-config='{action.configuration -> f:format.raw()}'
+            >
+                {action.icon -> f:format.raw()}
+                <span class="text">{action.label}</span>
+            </button>
+        </f:for>
+
         <button type="button" class="btn btn-default btn-sm" data-multi-record-selection-action="reset" data-multi-record-selection-action-config='{"idField": "taskId"}'>
             <span title="{f:translate(key: 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.reset')}">
                 <core:icon identifier="actions-refresh" /> <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.reset"/>

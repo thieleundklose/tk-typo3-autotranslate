@@ -10,6 +10,7 @@ use ThieleUndKlose\Autotranslate\Domain\Repository\BatchItemRepository;
 use ThieleUndKlose\Autotranslate\Utility\PageUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
+use TYPO3\CMS\Backend\Template\Components\MultiRecordSelection\Action;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
@@ -116,6 +117,9 @@ class BatchTranslationBaseController extends ActionController
 
         $languages = isset($data['rootPageId']) ? TranslationHelper::possibleTranslationLanguages($siteConfiguration->getLanguages()) : [];
 
+        $requestUri = $this->request->getAttribute('normalizedParams')->getRequestUri();
+        $languageService = $this->getLanguageService();
+
         // merge modified params
         $data = array_merge(
             $data,
@@ -125,7 +129,6 @@ class BatchTranslationBaseController extends ActionController
                 'pageUid' => $this->pageUid,
                 'levels' => $this->levels,
                 'queryParams' =>  $this->queryParams,
-
                 'createForm' => [
                     'pages' => [
                         $batchItem->getPid() => $batchItem->getPageTitle()
@@ -150,7 +153,46 @@ class BatchTranslationBaseController extends ActionController
                     'redirectAction' => $this->request->getControllerActionName(),
                     'batchItem' => $batchItem,
                 ],
-
+                'actions' => [
+                    new Action(
+                        'execute',
+                        [
+                            'idField' => 'uid',
+                            'tableName' => 'tx_autotranslate_batch_item',
+                            'title' => $languageService->sL('LLL:EXT:reactions/Resources/Private/Language/locallang_module_reactions.xlf:labels.delete.title'),
+                            'content' => $languageService->sL('LLL:EXT:reactions/Resources/Private/Language/locallang_module_reactions.xlf:labels.delete.message'),
+                            'ok' => $languageService->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:cm.delete'),
+                            'cancel' => $languageService->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.cancel'),
+                            'returnUrl' => $requestUri,
+                        ],
+                        'actions-play',
+                        'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.translate'
+                    ),
+                    new Action(
+                        'edit',
+                        [
+                            'idField' => 'uid',
+                            'tableName' => 'tx_autotranslate_batch_item',
+                            'returnUrl' => $requestUri,
+                        ],
+                        'actions-open',
+                        'LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:cm.edit'
+                    ),
+                    new Action(
+                        'delete',
+                        [
+                            'idField' => 'uid',
+                            'tableName' => 'tx_autotranslate_batch_item',
+                            'title' => $languageService->sL('LLL:EXT:reactions/Resources/Private/Language/locallang_module_reactions.xlf:labels.delete.title'),
+                            'content' => $languageService->sL('LLL:EXT:reactions/Resources/Private/Language/locallang_module_reactions.xlf:labels.delete.message'),
+                            'ok' => $languageService->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:cm.delete'),
+                            'cancel' => $languageService->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.cancel'),
+                            'returnUrl' => $requestUri,
+                        ],
+                        'actions-edit-delete',
+                        'LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:cm.delete'
+                    )
+                ]
             ]
         );
 

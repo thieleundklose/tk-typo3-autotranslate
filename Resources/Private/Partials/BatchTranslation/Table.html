@@ -40,13 +40,13 @@
                         </form>
                     </div>
                 </div>
-                <f:render partial="BatchTranslation/MultiRecordSelectionActions" />
+                <f:render partial="BatchTranslation/MultiRecordSelectionActions" arguments="{actions: actions}"/>
             </div>
 
             <form data-multi-record-selection-form="task-group-list" name="tx_autotranslate_form_list" id="tx_autotranslate_form_list" method="post">
                 <div class="panel-collapse collapse show" id="autotranslate-task-group-list" data-table="task-group-list">
                     <div class="table-fit">
-                        <table class="table table-striped table-hover" data-autotranslate-table>
+                        <table class="table table-striped table-hover">
                             <thead>
                                 <tr>
                                     <th data-sort-method="none">
@@ -133,6 +133,7 @@
                                         class="{record.class} {f:if(condition:record.hidden, then:'t3-form-field-container-inline-hidden')} {f:if(condition:record.waitingForRun, then:'warning')} {f:if(condition:record.finishedRun, then:'success')} {f:if(condition:record.error, then:'danger')}"
                                         title="id={record.uid}"
                                         data-multi-record-selection-element="true"
+                                        data-uid="{record.uid}"
                                     >
                                         <td class="col-checkbox"><span class="form-check form-check-type-toggle"><input class="form-check-input t3js-multi-record-selection-check" type="checkbox"></span></td>
                                         <td>{record.uid}</td>
@@ -186,7 +187,12 @@
                                                     </f:else>
                                                 </f:if>
 
-                                                <be:link.editRecord uid="{record.uid}" table="tx_autotranslate_batch_item" returnUrl="{f:be.uri(route: moduleName, parameters:'{id:pageUid}')}" class="btn btn-default">
+                                                <be:link.editRecord
+                                                    returnUrl="{f:be.uri(route: moduleName, parameters:'{id:pageUid}')}"
+                                                    class="btn btn-default"
+                                                    table="tx_autotranslate_batch_item"
+                                                    uid="{record.uid}"
+                                                >
                                                     <core:icon identifier="actions-file-edit"/>
                                                 </be:link.editRecord>
                                                 <button
