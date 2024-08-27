@@ -50,11 +50,19 @@ class BatchTranslationController extends BatchTranslationBaseController
             foreach ($executeUids as $uid) {
                 $item = $this->batchItemRepository->findByUid((int)$uid);
                 if ($item instanceof BatchItem) {
+                    if (!$item->isExecutable()) { 
+                        $this->addMessage(
+                            'Item can not be translated',
+                            sprintf('Item with uid %s could not be translated. Check the error and reset it.', $item->getUid()),
+                            self::MESSAGE_ERROR
+                        );
+                        continue;
+                    }
                     $res = $this->batchTranslationService->translate($item);
                     if ($res === true) {
                         $item->markAsTranslated();
                         $this->addMessage(
-                            'Successfully Translated',
+                            'Successfully translated',
                             sprintf('Item with uid %s was translated.', $item->getUid()),
                             self::MESSAGE_OK
                         );

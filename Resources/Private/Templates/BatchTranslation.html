@@ -6,13 +6,17 @@
 <f:layout name="Module" />
 
 <f:section name="Content">
+    <f:comment>
+        <!-- ToDo: Add Button validation -->
+        <!-- 4: '@thieleundklose/autotranslate/multi-record-selection-actions-validation.js', -->
+    </f:comment>
     <f:be.pageRenderer
         includeJavaScriptModules="{
             0: '@thieleundklose/autotranslate/BackendModule.js',
-            1: '@thieleundklose/autotranslate/RecordSelection.js',
-            2: '@typo3/backend/modal.js',
-            3: '@typo3/backend/multi-record-selection-edit-action.js'
-            4: '@typo3/backend/multi-record-selection-delete-action.js'
+            1: '@typo3/backend/modal.js',
+            2: '@typo3/backend/multi-record-selection-edit-action.js',
+            3: '@typo3/backend/multi-record-selection-delete-action.js'
+            4: '@thieleundklose/autotranslate/multi-record-selection-execute-action.js',
         }"
         includeCssFiles="{
             0: '{f:uri.resource(path: \'Css/Backend.css\')}'

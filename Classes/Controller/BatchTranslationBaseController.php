@@ -159,15 +159,22 @@ class BatchTranslationBaseController extends ActionController
                         [
                             'idField' => 'uid',
                             'tableName' => 'tx_autotranslate_batch_item',
-                            'title' => $languageService->sL('LLL:EXT:reactions/Resources/Private/Language/locallang_module_reactions.xlf:labels.delete.title'),
-                            'content' => $languageService->sL('LLL:EXT:reactions/Resources/Private/Language/locallang_module_reactions.xlf:labels.delete.message'),
-                            'ok' => $languageService->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:cm.delete'),
-                            'cancel' => $languageService->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.cancel'),
                             'returnUrl' => $requestUri,
                         ],
                         'actions-play',
                         'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.translate'
                     ),
+                    // ToDo: Implement multiselect disable action
+                    // new Action(
+                    //     'disable',
+                    //     [
+                    //         'idField' => 'uid',
+                    //         'tableName' => 'tx_autotranslate_batch_item',
+                    //         'returnUrl' => $requestUri,
+                    //     ],
+                    //     'actions-edit-unhide',
+                    //     'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.disable'
+                    // ),
                     new Action(
                         'edit',
                         [
@@ -183,15 +190,30 @@ class BatchTranslationBaseController extends ActionController
                         [
                             'idField' => 'uid',
                             'tableName' => 'tx_autotranslate_batch_item',
-                            'title' => $languageService->sL('LLL:EXT:reactions/Resources/Private/Language/locallang_module_reactions.xlf:labels.delete.title'),
-                            'content' => $languageService->sL('LLL:EXT:reactions/Resources/Private/Language/locallang_module_reactions.xlf:labels.delete.message'),
+                            'title' => $languageService->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.delete.title'),
+                            'content' => $languageService->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.delete.content'),
                             'ok' => $languageService->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:cm.delete'),
                             'cancel' => $languageService->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.cancel'),
                             'returnUrl' => $requestUri,
                         ],
                         'actions-edit-delete',
-                        'LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:cm.delete'
+                        'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.delete'
                     )
+                    // ToDo: Implement multiselect reset action
+                    // new Action(
+                    //     'reset',
+                    //     [
+                    //         'idField' => 'uid',
+                    //         'tableName' => 'tx_autotranslate_batch_item',
+                    //         'title' => $languageService->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.reset.title'),
+                    //         'content' => $languageService->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.reset.content'),
+                    //         'ok' => $languageService->sL(':autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.reset'),
+                    //         'cancel' => $languageService->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.cancel'),
+                    //         'returnUrl' => $requestUri,
+                    //     ],
+                    //     'actions-refresh',
+                    //     'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.reset'
+                    // )
                 ]
             ]
         );

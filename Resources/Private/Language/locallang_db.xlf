@@ -99,6 +99,12 @@
 			<trans-unit id="autotranslate_batch.function.delete" xml:space="preserve">
 				<source>Delete</source>
 			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.delete.title" xml:space="preserve">
+				<source>Delete selected</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.delete.content" xml:space="preserve">
+				<source>Are you sure you want to delete all selected records?</source>
+			</trans-unit>
 			<trans-unit id="autotranslate_batch.function.disable" xml:space="preserve">
 				<source>Disable</source>
 			</trans-unit>
@@ -107,6 +113,12 @@
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.function.reset" xml:space="preserve">
 				<source>Reset</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.reset.title" xml:space="preserve">
+				<source>Reset selected</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.reset.content" xml:space="preserve">
+				<source>Are you sure you want to reset all selected records?</source>
 			</trans-unit>
 		</body>
 	</file>

@@ -299,6 +299,14 @@ class BatchItem extends AbstractEntity
     /**
      * @return bool
      */
+    public function isExecutable(): bool
+    {
+        return $this->getError() === '';
+    }
+
+    /**
+     * @return bool
+     */
     public function isRecurring(): bool
     {
         $now = new \DateTime();
