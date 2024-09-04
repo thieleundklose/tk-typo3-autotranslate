@@ -32,8 +32,6 @@ class BatchTranslationBaseController extends ActionController
     const MESSAGE_WARNING = 1;
     const MESSAGE_ERROR = 2;
 
-    const EXTENSION_KEY = 'autotranslate';
-
     /**
      * @var PersistenceManager
      */
