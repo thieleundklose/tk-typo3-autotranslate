@@ -4,8 +4,17 @@ services:
     autoconfigure: true
     public: false
 
+  ThieleUndKlose\Autotranslate\:
+    resource: '../Classes/*'
+
   ThieleUndKlose\Autotranslate\EventListener\PageTsConfigListener:
     tags:
       - name: event.listener
-        method: 'onModifyLoadedPageTsConfig'
+        method: "onModifyLoadedPageTsConfig"
         event: TYPO3\CMS\Core\Configuration\Event\ModifyLoadedPageTsConfigEvent
+
+  ThieleUndKlose\Autotranslate\Command\BatchTranslation:
+    tags:
+      - name: console.command
+        command: "autotranslate:batchtranslationrun"
+        description: "Command for automatic translation of a number of elements."
