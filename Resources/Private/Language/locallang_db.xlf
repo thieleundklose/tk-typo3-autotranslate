@@ -19,7 +19,7 @@
 				<source>UID</source>
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.page" xml:space="preserve">
-				<source>Page to Translate</source>
+				<source>Page to Translate - uid</source>
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.priority" xml:space="preserve">
 				<source>Priority</source>

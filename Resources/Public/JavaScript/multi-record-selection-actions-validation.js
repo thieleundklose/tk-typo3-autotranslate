@@ -6,7 +6,7 @@ class MultiRecordSelectionExecuteActionValidation {
         const checkboxes = document.querySelectorAll('.t3js-multi-record-selection-check');
         checkboxes.forEach(checkbox => {
             checkbox.addEventListener('change', this.execute);
-        });        
+        });
     }
 
     execute(event) {

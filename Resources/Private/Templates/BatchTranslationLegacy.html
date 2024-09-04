@@ -4,11 +4,9 @@
 			xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
 >
 
-
-
 <f:flashMessages />
-<f:if condition="{pageUid}">
-    <f:render partial="BatchTranslation/Content" arguments="{_all}" />
+<f:if condition="{pageUid} && {rootPageId}">
+    <f:render partial="BatchTranslation/Table" arguments="{_all}" />
     <f:render partial="BatchTranslation/Form" arguments="{_all}" />
 </f:if>
 
