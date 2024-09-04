@@ -24,6 +24,12 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
      */
     public function showLogsLegacyAction()
     {
+        $this->initializeModuleTemplate();
+        $this->addMessage(
+            'Not yet implemented.',
+            'Planned for future versions.',
+            self::MESSAGE_WARNING
+        );
     }
 
     /**

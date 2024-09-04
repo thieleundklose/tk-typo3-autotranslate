@@ -7,15 +7,18 @@ namespace ThieleUndKlose\Autotranslate\Controller;
 use Exception;
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
 use ThieleUndKlose\Autotranslate\Domain\Repository\BatchItemRepository;
+use ThieleUndKlose\Autotranslate\Service\BatchTranslationService;
 use ThieleUndKlose\Autotranslate\Utility\PageUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
+use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
 
 /**
  * Class BatchTranslationBaseController for backend modules
@@ -28,6 +31,37 @@ class BatchTranslationBaseController extends ActionController
     const MESSAGE_OK = 0;
     const MESSAGE_WARNING = 1;
     const MESSAGE_ERROR = 2;
+
+    const EXTENSION_KEY = 'autotranslate';
+
+    /**
+     * @var PersistenceManager
+     */
+    protected $persistenceManager;
+
+    /**
+     * Inject the persistence manager
+     *
+     * @param PersistenceManager $persistenceManager
+     */
+    public function injectPersistenceManager(PersistenceManager $persistenceManager)
+    {
+        $this->persistenceManager = $persistenceManager;
+    }
+
+    /**
+     * @var BatchTranslationService
+     */
+    protected $batchTranslationService;
+
+    /**
+     * @param BatchTranslationService $batchTranslationService
+     * @return void
+     */
+    public function injectBatchTranslationService(BatchTranslationService $batchTranslationService): void
+    {
+        $this->batchTranslationService = $batchTranslationService;
+    }
 
     /**
      * @var BatchItemRepository
@@ -64,9 +98,9 @@ class BatchTranslationBaseController extends ActionController
     protected int $levels = 0;
 
     /**
-     * used for legacy version to set moduleName manually
+     * default module name of backend module overwritten by legacy typo3 version module names
      */
-    protected $moduleName = null;
+    protected $moduleName = 'web_autotranslate';
 
     /**
      * levels for recursive menu
@@ -80,6 +114,8 @@ class BatchTranslationBaseController extends ActionController
      */
     public function getBatchTranslationData(): array
     {
+        $this->handleActionArguments();
+
         if ($this->pageUid === 0) {
             return [];
         }
@@ -116,6 +152,9 @@ class BatchTranslationBaseController extends ActionController
 
         $languages = isset($data['rootPageId']) ? TranslationHelper::possibleTranslationLanguages($siteConfiguration->getLanguages()) : [];
 
+        $typo3Version = GeneralUtility::makeInstance(Typo3Version::class);
+        $majorVersion = $typo3Version->getMajorVersion();
+
         // merge modified params
         $data = array_merge(
             $data,
@@ -125,7 +164,6 @@ class BatchTranslationBaseController extends ActionController
                 'pageUid' => $this->pageUid,
                 'levels' => $this->levels,
                 'queryParams' =>  $this->queryParams,
-
                 'createForm' => [
                     'pages' => [
                         $batchItem->getPid() => $batchItem->getPageTitle()
@@ -150,7 +188,7 @@ class BatchTranslationBaseController extends ActionController
                     'redirectAction' => $this->request->getControllerActionName(),
                     'batchItem' => $batchItem,
                 ],
-
+                'typo3Version' => $majorVersion,
             ]
         );
 
@@ -252,6 +290,123 @@ class BatchTranslationBaseController extends ActionController
         }
 
         parent::initializeAction();
+    }
+
+    /**
+     * Collect batch items from given argument
+     *
+     * @param string $argument
+     * @return array
+     */
+    private function getBatchItemsFromArgument(string $argument): array
+    {
+        $items = [];
+        if ($this->request->hasArgument($argument)) {
+            $uids = GeneralUtility::trimExplode(',', $this->request->getArgument($argument));
+            foreach ($uids as $uid) {
+                $item = $this->batchItemRepository->findByUid((int)$uid);
+                if ($item instanceof BatchItem) {
+                    $items[] = $item;
+                }
+            }
+        }
+        return $items;
+
+    }
+
+    /**
+     * Function to handle actions like delete, execute or other
+     */
+    protected function handleActionArguments()
+    {
+        $reload = false;
+
+        if ($this->request->hasArgument('delete')) {
+            $items = $this->getBatchItemsFromArgument('delete');
+            foreach ($items as $item) {
+                $this->batchItemRepository->remove($item);
+                $this->addMessage(
+                    'Successfully deleted',
+                    sprintf('Item with uid %s was deleted.', $item->getUid()),
+                    self::MESSAGE_OK
+                );
+                $reload = true;
+            }
+        }
+
+        if ($this->request->hasArgument('execute')) {
+            $items = $this->getBatchItemsFromArgument('execute');
+            foreach ($items as $item) {
+                if (!$item->isExecutable()) {
+                    $this->addMessage(
+                        'Item can not be translated',
+                        sprintf('Item with uid %s could not be translated. Check the error and reset it.', $item->getUid()),
+                        self::MESSAGE_ERROR
+                    );
+                    continue;
+                }
+                $res = $this->batchTranslationService->translate($item);
+                if ($res === true) {
+                    $item->markAsTranslated();
+                    $this->addMessage(
+                        'Successfully translated',
+                        sprintf('Item with uid %s was translated.', $item->getUid()),
+                        self::MESSAGE_OK
+                    );
+                } else {
+                    $this->addMessage(
+                        'Error while translating',
+                        sprintf('Item with uid %s could not be translated.', $item->getUid()),
+                        self::MESSAGE_ERROR
+                    );
+                }
+                $this->batchItemRepository->update($item);
+            }
+        }
+
+        if ($this->request->hasArgument('reset')) {
+            $items = $this->getBatchItemsFromArgument('reset');
+            foreach ($items as $item) {
+                $item->setTranslated();
+                $item->setError('');
+                $this->addMessage(
+                    'Reset successful',
+                    sprintf('Translated date for item with uid %s was removed.', $item->getUid()),
+                    self::MESSAGE_OK
+                );
+                $this->batchItemRepository->update($item);
+            }
+        }
+
+        if ($reload) {
+            $this->persistenceManager->persistAll();
+            $this->reloadPage();
+        }
+    }
+
+    /**
+     * Reload the current page.
+     *
+     * @param int $pageUid
+     */
+    protected function reloadPage()
+    {
+        $this->redirectToPage($this->pageUid);
+    }
+
+    /**
+     * Redirects to the specified page UID.
+     *
+     * @param int $pageUid
+     */
+    protected function redirectToPage(int $pageUid)
+    {
+
+        $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+        $uri = $uriBuilder->buildUriFromRoute($this->moduleName, ['id' => $pageUid]);
+
+        header('Location: ' . $uri);
+        exit;
     }
 
 }

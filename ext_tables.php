@@ -23,7 +23,7 @@ if ($versionInformation->getMajorVersion() < 12) {
         ],
         [
             'access' => 'user,group',
-            'icon' => 'EXT:autotranslate/Resources/Public/Icons/Extension.png',
+            'icon' => 'EXT:autotranslate/Resources/Public/Icons/Backend.png',
             'labels' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf',
         ]
     );

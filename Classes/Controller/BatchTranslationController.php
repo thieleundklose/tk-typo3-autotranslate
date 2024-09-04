@@ -6,14 +6,14 @@ namespace ThieleUndKlose\Autotranslate\Controller;
 
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
+use TYPO3\CMS\Backend\Template\Components\Menu\MenuItem;
+use TYPO3\CMS\Backend\Template\Components\MultiRecordSelection\Action;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use Psr\Http\Message\ResponseInterface;
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
-use ThieleUndKlose\Autotranslate\Service\BatchTranslationService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Backend\Template\Components\Menu\MenuItem;
 
 /**
  * Class BatchTranslationController for backend modules used in TYPO3 V12
@@ -25,17 +25,8 @@ class BatchTranslationController extends BatchTranslationBaseController
      */
     protected $moduleTemplateFactory = null;
 
-    /**
-     * @var BatchTranslationService
-     */
-    protected $batchTranslationService;
-
-    /**
-     * @param BatchTranslationService $batchTranslationService
-     */
-    function __construct(BatchTranslationService $batchTranslationService)
+    function __construct()
     {
-        $this->batchTranslationService = $batchTranslationService;
         // Initialize without dependency injection to throw no error in TYPO3 v10
         $this->moduleTemplateFactory = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\ModuleTemplateFactory');
     }
@@ -45,50 +36,53 @@ class BatchTranslationController extends BatchTranslationBaseController
      */
     public function batchTranslationAction(): ResponseInterface
     {
-        if ($this->request->hasArgument('execute')) {
-            $executeUids = GeneralUtility::trimExplode(',' ,$this->request->getArgument('execute'));
-            foreach ($executeUids as $uid) {
-                $item = $this->batchItemRepository->findByUid((int)$uid);
-                if ($item instanceof BatchItem) {
-                    $res = $this->batchTranslationService->translate($item);
-                    if ($res === true) {
-                        $item->markAsTranslated();
-                        $this->addMessage(
-                            'Successfully Translated',
-                            sprintf('Item with uid %s was translated.', $item->getUid()),
-                            self::MESSAGE_OK
-                        );
-                    } else {
-                        $this->addMessage(
-                            'Error while translating',
-                            sprintf('Item with uid %s could not be translated.', $item->getUid()),
-                            self::MESSAGE_ERROR
-                        );
-                    }
-                    $this->batchItemRepository->update($item);
-                }
-            }
-        }
-
-        if ($this->request->hasArgument('reset')) {
-            $executeUids = GeneralUtility::trimExplode(',' ,$this->request->getArgument('reset'));
-            foreach ($executeUids as $uid) {
-                $item = $this->batchItemRepository->findByUid((int)$uid);
-                if ($item instanceof BatchItem) {
-                    $item->setTranslated();
-                    $item->setError('');
-                    $this->addMessage(
-                        'Reset successful',
-                        sprintf('Translated date for item with uid %s was removed.', $item->getUid()),
-                        self::MESSAGE_OK
-                    );
-                    $this->batchItemRepository->update($item);
-                }
-            }
-        }
-
         $view = $this->initializeModuleTemplate($this->request);
         $view->assignMultiple($this->getBatchTranslationData());
+
+        $requestUri = $this->request->getAttribute('normalizedParams')->getRequestUri();
+        $languageService = $this->getLanguageService();
+
+        $view->assign('actions', [
+            new Action(
+                'execute',
+                [
+                    'idField' => 'uid',
+                    'tableName' => 'tx_autotranslate_batch_item',
+                    'returnUrl' => $requestUri,
+                ],
+                'actions-play',
+                'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.translate'
+            ),
+            new Action(
+                'edit',
+                [
+                    'idField' => 'uid',
+                    'tableName' => 'tx_autotranslate_batch_item',
+                    'returnUrl' => $requestUri,
+                ],
+                'actions-open',
+                'LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:cm.edit'
+            ),
+
+            new Action(
+                'delete',
+                [
+                    'idField' => 'uid',
+                    'tableName' => 'tx_autotranslate_batch_item',
+                    'title' => $languageService->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.delete.title'),
+                    'content' => $languageService->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.delete.content'),
+                    'ok' => $languageService->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:cm.delete'),
+                    'cancel' => $languageService->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.cancel'),
+                    'returnUrl' => $requestUri,
+                ],
+                'actions-edit-delete',
+                'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.delete'
+            )
+            // ToDo: Implement multiselect reset action
+        ]);
+
+
+
 
         return $view->renderResponse();
     }
@@ -111,6 +105,12 @@ class BatchTranslationController extends BatchTranslationBaseController
     public function showLogsAction(): ResponseInterface
     {
         $view = $this->initializeModuleTemplate($this->request);
+        $this->addMessage(
+            'Not yet implemented.',
+            'Planned for future versions.',
+            self::MESSAGE_WARNING
+        );
+
         return $view->renderResponse();
     }
 

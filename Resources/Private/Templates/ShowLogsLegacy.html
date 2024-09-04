@@ -4,13 +4,6 @@
 			xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
 >
 
-<f:be.container
-    includeCssFiles="{
-        0: '{f:uri.resource(path:\'Css/Backend.css\')}'
-    }"
-    pageTitle="Autotranslate - Batch Translations"
-/>
-
-<f:render partial="BatchTranslation/Content" arguments="{_all}" />
+<f:flashMessages />
 
 </html>
