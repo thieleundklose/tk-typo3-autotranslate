@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.0] - 2024-09-04
+
+### Feature
+- Backend module "Batch Translations" introduced to plan or repeatedly process page-related translations into a specific target language
+- Symfony command / scheduler task added to process planned translations
+
 ## [1.0.4] - 2024-05-22
 
 ### Fixed
