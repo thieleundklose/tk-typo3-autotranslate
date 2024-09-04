@@ -5,7 +5,9 @@
 >
 
     <div class="t3js-group-draggable-container">
-        <f:render section="table" arguments="{_all}"/>
+        <f:if condition="{batchItemsRecursive -> f:count()}">
+            <f:render section="table" arguments="{_all}"/>
+        </f:if>
     </div>
 
     <f:section name="table">
