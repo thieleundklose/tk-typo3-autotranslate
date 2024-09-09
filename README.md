@@ -14,6 +14,8 @@ DeepL autotranslator is a powerful tool for editors with many features, especial
 * Translatable text fields can be configured
 * The languages to be translated can be configured
 * All configurations (including DeepL access) are anchored in the TYPO3 page configurations
+* Backend module to handle “batch translation” jobs
+* Symfony command/scheduler task to handle scheduled translations for automatic handling of translations based on predefined plans
 
 ## Compatibility
 
