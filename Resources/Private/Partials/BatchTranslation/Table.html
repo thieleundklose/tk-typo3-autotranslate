@@ -5,6 +5,13 @@
 >
 
     <div class="t3js-group-draggable-container">
+        <h1>
+            <f:for each="{createForm.pages}" as="page" iteration="iterator">
+                <f:if condition="{iterator.isFirst}">
+                    {page}
+                </f:if>
+            </f:for>
+        </h1>
         <f:if condition="{batchItemsRecursive -> f:count()}">
             <f:render section="table" arguments="{_all}"/>
         </f:if>
@@ -12,7 +19,6 @@
 
     <f:section name="table">
 
-        <h1><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_tablabel"/></h1>
         <div class="panel panel-default autotranslate-panel">
 
             <f:if condition="{typo3Version} > 11">

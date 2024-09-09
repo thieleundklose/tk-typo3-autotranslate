@@ -113,11 +113,19 @@ class Translator implements LoggerAwareInterface
                 ]);
                 continue;
             }
-            
+
             if (!$existingTranslation) {
                 $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
                 $dataHandler->start([], []);
+
                 $localizedUid = $dataHandler->localize($table, $recordUid, $languageId);
+                if ($localizedUid === false) {
+                    LogUtility::log($this->logger, 'No Translation of {table} with uid {uid} because DataHandler localize failed.', [
+                        'table' => $table,
+                        'uid' => $recordUid
+                    ]);
+                    continue;
+                }
             } else {
                 $localizedUid = $existingTranslation['uid'];
             }
@@ -126,22 +134,22 @@ class Translator implements LoggerAwareInterface
             $columnsSysFileLanguage = TranslationHelper::translationTextfields($this->pageId, 'sys_file_reference');
             $autotranslateSysFileReferences = TranslationHelper::translationFileReferences($this->pageId, $table);
             if (!empty($autotranslateSysFileReferences)) {
-                
+
                 // add deleted / hidden etc
                 $autotranslateSysFileReferencesStmt = "'" . implode("','", $autotranslateSysFileReferences) . "'";
                 $references = Records::getRecords('sys_file_reference', 'uid', [
                     "uid_foreign = " . $recordUid,
                     "deleted = 0",
                     "sys_language_uid = 0",
-                    "tablenames = '{$table}'", 
-                    "fieldname IN ({$autotranslateSysFileReferencesStmt})", 
+                    "tablenames = '{$table}'",
+                    "fieldname IN ({$autotranslateSysFileReferencesStmt})",
                 ]);
 
                 if (!empty($references)) {
                     foreach ($references as $referenceUid) {
 
                         $referenceTranslation = Records::getRecordTranslation('sys_file_reference', $referenceUid, (int)$languageId);
-                        
+
                         if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && empty($referenceTranslation)) {
                             LogUtility::log($this->logger, 'No sys_file_reference {referenceUid} Translation of {table} with uid {uid} because mode "update only".', [
                                 'table' => $table,
@@ -157,8 +165,8 @@ class Translator implements LoggerAwareInterface
                             $translatedSysFileReferenceUid = $dataHandler->localize('sys_file_reference', $referenceUid, $languageId);
 
                             Records::updateRecord(
-                                'sys_file_reference', 
-                                $translatedSysFileReferenceUid, 
+                                'sys_file_reference',
+                                $translatedSysFileReferenceUid,
                                 [
                                     'uid_foreign' => $localizedContents[$languageId][$recordUid],
                                 ]

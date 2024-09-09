@@ -1,10 +1,10 @@
 # Changelog
 
-## [1.1.0] - 2024-09-04
+## [1.1.0] - 2024-09-09
 
 ### Feature
-- Backend module "Batch Translations" introduced to plan or repeatedly process page-related translations into a specific target language
-- Symfony command / scheduler task added to process planned translations
+- Added a new backend module "Batch Translation", which enables automatic translation of pages and content elements. This feature streamlines the localization process, improving efficiency when managing multilingual content.
+- Added a symfony command/scheduler task to process scheduled translations. This allows for automated handling of translations based on predefined plans, ensuring timely updates and improved workflow automation.
 
 ## [1.0.4] - 2024-05-22
 

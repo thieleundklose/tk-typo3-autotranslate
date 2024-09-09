@@ -4,13 +4,13 @@
         <header/>
         <body>
             <trans-unit id="function_links_add_item" resname="function_links_add_item">
-                <source>Add new batch translation item(s) for selected page</source>
+                <source>Add new batch translation(s) for selected page</source>
             </trans-unit>
             <trans-unit id="confirm" resname="confirm">
                 <source>Are you sure you want to delete the batch translation item '%s'?</source>
             </trans-unit>
             <trans-unit id="function_links_add_items" resname="function_links_add_items">
-                <source>Add entries to the translation queue</source>
+                <source>Add to translations</source>
             </trans-unit>
             <trans-unit id="mlang_labels_page" resname="mlang_labels_page">
                 <source>Selected Page</source>

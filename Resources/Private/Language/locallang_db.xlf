@@ -13,7 +13,7 @@
 				<source>Last execution of autotranslation</source>
 			</trans-unit>
 			<trans-unit id="autotranslate_batch" xml:space="preserve">
-				<source>Autotranslate Batch Item</source>
+				<source>Batch Translation</source>
 			</trans-unit>
 			<trans-unit id="autotranslate_batch.uid" xml:space="preserve">
 				<source>UID</source>

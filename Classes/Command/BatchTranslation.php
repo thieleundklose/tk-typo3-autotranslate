@@ -10,6 +10,7 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Output\OutputInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use TYPO3\CMS\Core\Core\Bootstrap;
 use ThieleUndKlose\Autotranslate\Domain\Repository\BatchItemRepository;
 use ThieleUndKlose\Autotranslate\Service\BatchTranslationService;
 use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
@@ -107,11 +108,19 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        // Init _cli_ backend user, needed to execute command directly from CLI
+        Bootstrap::initializeBackendAuthentication();
+
         $translationsPerRun = $input->getArgument('translationsPerRun');
         $translationsPerRun = (int)$translationsPerRun;
         $successfulTranslations = 0;
 
         $batchItemsToRun = $this->batchItemRepository->findWaitingForRun($translationsPerRun);
+
+        if (empty($batchItemsToRun)) {
+            $output->writeln('No translation to run!');
+            return Command::SUCCESS;
+        }
 
         foreach ($batchItemsToRun as $item) {
             $res = $this->batchTranslationService->translate($item);
@@ -129,7 +138,5 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
         $output->writeln(($translationsPerRun - $successfulTranslations) . ' translation(s) failed.');
         return Command::SUCCESS;
     }
-
-
 
 }
