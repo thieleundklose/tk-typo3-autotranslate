@@ -19,7 +19,6 @@ You have the option of processing the Symfony command in the TYPO3 scheduler and
 
 ![DeepL](../Images/BatchTranslationCommand.png)
 
-You can of course also run the symfony command directly via Cronjob or via the command line interface of your web server.
-The argument here stands for the number of translations per run.
+You can of course also execute the Symfony command directly via cronjob or via the command line interface of your web server. The argument here represents the number of translations per run.
 
-```autotranslate:batchtranslationrun 5```
+```autotranslate:batch:run 5```
