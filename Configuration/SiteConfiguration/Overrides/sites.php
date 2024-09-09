@@ -162,7 +162,20 @@ if (empty($apiKey)) {
 
 $GLOBALS['SiteConfiguration']['site_language']['columns']['deeplTargetLang'] = [
     'label' => 'Target language (Iso code)',
-    'description' => 'Select target languages to use for DeepL for translating a record',
+    'description' => 'Select target language to use for DeepL for translating a record',
+    'config' => [
+        'type' => 'select',
+        'renderType' => 'selectSingle',
+        'items' => $deeplTargetLangItems,
+        'minitems' => 0,
+        'maxitems' => 1,
+        'size' => 1,
+    ],
+];
+
+$GLOBALS['SiteConfiguration']['site_language']['columns']['deeplTargetLang'] = [
+    'label' => 'Source language (Iso code)',
+    'description' => 'Select source language to use for DeepL to avoid auto-recognition errors',
     'config' => [
         'type' => 'select',
         'renderType' => 'selectSingle',

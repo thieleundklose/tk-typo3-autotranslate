@@ -116,4 +116,5 @@ class DataHandler implements SingletonInterface
             $this->suspended = false;
         }
     }
+
 }

@@ -19,7 +19,10 @@ namespace ThieleUndKlose\Autotranslate\Utility;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
+use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Information\Typo3Version;
+use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -156,6 +159,30 @@ class TranslationHelper {
 
 
     /**
+     * Receive default language from Site.
+     * @param Site $site
+     * @return SiteLanguage
+     */
+    public static function defaultLanguageFromSiteConfiguration(Site $site): SiteLanguage
+    {
+        return self::defaultLanguage($site->getLanguages());
+    }
+
+    /**
+     * Receive default language.
+     * @param array|null $siteLanguages
+     * @return SiteLanguage
+     */
+    public static function defaultLanguage(?array $siteLanguages): SiteLanguage
+    {
+        if (empty($siteLanguages)) {
+            return [];
+        }
+
+        return $siteLanguages[0];
+    }
+
+    /**
      * Receive translate configuration for a table by site configuration.
      * Todo: Check translations and columns if still exists, otherwise reduce items.
      *
@@ -266,13 +293,13 @@ class TranslationHelper {
             foreach ($keyPath as $key) {
                 $configuration = $configuration[$key] ?? null;
             }
-            
+
             return $configuration;
-            
+
         } catch (SiteNotFoundException $e) {
             return null;
         }
-        
+
     }
 
     /**
@@ -296,7 +323,7 @@ class TranslationHelper {
                 }
             }
             return null;
-        } 
+        }
 
         try {
             $site = $siteFinder->getSiteByPageId($pageId);
@@ -305,7 +332,7 @@ class TranslationHelper {
         } catch (SiteNotFoundException $e) {
             return null;
         }
-        
+
     }
 
     /**
@@ -331,10 +358,10 @@ class TranslationHelper {
         }
 
         if (
-            empty($pid) && 
-            isset($parsedBody['data']) && 
-            isset($parsedBody['data']['pages']) && 
-            is_array($parsedBody['data']) && 
+            empty($pid) &&
+            isset($parsedBody['data']) &&
+            isset($parsedBody['data']['pages']) &&
+            is_array($parsedBody['data']) &&
             is_array($parsedBody['data']['pages'])
         ) { // on page insert
             $pageRecord = current($parsedBody['data']['pages']);
@@ -347,10 +374,10 @@ class TranslationHelper {
         if (empty($pid)) {
             $queryParams = $request->getQueryParams();
             if (
-                is_array($queryParams) && 
-                isset($queryParams['data']) && 
-                isset($queryParams['data']['pages']) && 
-                is_array($queryParams['data']) && 
+                is_array($queryParams) &&
+                isset($queryParams['data']) &&
+                isset($queryParams['data']['pages']) &&
+                is_array($queryParams['data']) &&
                 is_array($queryParams['data']['pages'])
             ) {
                 $pid = current(array_keys($queryParams['data']['pages']));
@@ -375,6 +402,9 @@ class TranslationHelper {
      */
     private static function getRequest(): ServerRequestInterface
     {
-        return $GLOBALS['TYPO3_REQUEST'];
+        if (!empty($GLOBALS['TYPO3_REQUEST'])) {
+            return $GLOBALS['TYPO3_REQUEST'];
+        }
+        return (new ServerRequest())->withAttribute('applicationType', SystemEnvironmentBuilder::REQUESTTYPE_BE);
     }
 }

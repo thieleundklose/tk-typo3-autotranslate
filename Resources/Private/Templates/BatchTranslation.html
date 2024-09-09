@@ -1,0 +1,33 @@
+<html data-namespace-typo3-fluid="true"
+			xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+			xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+			xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
+>
+<f:layout name="Module" />
+
+<f:section name="Content">
+    <f:comment>
+        <!-- ToDo: Add Button validation -->
+        <!-- 4: '@thieleundklose/autotranslate/multi-record-selection-actions-validation.js', -->
+    </f:comment>
+    <f:be.pageRenderer
+        includeJavaScriptModules="{
+            0: '@thieleundklose/autotranslate/BackendModule.js',
+            1: '@typo3/backend/modal.js',
+            2: '@typo3/backend/multi-record-selection-edit-action.js',
+            3: '@thieleundklose/autotranslate/multi-record-selection-execute-action.js',
+        }"
+        includeCssFiles="{
+            0: '{f:uri.resource(path: \'Css/Backend.css\')}'
+        }"
+        pageTitle="Autotranslate - Batch Translations"
+    />
+
+    <f:if condition="{pageUid} && {rootPageId}">
+        <f:render partial="BatchTranslation/Table" arguments="{_all}" />
+        <f:render partial="BatchTranslation/Form" arguments="{_all}" />
+    </f:if>
+
+</f:section>
+
+</html>

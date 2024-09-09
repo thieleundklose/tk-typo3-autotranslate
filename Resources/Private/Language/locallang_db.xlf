@@ -12,6 +12,114 @@
 			<trans-unit id="autotranslate_last" xml:space="preserve">
 				<source>Last execution of autotranslation</source>
 			</trans-unit>
+			<trans-unit id="autotranslate_batch" xml:space="preserve">
+				<source>Batch Translation</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.uid" xml:space="preserve">
+				<source>UID</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.page" xml:space="preserve">
+				<source>Page to Translate - uid</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.priority" xml:space="preserve">
+				<source>Priority</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.priority.01_low" xml:space="preserve">
+				<source>Low</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.priority.02_medium" xml:space="preserve">
+				<source>Medium</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.priority.03_high" xml:space="preserve">
+				<source>High</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.disabled" xml:space="preserve">
+				<source>Disable item execution</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.sys_language_uid" xml:space="preserve">
+				<source>Target language</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.state" xml:space="preserve">
+				<source>State</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.translate" xml:space="preserve">
+				<source>Execution date</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.translated" xml:space="preserve">
+				<source>Translated (last)</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.mode" xml:space="preserve">
+				<source>Translation Mode</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.mode.create_update" xml:space="preserve">
+				<source>Create and update translations</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.mode.update_only" xml:space="preserve">
+				<source>Update translation only</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.mode.create_only" xml:space="preserve">
+				<source>Create new (missing) translation only</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.frequency" xml:space="preserve">
+				<source>Frequency</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.frequency.once" xml:space="preserve">
+				<source>Once</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.frequency.weekly" xml:space="preserve">
+				<source>Weekly</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.frequency.recurring" xml:space="preserve">
+				<source>Recurring</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.frequency.daily" xml:space="preserve">
+				<source>Daily</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.error" xml:space="preserve">
+				<source>Error</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.noselect" xml:space="preserve">
+				<source>Nothing selected</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.status.error" xml:space="preserve">
+				<source>error</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.status.done" xml:space="preserve">
+				<source>done</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.status.pending" xml:space="preserve">
+				<source>pending</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.status.recurring" xml:space="preserve">
+				<source>recurring</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.add" xml:space="preserve">
+				<source>New batch translation</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.delete" xml:space="preserve">
+				<source>Delete</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.delete.title" xml:space="preserve">
+				<source>Delete selected</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.delete.content" xml:space="preserve">
+				<source>Are you sure you want to delete all selected records?</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.disable" xml:space="preserve">
+				<source>Disable</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.translate" xml:space="preserve">
+				<source>Translate</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.reset" xml:space="preserve">
+				<source>Reset</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.reset.title" xml:space="preserve">
+				<source>Reset selected</source>
+			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.reset.content" xml:space="preserve">
+				<source>Are you sure you want to reset all selected records?</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>
