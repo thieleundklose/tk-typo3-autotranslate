@@ -1,0 +1,272 @@
+<html
+    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+    data-namespace-typo3-fluid="true"
+>
+
+    <div class="t3js-group-draggable-container">
+        <h1>
+            <f:for each="{createForm.pages}" as="page" iteration="iterator">
+                <f:if condition="{iterator.isFirst}">
+                    {page}
+                </f:if>
+            </f:for>
+        </h1>
+        <f:if condition="{batchItemsRecursive -> f:count()}">
+            <f:render section="table" arguments="{_all}"/>
+        </f:if>
+    </div>
+
+    <f:section name="table">
+
+        <div class="panel panel-default autotranslate-panel">
+
+            <f:if condition="{typo3Version} > 11">
+                <div class="panel-heading multi-record-selection-panel">
+                    <div class="panel-heading-row">
+                        <div class="panel-heading-title">
+                            {f:translate(key: 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.noselect')}
+                        </div>
+                        <div class="panel-heading-actions">
+                            <form name="tx_autotranslate_form_group_toggle_hidden" id="tx_autotranslate_form_group_toggle_hidden" method="post">
+                                <f:comment>
+                                <!-- <a
+                                    href=""
+                                    class="btn btn-sm btn-default"
+                                >
+                                    <core:icon identifier="actions-plus" />
+                                    <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.add"/>
+                                </a> -->
+                                </f:comment>
+                                <button type="button"
+                                        class="btn btn-sm btn-default t3js-toggle-table"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#autotranslate-task-group-list"
+                                        aria-expanded="true"
+                                >
+                                    <core:icon identifier="actions-view-list-collapse" size="small" />
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <f:render partial="BatchTranslation/MultiRecordSelectionActions" arguments="{actions: actions}"/>
+                </div>
+            </f:if>
+
+            <form data-multi-record-selection-form="task-group-list" name="tx_autotranslate_form_list" id="tx_autotranslate_form_list" method="post">
+                <div class="panel-collapse collapse show" id="autotranslate-task-group-list" data-table="task-group-list">
+                    <div class="table-fit">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <f:if condition="{typo3Version} > 11">
+                                        <th data-sort-method="none">
+                                            <div class="btn-group dropdown">
+                                                <button type="button"
+                                                    class="dropdown-toggle dropdown-toggle-link t3js-multi-record-selection-check-actions-toggle"
+                                                    data-bs-toggle="dropdown"
+                                                    data-bs-boundary="window"
+                                                    aria-expanded="false"
+                                                    aria-label="{f:translate(key: 'LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.openSelectionOptions')}"
+                                                >
+                                                    <core:icon identifier="actions-selection" size="small" />
+                                                </button>
+                                                <ul class="dropdown-menu t3js-multi-record-selection-check-actions">
+                                                    <li>
+                                                        <button
+                                                            type="button"
+                                                            class="dropdown-item disabled"
+                                                            data-multi-record-selection-check-action="check-all"
+                                                            title="{f:translate(key: 'LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.checkAll')}"
+                                                        >
+                                                                <span class="dropdown-item-columns">
+                                                                    <span class="dropdown-item-column dropdown-item-column-icon" aria-hidden="true">
+                                                                        <core:icon identifier="actions-selection-elements-all" size="small" />
+                                                                    </span>
+                                                                    <span class="dropdown-item-column dropdown-item-column-title">
+                                                                        <f:translate key="LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.checkAll" />
+                                                                    </span>
+                                                                </span>
+                                                        </button>
+                                                    </li>
+                                                    <li>
+                                                        <button
+                                                            type="button"
+                                                            class="dropdown-item disabled"
+                                                            data-multi-record-selection-check-action="check-none"
+                                                            title="{f:translate(key: 'LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.uncheckAll')}"
+                                                        >
+                                                                <span class="dropdown-item-columns">
+                                                                    <span class="dropdown-item-column dropdown-item-column-icon" aria-hidden="true">
+                                                                        <core:icon identifier="actions-selection-elements-none" size="small" />
+                                                                    </span>
+                                                                    <span class="dropdown-item-column dropdown-item-column-title">
+                                                                        <f:translate key="LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.uncheckAll" />
+                                                                    </span>
+                                                                </span>
+                                                        </button>
+                                                    </li>
+                                                    <li>
+                                                        <button
+                                                            type="button"
+                                                            class="dropdown-item"
+                                                            data-multi-record-selection-check-action="toggle"
+                                                            title="{f:translate(key: 'LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.toggleSelection')}"
+                                                        >
+                                                                <span class="dropdown-item-columns">
+                                                                    <span class="dropdown-item-column dropdown-item-column-icon" aria-hidden="true">
+                                                                        <core:icon identifier="actions-selection-elements-invert" size="small" />
+                                                                    </span>
+                                                                    <span class="dropdown-item-column dropdown-item-column-title">
+                                                                        <f:translate key="LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.toggleSelection" />
+                                                                    </span>
+                                                                </span>
+                                                        </button>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </th>
+                                    </f:if>
+                                    <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.uid"/></th>
+                                    <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.page"/></th>
+                                    <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority"/></th>
+                                    <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.sys_language_uid"/></th>
+                                    <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.translate"/></th>
+                                    <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.translated"/></th>
+                                    <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency"/></th>
+                                    <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode"/></th>
+                                    <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.state"/></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody data-multi-record-selection-row-selection="true">
+                                <f:for each="{batchItemsRecursive}" as="record">
+                                    <f:if condition="{typo3Version} > 11">
+                                        <f:then>
+                                            <f:variable name="actionDeleteHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, delete: record.uid})}" />
+                                            <f:variable name="actionExecuteHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, execute: record.uid})}" />
+                                            <f:variable name="actionResetHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, reset: record.uid})}" />
+                                        </f:then>
+                                        <f:else>
+                                            <f:variable name="actionDeleteHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, tx_autotranslate_web_autotranslatem1: {delete: record.uid}})}" />
+                                            <f:variable name="actionExecuteHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, tx_autotranslate_web_autotranslatem1: {execute: record.uid}})}" />
+                                            <f:variable name="actionResetHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, tx_autotranslate_web_autotranslatem1: {reset: record.uid}})}" />
+                                        </f:else>
+                                    </f:if>
+                                    <tr
+                                        class="{record.class} {f:if(condition:record.hidden, then:'t3-form-field-container-inline-hidden')} {f:if(condition:record.waitingForRun, then:'warning')} {f:if(condition:record.finishedRun, then:'success')} {f:if(condition:record.error, then:'danger')}"
+                                        title="id={record.uid}"
+                                        data-multi-record-selection-element="true"
+                                        data-uid="{record.uid}"
+                                        data-execute="{record.executable}"
+                                    >
+                                        <f:if condition="{typo3Version} > 11">
+                                            <td class="col-checkbox"><span class="form-check form-check-type-toggle"><input class="form-check-input t3js-multi-record-selection-check" type="checkbox"></span></td>
+                                        </f:if>
+                                        <td>{record.uid}</td>
+                                        <td class="nowrap" title="id={record.pid}">{record.pageTitle}</td>
+                                        <td><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.{record.priority}"/></td>
+                                        <td title="id={record.sysLanguageUid}">{record.sysLanguageTitle}</td>
+                                        <td class="col-datetime"><f:format.date format="d.m.Y - H:i">{record.translate}</f:format.date></td>
+                                        <td class="col-datetime">
+                                            <f:if condition="{record.translated}">
+                                                <f:then>
+                                                    <f:format.date format="d.m.Y - H:i">{record.translated}</f:format.date>
+                                                </f:then>
+                                                <f:else>
+                                                    <small>-</small>
+                                                </f:else>
+                                            </f:if>
+                                        </td>
+                                        <td class="col-state" title="{rcord.frequencyDateInterval}"><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.{record.frequency}"/></td>
+                                        <td class="col-state"><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode.{record.mode}"/></td>
+                                        <td class="col-min">
+                                            <f:if condition="{record.error}">
+                                                <f:then>
+                                                    <p><span class="badge badge-danger" title=""><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.status.error"/></span></p>
+                                                    <p>{record.error -> f:format.crop(maxCharacters: 10)}</p>
+                                                </f:then>
+                                                <f:else>
+                                                    <f:if condition="{record.finishedRun}">
+                                                        <span class="badge badge-success" title=""><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.status.done"/></span>
+                                                    </f:if>
+                                                    <f:if condition="{record.waitingForRun}">
+                                                        <span class="badge badge-warning" title=""><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.status.pending"/></span>
+                                                    </f:if>
+                                                    <f:if condition="{record.recurring}">
+                                                        <span class="badge badge-secondary" title=""><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.status.recurring"/></span>
+                                                    </f:if>
+                                                </f:else>
+                                            </f:if>
+                                        </td>
+                                        <td class="nowrap col-control">
+                                            <div class="btn-group">
+                                                <f:if condition="{record.hidden}">
+                                                    <f:then>
+                                                        <a class="btn btn-default" href="{be:moduleLink(route:'tce_db', query:'data[tx_autotranslate_batch_item][{record.uid}][hidden]=0', currentUrlParameterName:'redirect')}" title="{f:translate(key: 'visibility.unhide')}">
+                                                            <core:icon identifier="actions-edit-unhide" />
+                                                        </a>
+                                                    </f:then>
+                                                    <f:else>
+                                                        <a class="btn btn-default" href="{be:moduleLink(route:'tce_db', query:'data[tx_autotranslate_batch_item][{record.uid}][hidden]=1', currentUrlParameterName:'redirect')}" title="{f:translate(key: 'visibility.hide')}">
+                                                            <core:icon identifier="actions-edit-hide" />
+                                                        </a>
+                                                    </f:else>
+                                                </f:if>
+
+                                                <be:link.editRecord
+                                                    returnUrl="{f:be.uri(route: moduleName, parameters:'{id:pageUid}')}"
+                                                    class="btn btn-default"
+                                                    table="tx_autotranslate_batch_item"
+                                                    uid="{record.uid}"
+                                                >
+                                                    <core:icon identifier="actions-file-edit"/>
+                                                </be:link.editRecord>
+                                                <a data-bs-toggle="tooltip" class="btn btn-default t3js-modal-trigger" href="{actionDeleteHref}" data-severity="warning" data-title="{f:translate(key:'LLL:EXT:backend/Resources/Private/Language/locallang_alt_doc.xlf:label.confirm.delete_record.title')}" data-button-close-text="{f:translate(key:'LLL:EXT:core/Resources/Private/Language/locallang_common.xlf:cancel')}" data-bs-content="{f:translate(key:'confirm',arguments:'{0:record.uid}')}" title="{f:translate(key:'delete')}" data-button-ok-text="{f:translate(key:'LLL:EXT:backend/Resources/Private/Language/locallang_alt_doc.xlf:buttons.confirm.delete_record.yes')}">
+                                                    <core:icon identifier="actions-edit-delete"/>
+                                                </a>
+                                            </div>
+                                            <div class="btn-group" role="group">
+                                                <f:if condition="{record.waitingForRun} || {record.recurring}">
+                                                    <f:then>
+                                                        <span class="btn btn-default disabled">
+                                                            <core:icon identifier="empty-empty" />
+                                                        </span>
+                                                    </f:then>
+                                                    <f:else>
+                                                        <a class="btn btn-default" href="{actionResetHref}" title="{f:translate(key:'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.reset')}">
+                                                            <core:icon identifier="actions-refresh"/>
+                                                        </a>
+                                                    </f:else>
+                                                </f:if>
+                                                <f:if condition="{record.error}">
+                                                    <f:then>
+                                                        <span class="btn btn-default disabled">
+                                                            <core:icon identifier="empty-empty" />
+                                                        </span>
+                                                    </f:then>
+                                                    <f:else>
+                                                        <a class="btn btn-default" href="{actionExecuteHref}" title="{f:translate(key:'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.translate')}">
+                                                            <core:icon identifier="actions-play"/>
+                                                        </a>
+                                                    </f:else>
+                                                </f:if>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </f:for>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="10">
+                                        {batchItemsRecursive -> f:count()} Entries
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </f:section>
