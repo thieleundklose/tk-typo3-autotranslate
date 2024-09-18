@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.1] - 2024-09-18
+
+### Feature
+- Added the option to select a source language for DeepL translations in the page configuration. Otherwise, when translating individual words, the source language is often incorrectly recognized, thx to Schorsch.
+
 ## [1.1.0] - 2024-09-09
 
 ### Feature

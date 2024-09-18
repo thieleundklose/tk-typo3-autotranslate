@@ -14,6 +14,9 @@ The DeepL API key can be configured in the site configuration module under the D
 
 ### Translatable Languages
 
+You should set the DeepL source language to your base language, otherwise DeepL will try to detect it based on the text to be translated. (since v1.1.1)
+![DeeplSourceLanguage](../Images/DeeplSourceLanguage.png)
+
 You have to set the DeepL target language for each language to be translated.
 ![DeeplTargetLanguage](../Images/DeeplTargetLanguage.png)
 
