@@ -227,10 +227,11 @@ class Translator implements LoggerAwareInterface
             $toTranslateObject = array_intersect_key($record, array_flip($columns));
 
             $toTranslate = array_filter($toTranslateObject, fn($value) => !is_null($value) && $value !== '');
+            $deeplSourceLang = $this->deeplSourceLanguage();
             $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
                 $translator = new \DeepL\Translator($this->apiKey);
-                $result = $translator->translateText($toTranslate, null , $deeplTargetLang, [TranslateTextOptions::TAG_HANDLING => 'html']);
+                $result = $translator->translateText($toTranslate, $deeplSourceLang, $deeplTargetLang, [TranslateTextOptions::TAG_HANDLING => 'html']);
             }
 
             $keys = array_keys($toTranslate);
@@ -253,13 +254,30 @@ class Translator implements LoggerAwareInterface
     }
 
     /**
+     * @return string|null
+     */
+    private function deeplSourceLanguage(): ?string
+    {
+        foreach ($this->siteLanguages as $language) {
+            if ($language['languageId'] === 0) {
+                if (empty($language['deeplSourceLang'])) {
+                    return null;
+                }
+                return $language['deeplSourceLang'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @param int $languageId
      * @return string|null
      */
     private function deeplTargetLanguage(int $languageId): ?string
     {
         foreach ($this->siteLanguages as $language) {
-            if ($language['languageId'] == $languageId) {
+            if ($language['languageId'] === $languageId) {
                 return $language['deeplTargetLang'] ?? null;
             }
         }
