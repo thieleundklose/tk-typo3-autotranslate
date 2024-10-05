@@ -19,6 +19,7 @@ namespace ThieleUndKlose\Autotranslate\Domain\Repository;
 
 use ThieleUndKlose\Autotranslate\Utility\PageUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings;
 use TYPO3\CMS\Extbase\Persistence\QueryInterface;
@@ -79,7 +80,7 @@ final class BatchItemRepository extends Repository {
         $queryBuilder->getRestrictions()->removeAll();
 
         $now = new \DateTime();
-        $statement = $queryBuilder
+        $queryBuilder
             ->select('uid')
             ->from('tx_autotranslate_batch_item')
             ->where(
@@ -94,8 +95,14 @@ final class BatchItemRepository extends Repository {
                 $queryBuilder->expr()->lt('translate', $queryBuilder->createNamedParameter($now->getTimestamp())),
                 // only load active items
                 $queryBuilder->expr()->eq('hidden', $queryBuilder->createNamedParameter(false))
-            )
-            ->execute();
+            );
+
+            $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
+            if ($versionInformation->getMajorVersion() < 11) {
+                $statement = $queryBuilder->execute();
+            } else {
+                $statement = $queryBuilder->executeQuery();
+            }
 
         $uids = $statement->fetchFirstColumn();
 
@@ -123,6 +130,10 @@ final class BatchItemRepository extends Repository {
             $query->setLimit($limit);
         }
 
+        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
+        if ($versionInformation->getMajorVersion() > 11) {
+            return $query->executeQuery();
+        }
         return $query->execute();
     }
 

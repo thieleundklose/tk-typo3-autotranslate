@@ -45,7 +45,7 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
     /**
      * Function will be called before every other action
      */
-    protected function initializeAction()
+    protected function initializeAction(): void
     {
         $this->defaultViewObjectName = BackendTemplateView::class;
         parent::initializeAction();

@@ -249,7 +249,7 @@ class BatchTranslationBaseController extends ActionController
     /**
      * Function will be called before every other action
      */
-    protected function initializeAction()
+    protected function initializeAction(): void
     {
         $this->typo3Version = GeneralUtility::makeInstance(Typo3Version::class);
 
