@@ -36,7 +36,7 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
      *
      * @return void
      */
-    public function batchTranslationLegacyAction()
+    public function defaultLegacyAction()
     {
         $this->initializeModuleTemplate();
         $this->view->assignMultiple($this->getBatchTranslationData());
@@ -95,7 +95,7 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
         $menuItems = [
             'batchTranslationLegacy' => [
                 'controller' => 'BatchTranslationLegacy',
-                'action' => 'batchTranslationLegacy',
+                'action' => 'defaultLegacy',
                 'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_tablabel'),
             ],
             'showLogsLegacy' => [
@@ -137,7 +137,7 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
                 $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $level)
             );
             $uri = $uriBuilder->reset()->uriFor(
-                'batchTranslationLegacy',
+                'defaultLegacy',
                 ['levels' => $level],
                 'BatchTranslationLegacy'
             );

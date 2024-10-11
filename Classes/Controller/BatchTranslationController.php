@@ -34,7 +34,7 @@ class BatchTranslationController extends BatchTranslationBaseController
     /**
      * @return HtmlResponse
      */
-    public function batchTranslationAction(): ResponseInterface
+    public function defaultAction(): ResponseInterface
     {
         $view = $this->initializeModuleTemplate($this->request);
         $view->assignMultiple($this->getBatchTranslationData());
@@ -126,7 +126,7 @@ class BatchTranslationController extends BatchTranslationBaseController
         $menuItems = [
             'batchTranslation' => [
                 'controller' => 'BatchTranslation',
-                'action' => 'batchTranslation',
+                'action' => 'default',
                 'label' => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_tablabel'),
             ],
             'showLogs' => [
@@ -159,12 +159,11 @@ class BatchTranslationController extends BatchTranslationBaseController
             $menuItem = $menu->makeMenuItem()
                 ->setTitle($this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $level))
                 ->setHref($this->uriBuilder->reset()->uriFor(
-                    'batchTranslation',
+                    'default',
                     ['levels' => $level],
                     'BatchTranslation'
                 ))
                 ->setActive($this->levels === $level);
-
             $menu->addMenuItem($menuItem);
         }
 

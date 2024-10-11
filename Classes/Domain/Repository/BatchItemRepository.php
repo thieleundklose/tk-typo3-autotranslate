@@ -50,12 +50,12 @@ final class BatchItemRepository extends Repository {
     /**
      * find all pages recursively for actual given site from backend module selected tree item
      * @param int $levels
+     * @param int|null $pageId
      * @return QueryResultInterface|array|null
      */
-    public function findAllRecursive(int $levels = 0)
+    public function findAllRecursive(int $levels = 0, int $pageId = null)
     {
-        $pageId = (int)GeneralUtility::_GP('id');
-        if ($pageId === 0) {
+        if (!$pageId) {
             return null;
         }
         $pageIds = [$pageId];
