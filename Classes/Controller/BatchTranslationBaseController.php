@@ -127,7 +127,7 @@ class BatchTranslationBaseController extends ActionController
             $data['moduleName'] = $this->moduleName;
         }
 
-        if ($this->typo3Version < 12) {
+        if ($this->typo3Version->getMajorVersion() < 12) {
             $pageId = (int)GeneralUtility::_GP('id');
         } else {
             $pageId = $this->request->hasArgument('id') ? (int)$this->request->getArgument('id') : 0;
