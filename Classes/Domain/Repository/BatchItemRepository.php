@@ -76,6 +76,8 @@ final class BatchItemRepository extends Repository {
      */
     public function findWaitingForRun(int $limit = null)
     {
+        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
+
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_autotranslate_batch_item');
         $queryBuilder->getRestrictions()->removeAll();
 
@@ -85,10 +87,17 @@ final class BatchItemRepository extends Repository {
             ->from('tx_autotranslate_batch_item')
             ->where(
                 // only load items where translate is gerader than translated
-                $queryBuilder->expr()->orX(
-                    $queryBuilder->expr()->isNull('translated'),
-                    $queryBuilder->expr()->gt('translate', 'translated'),
-                ),
+                $versionInformation->getMajorVersion() < 11 ?
+                    $queryBuilder->expr()->orX(
+                        $queryBuilder->expr()->isNull('translated'),
+                        $queryBuilder->expr()->gt('translate', 'translated'),
+                    )
+                :
+                    $queryBuilder->expr()->or(
+                        $queryBuilder->expr()->isNull('translated'),
+                        $queryBuilder->expr()->gt('translate', 'translated'),
+                    )
+                ,
                 // only load items where error is empty
                 $queryBuilder->expr()->eq('error', $queryBuilder->createNamedParameter('')),
                 // only loaditems with next translation date in the past
@@ -97,12 +106,11 @@ final class BatchItemRepository extends Repository {
                 $queryBuilder->expr()->eq('hidden', $queryBuilder->createNamedParameter(false))
             );
 
-            $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-            if ($versionInformation->getMajorVersion() < 11) {
-                $statement = $queryBuilder->execute();
-            } else {
-                $statement = $queryBuilder->executeQuery();
-            }
+        if ($versionInformation->getMajorVersion() < 11) {
+            $statement = $queryBuilder->execute();
+        } else {
+            $statement = $queryBuilder->executeQuery();
+        }
 
         $uids = $statement->fetchFirstColumn();
 
@@ -130,10 +138,6 @@ final class BatchItemRepository extends Repository {
             $query->setLimit($limit);
         }
 
-        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-        if ($versionInformation->getMajorVersion() > 11) {
-            return $query->executeQuery();
-        }
         return $query->execute();
     }
 
