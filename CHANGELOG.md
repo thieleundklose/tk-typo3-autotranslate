@@ -3,6 +3,7 @@
 ## [1.1.2] - dev
 
 ### Added
+- TYPO3 v13 support established
 - Compatibility of event listeners for PageTsConfig up to TYPO3 v13 established
 
 ## [1.1.1] - 2024-09-18

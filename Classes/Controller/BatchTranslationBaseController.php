@@ -17,6 +17,7 @@ use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\SiteFinder;
+use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
 
@@ -126,9 +127,17 @@ class BatchTranslationBaseController extends ActionController
             $data['moduleName'] = $this->moduleName;
         }
 
-        $batchItems = $this->batchItemRepository->findAll();
-        $batchItemsRecursive = $this->batchItemRepository->findAllRecursive($this->levels);
+        if ($this->typo3Version->getMajorVersion() < 12) {
+            $pageId = (int)GeneralUtility::_GP('id');
+        } else {
+            $pageId = $this->request->hasArgument('id') ? (int)$this->request->getArgument('id') : 0;
+        }
 
+        $batchItems = $this->batchItemRepository->findAll();
+        $batchItemsRecursive = $this->batchItemRepository->findAllRecursive(
+            $this->levels,
+            $pageId
+        );
 
         $batchItem = new BatchItem();
         $batchItem->setPid($this->pageUid);
@@ -242,14 +251,38 @@ class BatchTranslationBaseController extends ActionController
         $this->addFlashMessage(
             $message,
             $title,
-            $severity
+            $this->typo3Version->getMajorVersion() > 12 ? $this->mapSeverity($severity) : $severity
         );
+    }
+
+    /**
+     * Map old FlashMessage constants to new ContextualFeedbackSeverity constants.
+     *
+     * @param int $oldSeverity
+     * @return ContextualFeedbackSeverity
+     */
+    private function mapSeverity(int $oldSeverity): ContextualFeedbackSeverity
+    {
+        switch ($oldSeverity) {
+            case self::MESSAGE_NOTICE:
+                return ContextualFeedbackSeverity::NOTICE;
+            case self::MESSAGE_INFO:
+                return ContextualFeedbackSeverity::INFO;
+            case self::MESSAGE_OK:
+                return ContextualFeedbackSeverity::OK;
+            case self::MESSAGE_WARNING:
+                return ContextualFeedbackSeverity::WARNING;
+            case self::MESSAGE_ERROR:
+                return ContextualFeedbackSeverity::ERROR;
+            default:
+                throw new \InvalidArgumentException('Invalid severity level');
+        }
     }
 
     /**
      * Function will be called before every other action
      */
-    protected function initializeAction()
+    protected function initializeAction(): void
     {
         $this->typo3Version = GeneralUtility::makeInstance(Typo3Version::class);
 

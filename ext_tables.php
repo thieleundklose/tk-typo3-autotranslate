@@ -19,7 +19,7 @@ if ($versionInformation->getMajorVersion() < 12) {
         '',
         [
             \ThieleUndKlose\Autotranslate\Controller\BatchTranslationLegacyController::class =>
-                'batchTranslationLegacy, showLogsLegacy, create'
+                'defaultLegacy, showLogsLegacy, create'
         ],
         [
             'access' => 'user,group',

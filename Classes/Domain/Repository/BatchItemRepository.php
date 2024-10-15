@@ -19,6 +19,7 @@ namespace ThieleUndKlose\Autotranslate\Domain\Repository;
 
 use ThieleUndKlose\Autotranslate\Utility\PageUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings;
 use TYPO3\CMS\Extbase\Persistence\QueryInterface;
@@ -49,12 +50,12 @@ final class BatchItemRepository extends Repository {
     /**
      * find all pages recursively for actual given site from backend module selected tree item
      * @param int $levels
+     * @param int|null $pageId
      * @return QueryResultInterface|array|null
      */
-    public function findAllRecursive(int $levels = 0)
+    public function findAllRecursive(int $levels = 0, int $pageId = null)
     {
-        $pageId = (int)GeneralUtility::_GP('id');
-        if ($pageId === 0) {
+        if (!$pageId) {
             return null;
         }
         $pageIds = [$pageId];
@@ -75,27 +76,41 @@ final class BatchItemRepository extends Repository {
      */
     public function findWaitingForRun(int $limit = null)
     {
+        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
+
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_autotranslate_batch_item');
         $queryBuilder->getRestrictions()->removeAll();
 
         $now = new \DateTime();
-        $statement = $queryBuilder
+        $queryBuilder
             ->select('uid')
             ->from('tx_autotranslate_batch_item')
             ->where(
                 // only load items where translate is gerader than translated
-                $queryBuilder->expr()->orX(
-                    $queryBuilder->expr()->isNull('translated'),
-                    $queryBuilder->expr()->gt('translate', 'translated'),
-                ),
+                $versionInformation->getMajorVersion() < 11 ?
+                    $queryBuilder->expr()->orX(
+                        $queryBuilder->expr()->isNull('translated'),
+                        $queryBuilder->expr()->gt('translate', 'translated'),
+                    )
+                :
+                    $queryBuilder->expr()->or(
+                        $queryBuilder->expr()->isNull('translated'),
+                        $queryBuilder->expr()->gt('translate', 'translated'),
+                    )
+                ,
                 // only load items where error is empty
                 $queryBuilder->expr()->eq('error', $queryBuilder->createNamedParameter('')),
                 // only loaditems with next translation date in the past
                 $queryBuilder->expr()->lt('translate', $queryBuilder->createNamedParameter($now->getTimestamp())),
                 // only load active items
                 $queryBuilder->expr()->eq('hidden', $queryBuilder->createNamedParameter(false))
-            )
-            ->execute();
+            );
+
+        if ($versionInformation->getMajorVersion() < 11) {
+            $statement = $queryBuilder->execute();
+        } else {
+            $statement = $queryBuilder->executeQuery();
+        }
 
         $uids = $statement->fetchFirstColumn();
 

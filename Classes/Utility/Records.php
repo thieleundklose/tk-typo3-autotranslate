@@ -33,7 +33,7 @@ class Records {
      * @param string $table tablename
      * @return QueryBuilder
      */
-    public static function getQueryBuilder(string $table): QueryBuilder 
+    public static function getQueryBuilder(string $table): QueryBuilder
     {
 
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
@@ -61,8 +61,13 @@ class Records {
 			->from($table)
 			->where($queryBuilder->expr()->eq('uid', $uid));
 
-        if (GeneralUtility::makeInstance(Typo3Version::class)->getMajorVersion() > 10) {
-            $res = $query->execute()->fetchAssociative();
+        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
+        if ($versionInformation->getMajorVersion() > 10) {
+            if ($versionInformation->getMajorVersion() > 11) {
+                $res = $query->executeQuery()->fetchAssociative();
+            } else {
+                $res = $query->execute()->fetchAssociative();
+            }
         } else {
             $res = $query->execute()->fetch();
         }
@@ -98,8 +103,13 @@ class Records {
             ->where($queryBuilder->expr()->eq('sys_language_uid', $langUid))
             ->andWhere($queryBuilder->expr()->eq($parentField, $uid));
 
-        if (GeneralUtility::makeInstance(Typo3Version::class)->getMajorVersion() > 10) {
-            $res = $query->execute()->fetchAssociative();
+        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
+        if ($versionInformation->getMajorVersion() > 10) {
+            if ($versionInformation->getMajorVersion() > 11) {
+                $res = $query->executeQuery()->fetchAssociative();
+            } else {
+                $res = $query->execute()->fetchAssociative();
+            }
         } else {
             $res = $query->execute()->fetch();
         }
@@ -126,7 +136,6 @@ class Records {
     public static function updateRecord(string $table, int $uid, ?array $properties = null)
     {
         $queryBuilder = self::getQueryBuilder($table);
-
         $update = $queryBuilder
             ->update($table)
             ->where('uid=' . $uid);
@@ -138,7 +147,14 @@ class Records {
                 }
             }
         }
-        $update->execute();
+        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
+        if ($versionInformation->getMajorVersion() > 11) {
+            $update->executeStatement();
+        } else {
+            $update->execute();
+        }
+
+
     }
 
     /**
@@ -160,8 +176,13 @@ class Records {
             $query->andWhere($constraint);
         }
 
-        if (GeneralUtility::makeInstance(Typo3Version::class)->getMajorVersion() > 10) {
-            return $query->execute()->fetchFirstColumn();
+        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
+        if ($versionInformation->getMajorVersion() > 10) {
+            if ($versionInformation->getMajorVersion() > 11) {
+                return $query->executeQuery()->fetchFirstColumn();
+            } else {
+                return $query->execute()->fetchFirstColumn();
+            }
         } else {
             return array_map(
                 function ($item) {
