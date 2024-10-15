@@ -7,14 +7,22 @@ services:
   ThieleUndKlose\Autotranslate\:
     resource: '../Classes/*'
 
-  ThieleUndKlose\Autotranslate\EventListener\PageTsConfigListener:
-    tags:
-      - name: event.listener
-        method: "onModifyLoadedPageTsConfig"
-        event: TYPO3\CMS\Core\Configuration\Event\ModifyLoadedPageTsConfigEvent
-
   ThieleUndKlose\Autotranslate\Command\BatchTranslation:
     tags:
       - name: console.command
         command: "autotranslate:batch:run"
         description: "Command for automatic translation of a number of elements."
+
+  ThieleUndKlose\Autotranslate\TsConfig\Loader:
+    public: true
+    tags:
+      # Remove when TYPO3 v10/v11 compat is dropped
+      - name: event.listener
+        identifier: 'add-page-configuration-v11'
+        event: TYPO3\CMS\Core\Configuration\Event\ModifyLoadedPageTsConfigEvent
+        method: 'addPageConfigurationCore11'
+      # TYPO3 v12 and above
+      - name: event.listener
+        identifier: 'add-page-configuration'
+        event: TYPO3\CMS\Core\TypoScript\IncludeTree\Event\ModifyLoadedPageTsConfigEvent
+        method: 'addPageConfiguration'
