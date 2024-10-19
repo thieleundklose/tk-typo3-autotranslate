@@ -68,7 +68,6 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
     /**
      * @return void
      */
-
     protected function configure(): void
     {
         $this
@@ -140,7 +139,7 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
      * find all items recursively to run
      * TODO: filter items recursively for given page from argument
      * @param int $limit|null
-     * @return array|null
+     * @return array
      */
     public function findWaitingForRun(int $limit = null): array
     {
