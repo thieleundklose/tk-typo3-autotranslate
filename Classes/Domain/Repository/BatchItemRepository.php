@@ -18,8 +18,6 @@ namespace ThieleUndKlose\Autotranslate\Domain\Repository;
  */
 
 use ThieleUndKlose\Autotranslate\Utility\PageUtility;
-use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings;
 use TYPO3\CMS\Extbase\Persistence\QueryInterface;
@@ -67,78 +65,6 @@ final class BatchItemRepository extends Repository {
         }
 
         return $this->findAllByPids($pageIds);
-    }
-
-    /**
-     * find all items recursively for actual given site from backend module selected tree item
-     * @param int $limit|null
-     * @return QueryResultInterface|array|null
-     */
-    public function findWaitingForRun(int $limit = null)
-    {
-        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable('tx_autotranslate_batch_item');
-        $queryBuilder->getRestrictions()->removeAll();
-
-        $now = new \DateTime();
-        $queryBuilder
-            ->select('uid')
-            ->from('tx_autotranslate_batch_item')
-            ->where(
-                // only load items where translate is gerader than translated
-                $versionInformation->getMajorVersion() < 11 ?
-                    $queryBuilder->expr()->orX(
-                        $queryBuilder->expr()->isNull('translated'),
-                        $queryBuilder->expr()->gt('translate', 'translated'),
-                    )
-                :
-                    $queryBuilder->expr()->or(
-                        $queryBuilder->expr()->isNull('translated'),
-                        $queryBuilder->expr()->gt('translate', 'translated'),
-                    )
-                ,
-                // only load items where error is empty
-                $queryBuilder->expr()->eq('error', $queryBuilder->createNamedParameter('')),
-                // only loaditems with next translation date in the past
-                $queryBuilder->expr()->lt('translate', $queryBuilder->createNamedParameter($now->getTimestamp())),
-                // only load active items
-                $queryBuilder->expr()->eq('hidden', $queryBuilder->createNamedParameter(false))
-            );
-
-        if ($versionInformation->getMajorVersion() < 11) {
-            $statement = $queryBuilder->execute();
-        } else {
-            $statement = $queryBuilder->executeQuery();
-        }
-
-        $uids = $statement->fetchFirstColumn();
-
-        return $this->findAllByUids($uids, $limit);
-    }
-
-    /**
-     * find all items by given ids
-     * @param array $uids
-     * @param int $limit|null
-     * @return QueryResultInterface|array|null
-     */
-    public function findAllByUids(array $uids, int $limit = null)
-    {
-        if (empty($uids)) {
-            return [];
-        }
-
-        $query = $this->createQuery();
-        $query->matching(
-            $query->in('uid', $uids)
-        );
-
-        if ($limit !== null) {
-            $query->setLimit($limit);
-        }
-
-        return $query->execute();
     }
 
     /**
