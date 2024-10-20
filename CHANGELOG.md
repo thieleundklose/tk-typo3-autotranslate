@@ -1,9 +1,9 @@
 # Changelog
 
-## [1.2.1] - 2024-10-19
+## [1.2.1] - 2024-10-20
 
 ### Fix
-- Using the symfony command to execute batch translation in typo3 v13
+- Symfony command to perform a batch translation in Typo3 v13
 - Number of translations per run limited to the maximum defined number
 
 ## [1.2.0] - 2024-10-15 (TYPO3 v13.4 LTS Release)
