@@ -48,11 +48,6 @@ class Translator implements LoggerAwareInterface
     function __construct(int $pageId) {
         $this->pageId = $pageId;
         $this->apiKey = TranslationHelper::apiKey($pageId);
-        try {
-            $this->languages = TranslationHelper::fetchSysLanguages();
-        } catch (\Exception $e) {
-            // TODO: give feedback
-        }
         $this->siteLanguages = TranslationHelper::siteConfigurationValue($pageId, ['languages']);
     }
 

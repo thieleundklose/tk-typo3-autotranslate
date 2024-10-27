@@ -1,9 +1,15 @@
 # Changelog
 
+## [1.2.2] - 2024-10-27
+
+### Fix
+- Stabilizations
+- Fixed backend bugs when editing pages and content elements on pages without site configuration
+
 ## [1.2.1] - 2024-10-20
 
 ### Fix
-- Symfony command to perform a batch translation in Typo3 v13
+- Symfony command to perform a batch translation in TYPO3 v13
 - Number of translations per run limited to the maximum defined number
 
 ## [1.2.0] - 2024-10-15 (TYPO3 v13.4 LTS Release)

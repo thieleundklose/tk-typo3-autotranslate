@@ -24,7 +24,17 @@ class BatchTranslationService implements LoggerAwareInterface
     public function translate(BatchItem $item): bool
     {
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-        $siteConfiguration = $siteFinder->getSiteByPageId($item->getPid());
+        try {
+            $siteConfiguration = $siteFinder->getSiteByPageId($item->getPid());
+        } catch (\Exception $e) {
+            $message = sprintf('No site configuration found for pid %s.', $item->getPid());
+
+            LogUtility::log($this->logger, $message, [], LogUtility::MESSAGE_ERROR);
+            $item->setError(LogUtility::interpolate($message, []));
+
+            return false;
+        }
+
         $defaultLanguage = TranslationHelper::defaultLanguageFromSiteConfiguration($siteConfiguration);
         $languages = TranslationHelper::possibleTranslationLanguages($siteConfiguration->getLanguages());
 
