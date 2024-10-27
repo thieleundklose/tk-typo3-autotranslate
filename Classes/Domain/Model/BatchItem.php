@@ -11,6 +11,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\DomainObject\AbstractEntity;
 use DateInterval;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
+use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 
 /*
  * This file is part of the TYPO3 CMS project.
@@ -264,14 +265,17 @@ class BatchItem extends AbstractEntity
     public function getSysLanguageTitle(): string
     {
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-        $site = $siteFinder->getSiteByPageId($this->pid);
-
-        foreach ($site->getAllLanguages() as $siteLanguage) {
-            if ($siteLanguage->getLanguageId() === $this->getSysLanguageUid()) {
-                return $siteLanguage->getTitle();
+        try {
+            $site = $siteFinder->getSiteByPageId($this->pid);
+            foreach ($site->getAllLanguages() as $siteLanguage) {
+                if ($siteLanguage->getLanguageId() === $this->getSysLanguageUid()) {
+                    return $siteLanguage->getTitle();
+                }
             }
+        } catch (SiteNotFoundException $e) {
         }
         return 'not found';
+
     }
 
     /**

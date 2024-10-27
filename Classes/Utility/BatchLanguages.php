@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Utility;
 
+use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Site\SiteFinder;
 
@@ -20,12 +21,15 @@ class BatchLanguages
     {
         $pageId = (int)$parameters['row']['pid'];
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-        $site = $siteFinder->getSiteByPageId($pageId);
-        $siteConfiguration = $site->getConfiguration();
-        $possibleTranslationLanguages = TranslationHelper::possibleTranslationLanguages($siteConfiguration['languages'] ?? []);
         $parameters['items'] = [];
-        foreach ($possibleTranslationLanguages as $language) {
-            $parameters['items'][] = [$language['title'], $language['languageId']];
+        try {
+            $site = $siteFinder->getSiteByPageId($pageId);
+            $siteConfiguration = $site->getConfiguration();
+            $possibleTranslationLanguages = TranslationHelper::possibleTranslationLanguages($siteConfiguration['languages'] ?? []);
+            foreach ($possibleTranslationLanguages as $language) {
+                $parameters['items'][] = [$language['title'], $language['languageId']];
+            }
+        } catch (SiteNotFoundException $e) {
         }
     }
 }

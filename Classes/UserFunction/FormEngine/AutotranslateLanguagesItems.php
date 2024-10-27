@@ -62,11 +62,14 @@ class AutotranslateLanguagesItems {
         }
 
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-        $siteConfiguration = $siteFinder->getSiteByPageId($sitePid);
-        $languages = TranslationHelper::possibleTranslationLanguages($siteConfiguration->getLanguages());
+        try {
+            $siteConfiguration = $siteFinder->getSiteByPageId($sitePid);
+            $languages = TranslationHelper::possibleTranslationLanguages($siteConfiguration->getLanguages());
+            foreach ($languages as $language) {
+                array_push($config['items'], array($language->getTitle(), $language->getLanguageId()));
+            }
+        } catch (SiteNotFoundException $e) {
 
-        foreach ($languages as $language) {
-            array_push($config['items'], array($language->getTitle(), $language->getLanguageId()));
         }
     }
 }
