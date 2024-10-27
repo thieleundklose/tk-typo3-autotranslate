@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\UserFunction;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Site\SiteFinder;
 
@@ -51,16 +52,16 @@ class Tca {
 
         $pageId = (int)$parameters['row']['pid'];
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-        $site = $siteFinder->getSiteByPageId($pageId);
-
         $parameters['title'] = $translationDate;
-
-        foreach ($site->getAllLanguages() as $siteLanguage) {
-            if ($siteLanguage->getLanguageId() === $languageId) {
-                $parameters['title'] = $siteLanguage->getTitle() . ' - ' . $parameters['title'];
-                break;
+        try {
+            $site = $siteFinder->getSiteByPageId($pageId);
+            foreach ($site->getAllLanguages() as $siteLanguage) {
+                if ($siteLanguage->getLanguageId() === $languageId) {
+                    $parameters['title'] = $siteLanguage->getTitle() . ' - ' . $parameters['title'];
+                    break;
+                }
             }
+        } catch (SiteNotFoundException $e) {
         }
-
     }
 }
