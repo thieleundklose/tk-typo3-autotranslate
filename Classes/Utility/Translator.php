@@ -194,7 +194,9 @@ class Translator implements LoggerAwareInterface
             // Translate properties with given service
             $translatedColumns = $this->translateRecordProperties($record, (int)$languageId, $columns);
 
-            Records::updateRecord($table, $localizedUid, $translatedColumns);
+            if (count($translatedColumns) > 0) {
+                Records::updateRecord($table, $localizedUid, $translatedColumns);
+            }
 
             if (!$existingTranslation) {
                 $this->generateSlugs($table, $localizedUid);
