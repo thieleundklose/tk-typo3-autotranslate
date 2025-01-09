@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.2.3] - 2025-01-09
+
+### Fix
+- Fixed: Empty database query caused SyntaxErrorException, thanks to Rico Sonntag
+
 ## [1.2.2] - 2024-10-27
 
 ### Fix
