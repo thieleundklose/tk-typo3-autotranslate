@@ -4,6 +4,7 @@
 
 ### Fix
 - Handling of delete tca definition on additional tables
+- Stabilizations, thx to Rico Sonntag
 
 ## [1.3.0] - 2025-02-20
 
