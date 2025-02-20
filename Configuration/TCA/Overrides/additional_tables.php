@@ -4,6 +4,7 @@ use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 foreach (TranslationHelper::additionalTables() as $table) {
+    // check to set translationSource' => 'l10n_source', if not set!! otherwise there would be an error on write back to missing db field
     $extKey = 'autotranslate';
     $llPath = 'LLL:EXT:' . $extKey . '/Resources/Private/Language/locallang_db.xlf:';
     $tempColumns = [
