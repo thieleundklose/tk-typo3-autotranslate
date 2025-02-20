@@ -29,8 +29,3 @@ You can choose for which of the supported content types (pages, tt_content or ad
 In the example, translations for pages are active. The title of the pages and files of the Media type is translated into German and French.
 
 ![ExamplePage.png](../../Images/ExamplePage.png)
-
-### Further information
-
-* [Language](TranslatableElements/Languages.md)
-* [Text fields](TranslatableElements/TextFields.md)
