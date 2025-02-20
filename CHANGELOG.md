@@ -1,5 +1,11 @@
 # Changelog
 
+
+## [1.3.0] - 2025-02-20
+
+### Added
+- Extension configuration to improve translation of 3rd party content (Check documentation for upgrade instructions)
+
 ## [1.2.3] - 2025-01-09
 
 ### Fix

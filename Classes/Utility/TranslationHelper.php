@@ -16,20 +16,17 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Utility;
 
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
-use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
-use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\SiteFinder;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 
-class TranslationHelper {
-
+class TranslationHelper
+{
     const COLUMN_TRANSLATEABLE_TABLES = ['pages', 'tt_content'];
     const COLUMN_TRANSLATEABLE_TYPES = ['text', 'input'];
     const COLUMN_TRANSLATEABLE_EXCLUDE_EVALS = ['int'];
@@ -45,7 +42,7 @@ class TranslationHelper {
     {
         return array_merge(
             self::COLUMN_TRANSLATEABLE_TABLES,
-            ExtensionManagementUtility::isLoaded('news') ? ['tx_news_domain_model_news'] : []
+            self::additionalTables(),
         );
     }
 
@@ -57,7 +54,7 @@ class TranslationHelper {
      */
     public static function translateableColumns(string $table): array
     {
-        $textColumns = array_filter($GLOBALS['TCA'][$table]['columns'], function($v, $k) use ($table) {
+        $textColumns = array_filter($GLOBALS['TCA'][$table]['columns'], function ($v, $k) use ($table) {
 
             if ($table == 'sys_file_reference' && in_array($k, ['tablenames', 'fieldname', 'table_local'])) {
                 return;
@@ -81,7 +78,7 @@ class TranslationHelper {
             return true;
         }, ARRAY_FILTER_USE_BOTH);
 
-        $fileReferenceColumns = array_filter($GLOBALS['TCA'][$table]['columns'], function($v) {
+        $fileReferenceColumns = array_filter($GLOBALS['TCA'][$table]['columns'], function ($v) {
             $config = $v['config'];
 
             if (!isset($config['type']) || !isset($config['foreign_table']) || $config['foreign_table'] != 'sys_file_reference') {
@@ -147,7 +144,7 @@ class TranslationHelper {
         if (empty($siteLanguages)) {
             return [];
         }
-        $languages = array_filter($siteLanguages, function($k) {
+        $languages = array_filter($siteLanguages, function ($k) {
             if ($k === 0) {
                 return;
             }
@@ -192,15 +189,15 @@ class TranslationHelper {
      */
     public static function translationSettingsDefaults(array $siteConfiguration, string $table): ?array
     {
-        $fieldnameAutotranslateEnabled = self::configurationFieldname($table,'enabled');
+        $fieldnameAutotranslateEnabled = self::configurationFieldname($table, 'enabled');
 
         if ($table != 'sys_file_reference' && (!isset($siteConfiguration[$fieldnameAutotranslateEnabled]) || $siteConfiguration[$fieldnameAutotranslateEnabled] === FALSE)) {
             return null;
         }
 
-        $fieldnameAutotranslateLanguages = self::configurationFieldname($table,'languages');
-        $fieldnameAutotranslateTextFields = self::configurationFieldname($table,'textfields');
-        $fieldnameAutotranslateFileReferences = self::configurationFieldname($table,'fileReferences');
+        $fieldnameAutotranslateLanguages = self::configurationFieldname($table, 'languages');
+        $fieldnameAutotranslateTextFields = self::configurationFieldname($table, 'textfields');
+        $fieldnameAutotranslateFileReferences = self::configurationFieldname($table, 'fileReferences');
 
         return [
             'autotranslateLanguages' => $siteConfiguration[$fieldnameAutotranslateLanguages] ?? '',
@@ -217,7 +214,8 @@ class TranslationHelper {
      * @return array|null
      * @throws SiteNotFoundException
      */
-    public static function translationTextfields(int $pageId, string $table): ?array {
+    public static function translationTextfields(int $pageId, string $table): ?array
+    {
         if ($pageId === 0) {
             return null;
         }
@@ -235,7 +233,8 @@ class TranslationHelper {
      * @return array|null
      * @throws SiteNotFoundException
      */
-    public static function translationFileReferences(int $pageId, string $table): ?array {
+    public static function translationFileReferences(int $pageId, string $table): ?array
+    {
 
         if ($pageId === 0) {
             return null;
@@ -295,11 +294,9 @@ class TranslationHelper {
             }
 
             return $configuration;
-
         } catch (SiteNotFoundException $e) {
             return null;
         }
-
     }
 
     /**
@@ -332,6 +329,22 @@ class TranslationHelper {
         } catch (SiteNotFoundException $e) {
             return null;
         }
+    }
 
+    /**
+     * Receive additional tables from extension settings
+     *
+     * @return array
+     */
+    public static function additionalTables(): array
+    {
+        $additionalTables = GeneralUtility::makeInstance(ExtensionConfiguration::class)
+            ->get('autotranslate', 'additionalTables');
+        $tables = $additionalTables ? GeneralUtility::trimExplode(',', $additionalTables, true) : [];
+
+        // Filter the tables to only include those that exist in $GLOBALS['TCA']
+        return array_filter($tables, function ($table) {
+            return isset($GLOBALS['TCA'][$table]);
+        });
     }
 }

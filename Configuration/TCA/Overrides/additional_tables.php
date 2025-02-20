@@ -1,11 +1,11 @@
 <?php
 
+use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
-if (ExtensionManagementUtility::isLoaded('news')) {
+foreach (TranslationHelper::additionalTables() as $table) {
     $extKey = 'autotranslate';
     $llPath = 'LLL:EXT:' . $extKey . '/Resources/Private/Language/locallang_db.xlf:';
-
     $tempColumns = [
         'autotranslate_exclude' => [
             'exclude' => 1,
@@ -26,7 +26,7 @@ if (ExtensionManagementUtility::isLoaded('news')) {
         'autotranslate_languages' => [
             'exclude' => 1,
             'label' => $llPath . 'autotranslate_languages',
-            'displayCond' => 'FIELD:' . $GLOBALS['TCA']['tx_news_domain_model_news']['ctrl']['translationSource'] . ':<=:0',
+            'displayCond' => 'FIELD:' . $GLOBALS['TCA'][$table]['ctrl']['translationSource'] . ':<=:0',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectCheckBox',
@@ -36,7 +36,7 @@ if (ExtensionManagementUtility::isLoaded('news')) {
         'autotranslate_last' => [
             'exclude' => 1,
             'label' => $llPath . 'autotranslate_last',
-            'displayCond' => 'FIELD:' . $GLOBALS['TCA']['tx_news_domain_model_news']['ctrl']['translationSource'] . ':>:0',
+            'displayCond' => 'FIELD:' . $GLOBALS['TCA'][$table]['ctrl']['translationSource'] . ':>:0',
             'config' => [
                 'type' => 'input',
                 'renderType' => 'inputDateTime',
@@ -47,13 +47,12 @@ if (ExtensionManagementUtility::isLoaded('news')) {
             ],
         ],
     ];
-    ExtensionManagementUtility::addTCAcolumns('tx_news_domain_model_news', $tempColumns, 1);
+    ExtensionManagementUtility::addTCAcolumns($table, $tempColumns, 1);
 
     ExtensionManagementUtility::addToAllTCAtypes(
-        'tx_news_domain_model_news',
+        $table,
         'autotranslate_exclude,autotranslate_languages,autotranslate_last',
         '',
-        'after:' . $GLOBALS['TCA']['tx_news_domain_model_news']['ctrl']['transOrigPointerField']
+        'after:' . $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']
     );
-
 }
