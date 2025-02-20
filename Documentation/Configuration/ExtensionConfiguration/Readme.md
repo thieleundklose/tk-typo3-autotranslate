@@ -6,9 +6,9 @@ Here you can define which 3rd party content should be supported.
 
 ![DeepL](../../Images/ExtensionConfiguration.png)
 
-### TYPO3 < v13
+### Important: TYPO3 v12 and older
 
-In older TYPO3 versions you have to provide the required fields for the 3rd party tables in your site package via ext_tables.sql. Except for tx_news, here we already provide the sql schema.
+In older TYPO3 versions you have to provide the required fields for the 3rd party tables in your site package via ext_tables.sql. Except for tx_news_domain_model_news, here we already provide the sql schema.
 
 ## Example sql schema
 
