@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.3.1] - 2025-02-20
+
+### Fix
+- Handling of delete tca definition on additional tables
 
 ## [1.3.0] - 2025-02-20
 
