@@ -23,7 +23,7 @@
         pageTitle="Autotranslate - Batch Translations"
     />
 
-    <f:if condition="{pageUid} && {rootPageId}">
+    <f:if condition="{pageUid} && {rootPageId} && {createForm.targetLanguage}">
         <f:render partial="BatchTranslation/Table" arguments="{_all}" />
         <f:render partial="BatchTranslation/Form" arguments="{_all}" />
     </f:if>

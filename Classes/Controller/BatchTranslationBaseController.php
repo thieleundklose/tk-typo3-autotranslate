@@ -12,12 +12,14 @@ use ThieleUndKlose\Autotranslate\Utility\PageUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\SiteFinder;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
@@ -27,7 +29,6 @@ use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
  */
 class BatchTranslationBaseController extends ActionController
 {
-
     const MESSAGE_NOTICE = -2;
     const MESSAGE_INFO = -1;
     const MESSAGE_OK = 0;
@@ -138,10 +139,6 @@ class BatchTranslationBaseController extends ActionController
             $pageId
         );
 
-        $batchItem = new BatchItem();
-        $batchItem->setPid($this->pageUid);
-        $batchItem->setTranslate(new \DateTime());
-
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
         try {
             $siteConfiguration = $siteFinder->getSiteByPageId($this->pageUid);
@@ -156,10 +153,41 @@ class BatchTranslationBaseController extends ActionController
 
         }
 
+        $backendUser = $this->getBackendUserAuthentication();
+
+        // Filter languages by users access rights
         $languages = isset($data['rootPageId']) ? TranslationHelper::possibleTranslationLanguages($siteConfiguration->getLanguages()) : [];
+        $languages = array_filter($languages, fn($language) => $backendUser->checkLanguageAccess($language->getLanguageId()));
+
+        if (empty($languages)) {
+            $this->addMessage(
+                'No target language available',
+                'Please choose another page or contact the administrator.',
+                self::MESSAGE_WARNING
+            );
+        }
 
         $typo3Version = GeneralUtility::makeInstance(Typo3Version::class);
         $majorVersion = $typo3Version->getMajorVersion();
+
+        // Filter items by users access rights
+        $batchItemsRecursive = array_filter($batchItemsRecursive->toArray(), function ($batchItem) use ($backendUser, $languages) {
+            $rowBatchItem = BackendUtility::getRecordWSOL('pages', $batchItem->getPid());
+            return isset($languages[$batchItem->getSysLanguageUid()]) && $backendUser->doesUserHaveAccess($rowBatchItem, Permission::CONTENT_EDIT);
+        });
+
+        $rowPage = BackendUtility::getRecordWSOL('pages', $this->pageUid);
+        if ($backendUser->doesUserHaveAccess($rowPage, Permission::CONTENT_EDIT)) {
+            $batchItem = new BatchItem();
+            $batchItem->setPid($this->pageUid);
+            $batchItem->setTranslate(new \DateTime());
+        } else {
+            $this->addMessage(
+                'No translations available on selected page',
+                'Please choose another page or contact the administrator.',
+                self::MESSAGE_WARNING
+            );
+        }
 
         // merge modified params
         $data = array_merge(
@@ -170,10 +198,11 @@ class BatchTranslationBaseController extends ActionController
                 'pageUid' => $this->pageUid,
                 'levels' => $this->levels,
                 'queryParams' =>  $this->queryParams,
+                'pageTitle' => $rowPage['title'],
                 'createForm' => [
-                    'pages' => [
+                    'pages' => $batchItem ? [
                         $batchItem->getPid() => $batchItem->getPageTitle()
-                    ],
+                    ] : null,
                     'recursive' => array_map(fn($item) => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $item), $this->menuLevelItems),
                     'priority' => [
                         BatchItem::PRIORITY_LOW => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.' . BatchItem::PRIORITY_LOW),
@@ -192,7 +221,7 @@ class BatchTranslationBaseController extends ActionController
                         BatchItem::FREQUENCY_RECURRING => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.' . BatchItem::FREQUENCY_RECURRING),
                     ],
                     'redirectAction' => $this->request->getControllerActionName(),
-                    'batchItem' => $batchItem,
+                    'batchItem' =>  $batchItem ?? null,
                 ],
                 'typo3Version' => $majorVersion,
             ]
@@ -238,8 +267,13 @@ class BatchTranslationBaseController extends ActionController
         $counter = 1;
 
         if ($levels > 0)  {
-            $subPages = PageUtility::getSubpageIds($batchItem->getPid(), $levels - 1);
+            $subPages = PageUtility::getSubpageIds($this->pageUid, $levels - 1);
+            $backendUser = $this->getBackendUserAuthentication();
             foreach ($subPages as $subPageUid) {
+                $rowSubPage = BackendUtility::getRecordWSOL('pages', $subPageUid);
+                if (!$backendUser->doesUserHaveAccess($rowSubPage, Permission::CONTENT_EDIT)) {
+                    continue;
+                }
                 $counter++;
                 $batchItem = clone $batchItem;
                 $batchItem->setPid($subPageUid);
