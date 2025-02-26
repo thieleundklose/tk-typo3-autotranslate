@@ -274,7 +274,7 @@ class TranslationHelper
      * @return array|mixed|null
      * @throws SiteNotFoundException
      */
-    public static function siteConfigurationValue(int $pageId, array $keyPath = null)
+    public static function siteConfigurationValue(int $pageId, ?array $keyPath = null)
     {
         if (empty($pageId)) {
             return null;
@@ -306,7 +306,7 @@ class TranslationHelper
      * @return string|null
      * @throws SiteNotFoundException
      */
-    public static function apiKey(int $pageId = null): ?string
+    public static function apiKey(?int $pageId = null): ?string
     {
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
 

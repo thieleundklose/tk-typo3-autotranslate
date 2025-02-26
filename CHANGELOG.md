@@ -1,5 +1,12 @@
 # Changelog
 
+
+## [2.0.0] - 2025-02-27
+
+### Release
+- Add PHP v8.3 support
+- Update the DeepL PHP package for compatibility reasons
+
 ## [1.3.2] - 2025-02-26
 
 ### Fix
