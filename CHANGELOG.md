@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.2] - 2025-02-26
+
+### Fix
+- Add Missing Batchtranslation filename for usage in TYPO3 v13
+- Batch translation created now with correct time offset from php / typo3 timezone settings
+
 ## [1.3.1] - 2025-02-20
 
 ### Fix

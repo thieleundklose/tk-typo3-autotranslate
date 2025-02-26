@@ -1,5 +1,4 @@
-<f:variable name="dateFormat">Y-m-d\TH:i:s\Z</f:variable>
-
+<f:comment>Must be used for TYPO3 v10 / TYPO3 v11 could also use Form</f:comment>
 <h1><f:translate key="function_links_add_item"/></h1>
 <f:form action="create" name="batchItem" method="post" object="{createForm.batchItem}">
     <div class="form-group">
@@ -26,35 +25,16 @@
         </label>
         <f:form.select property="sysLanguageUid" options="{createForm.targetLanguage}" class="form-control" id="sysLanguageUid"/>
     </div>
-    <div class="form-group" id="translate_col">
-        <label class="form-label" for="tceforms-datetimefield-translate_row">
+    <div class="form-group">
+        <label class="form-label" for="translate">
             <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.translate"/>
         </label>
-        <div class="formengine-field-item">
-            <div class="form-control-wrap">
-                <div class="form-wizards-wrap">
-                    <div class="form-wizards-item-element">
-                        <div class="input-group" id="tceforms-datetimefield-translate_row-wrapper">
-                            <f:form.textfield
-                                name="batchItem[translate]"
-                                value="{f:format.date(format: dateFormat, date: createForm.batchItem.translate)}"
-                                type="datetime"
-                                class="form-control t3js-datetimepicker t3js-clearable"
-                                data="{date-type:'datetime', date-offset:dateOffset}"
-                                id="tceforms-datetimefield-translate_row" />
-                            <button
-                                class="btn btn-default"
-                                aria-label="{f:translate(key:'LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.datepicker.label')}"
-                                type="button"
-                                data-global-event="click"
-                                data-action-focus="#tceforms-datetimefield-translate_row"
-                            >
-                                <core:icon identifier="actions-edit-pick-date" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="input-group">
+            <f:form.textfield name="translate" value="{createForm.batchItem.translate -> f:format.date(format: dateTimeFormat)}" type="datetime"  class="form-control t3js-datetimepicker t3js-clearable" data="{date-type:'datetime',date-offset:'0'}" id="translate" />
+            <f:form.hidden property="translate" value="{f:format.date(date: createForm.batchItem.translate, format: 'Y-m-d\TH:i:s\Z')}" />
+            <label class="mb-0 btn btn-default input-group-btn" for="translate">
+                <core:icon identifier="actions-calendar" />
+            </label>
         </div>
     </div>
     <div class="form-group">
