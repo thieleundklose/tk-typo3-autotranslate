@@ -13,6 +13,7 @@ use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Core\Information\Typo3Version;
@@ -119,9 +120,7 @@ class BatchTranslationBaseController extends ActionController
             return [];
         }
 
-        $data = [
-            'dateTimeFormat' => 'H:i d-m-Y'
-        ];
+        $data = [];
 
         if ($this->moduleName !== null) {
             $data['moduleName'] = $this->moduleName;
@@ -220,6 +219,21 @@ class BatchTranslationBaseController extends ActionController
      */
     protected function createActionAbstract(BatchItem $batchItem, int $levels): void
     {
+
+        $context = GeneralUtility::makeInstance(Context::class);
+
+        // calc offset
+        $timezone = new \DateTimeZone($context->getPropertyFromAspect('date', 'timezone'));
+        $datetime = new \DateTime('now');
+        $offset = $timezone->getOffset($datetime);
+
+        // modify time with offset
+        if ($offset){
+            $translateTime = $batchItem->getTranslate();
+            $translateTime->modify("-{$offset} seconds");
+            $batchItem->setTranslate($translateTime);
+        }
+
         $this->batchItemRepository->add($batchItem);
         $counter = 1;
 

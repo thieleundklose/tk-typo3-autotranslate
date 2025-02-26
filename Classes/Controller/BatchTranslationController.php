@@ -81,10 +81,7 @@ class BatchTranslationController extends BatchTranslationBaseController
             // ToDo: Implement multiselect reset action
         ]);
 
-
-
-
-        return $view->renderResponse();
+        return $view->renderResponse('Default');
     }
 
     /**
@@ -111,7 +108,7 @@ class BatchTranslationController extends BatchTranslationBaseController
             self::MESSAGE_WARNING
         );
 
-        return $view->renderResponse();
+        return $view->renderResponse('ShowLogs');
     }
 
     /**
