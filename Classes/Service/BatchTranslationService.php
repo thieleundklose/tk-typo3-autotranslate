@@ -68,12 +68,18 @@ class BatchTranslationService implements LoggerAwareInterface
                 // translate page
                 $translator->translate($table, $item->getPid(), null, (string)$item->getSysLanguageUid(), $item->getMode());
             } else {
-                // get and translate other content placed on page
-                $records = Records::getRecords($table, 'uid', [
+                $constraints = [
                     "pid = " . $item->getPid(),
-                    "deleted = 0",
                     "sys_language_uid = " . $defaultLanguage->getLanguageId(),
-                ]);
+                ];
+
+                // if record has column for exclude deleted
+                if (isset($GLOBALS['TCA'][$table]['ctrl']['delete'])) {
+                    $constraints[] = $GLOBALS['TCA'][$table]['ctrl']['delete'] . ' = 0';
+                }
+
+                // get and translate other content placed on page
+                $records = Records::getRecords($table, 'uid', $constraints);
                 foreach ($records as $uid) {
                     $translator->translate($table, $uid, null, (string)$item->getSysLanguageUid(), $item->getMode());
                 }

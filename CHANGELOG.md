@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.3.2] - 2025-02-26
+
+### Fix
+- Add Missing Batchtranslation filename for usage in TYPO3 v13
+- Batch translation created now with correct time offset from php / typo3 timezone settings
+
+## [1.3.1] - 2025-02-20
+
+### Fix
+- Handling of delete tca definition on additional tables
+- Stabilizations, thx to Rico Sonntag
+
+## [1.3.0] - 2025-02-20
+
+### Added
+- Extension configuration to improve translation of 3rd party content (Check documentation for upgrade instructions)
+
 ## [1.2.3] - 2025-01-09
 
 ### Fix

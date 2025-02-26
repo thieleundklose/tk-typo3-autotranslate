@@ -246,6 +246,10 @@ class Translator implements LoggerAwareInterface
             $translatedColumns['hidden'] = $record['hidden'];
             $translatedColumns[self::AUTOTRANSLATE_LAST] = time();
 
+            if (isset($record['pi_flexform'])) {
+                $translatedColumns['pi_flexform'] = $record['pi_flexform'];
+            }
+
             LogUtility::log($this->logger, 'Successful translated to target language {deeplTargetLang}.', ['deeplTargetLang' => $deeplTargetLang, 'toTranslate' => $toTranslate, 'result' => $result, 'translatedColumns' => $translatedColumns]);
         } catch (\Exception $e) {
             LogUtility::log($this->logger, 'Translation Error: {error}.', ['error' => $e->getMessage()], LogUtility::MESSAGE_ERROR);
