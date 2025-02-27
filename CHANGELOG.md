@@ -4,15 +4,15 @@
 ## [2.0.0] - 2025-02-27
 
 ### Added
-- Editors can now also use Batch Translation after approval via TYPO3 access rights
+- Editors can now also use BatchTranslation after approval via TYPO3 access rights
 - PHP v8.4 support
 - Update the DeepL PHP package for compatibility reasons
 
 ## [1.3.2] - 2025-02-26
 
 ### Fix
-- Add Missing Batchtranslation filename for usage in TYPO3 v13
-- Batch translation created now with correct time offset from php / typo3 timezone settings
+- Add Missing BatchTranslation filename for usage in TYPO3 v13
+- BatchTranslation created now with correct time offset from php / typo3 timezone settings
 
 ## [1.3.1] - 2025-02-20
 
@@ -39,7 +39,7 @@
 ## [1.2.1] - 2024-10-20
 
 ### Fix
-- Symfony command to perform a batch translation in TYPO3 v13
+- Symfony command to perform a BatchTranslation in TYPO3 v13
 - Number of translations per run limited to the maximum defined number
 
 ## [1.2.0] - 2024-10-15 (TYPO3 v13.4 LTS Release)
@@ -56,7 +56,7 @@
 ## [1.1.0] - 2024-09-09
 
 ### Feature
-- Added a new backend module "Batch Translation", which enables automatic translation of pages and content elements. This feature streamlines the localization process, improving efficiency when managing multilingual content.
+- Added a new backend module "BatchTranslation", which enables automatic translation of pages and content elements. This feature streamlines the localization process, improving efficiency when managing multilingual content.
 - Added a symfony command/scheduler task to process scheduled translations. This allows for automated handling of translations based on predefined plans, ensuring timely updates and improved workflow automation.
 
 ## [1.0.4] - 2024-05-22
