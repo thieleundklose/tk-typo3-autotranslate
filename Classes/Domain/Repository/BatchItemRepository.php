@@ -51,7 +51,7 @@ final class BatchItemRepository extends Repository {
      * @param int|null $pageId
      * @return QueryResultInterface|array|null
      */
-    public function findAllRecursive(int $levels = 0, int $pageId = null)
+    public function findAllRecursive(int $levels = 0, ?int $pageId = null)
     {
         if (!$pageId) {
             return null;

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /*
@@ -25,7 +26,8 @@ use TYPO3\CMS\Core\Database\Query\Restriction\StartTimeRestriction;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-class Records {
+class Records
+{
 
     /**
      * Get QueryBuilder for given or loaded table
@@ -57,19 +59,15 @@ class Records {
     public static function getRecord(string $table, int $uid, ?string $column = null)
     {
         $queryBuilder = self::getQueryBuilder($table);
-		$query = $queryBuilder->select('*')
-			->from($table)
-			->where($queryBuilder->expr()->eq('uid', $uid));
+        $query = $queryBuilder->select('*')
+            ->from($table)
+            ->where($queryBuilder->expr()->eq('uid', $uid));
 
         $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-        if ($versionInformation->getMajorVersion() > 10) {
-            if ($versionInformation->getMajorVersion() > 11) {
-                $res = $query->executeQuery()->fetchAssociative();
-            } else {
-                $res = $query->execute()->fetchAssociative();
-            }
+        if ($versionInformation->getMajorVersion() > 11) {
+            $res = $query->executeQuery()->fetchAssociative();
         } else {
-            $res = $query->execute()->fetch();
+            $res = $query->execute()->fetchAssociative();
         }
 
         if ($res === false) {
@@ -80,7 +78,7 @@ class Records {
             return $res[$column] ?? null;
         }
 
-		return $res;
+        return $res;
     }
 
     /**
@@ -104,14 +102,10 @@ class Records {
             ->andWhere($queryBuilder->expr()->eq($parentField, $uid));
 
         $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-        if ($versionInformation->getMajorVersion() > 10) {
-            if ($versionInformation->getMajorVersion() > 11) {
-                $res = $query->executeQuery()->fetchAssociative();
-            } else {
-                $res = $query->execute()->fetchAssociative();
-            }
+        if ($versionInformation->getMajorVersion() > 11) {
+            $res = $query->executeQuery()->fetchAssociative();
         } else {
-            $res = $query->execute()->fetch();
+            $res = $query->execute()->fetchAssociative();
         }
 
         if ($res === false) {
@@ -142,7 +136,7 @@ class Records {
 
         if ($properties !== null) {
             foreach ($properties as $property => $value) {
-                if($value !== null) {
+                if ($value !== null) {
                     $update->set($property, $value);
                 }
             }
@@ -153,8 +147,6 @@ class Records {
         } else {
             $update->execute();
         }
-
-
     }
 
     /**
@@ -177,20 +169,10 @@ class Records {
         }
 
         $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-        if ($versionInformation->getMajorVersion() > 10) {
-            if ($versionInformation->getMajorVersion() > 11) {
-                return $query->executeQuery()->fetchFirstColumn();
-            } else {
-                return $query->execute()->fetchFirstColumn();
-            }
+        if ($versionInformation->getMajorVersion() > 11) {
+            return $query->executeQuery()->fetchFirstColumn();
         } else {
-            return array_map(
-                function ($item) {
-                    return current($item);
-                },
-                $query->execute()->fetchAll()
-            );
+            return $query->execute()->fetchFirstColumn();
         }
     }
-
 }
