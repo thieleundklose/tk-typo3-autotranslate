@@ -200,7 +200,7 @@ class BatchTranslationBaseController extends ActionController
                 'queryParams' =>  $this->queryParams,
                 'pageTitle' => $rowPage['title'],
                 'createForm' => [
-                    'pages' => $batchItem ? [
+                    'pages' => isset($batchItem) ? [
                         $batchItem->getPid() => $batchItem->getPageTitle()
                     ] : null,
                     'recursive' => array_map(fn($item) => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $item), $this->menuLevelItems),
@@ -334,11 +334,7 @@ class BatchTranslationBaseController extends ActionController
     {
         $this->typo3Version = GeneralUtility::makeInstance(Typo3Version::class);
 
-        if ($this->typo3Version->getMajorVersion() < 11) {
-            $this->queryParams = array_merge_recursive($GLOBALS['_GET'], $GLOBALS['_POST'] ?? []);
-        } else {
-            $this->queryParams = array_merge_recursive($this->request->getQueryParams(), $this->request->getParsedBody() ?? []);
-        }
+        $this->queryParams = array_merge_recursive($this->request->getQueryParams(), $this->request->getParsedBody() ?? []);
 
         if (isset($this->queryParams['id'])){
             $this->pageUid = (int)$this->queryParams['id'];

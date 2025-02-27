@@ -13,23 +13,14 @@ use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use Psr\Http\Message\ResponseInterface;
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 
 /**
  * Class BatchTranslationController for backend modules used in TYPO3 V12
  */
 class BatchTranslationController extends BatchTranslationBaseController
 {
-    /**
-     * @var \TYPO3\CMS\Backend\Template\ModuleTemplateFactory|null
-     */
-    protected $moduleTemplateFactory = null;
-
-    function __construct()
-    {
-        // Initialize without dependency injection to throw no error in TYPO3 v10
-        $this->moduleTemplateFactory = GeneralUtility::makeInstance('TYPO3\\CMS\\Backend\\Template\\ModuleTemplateFactory');
-    }
+    function __construct(protected ModuleTemplateFactory $moduleTemplateFactory) {}
 
     /**
      * @return HtmlResponse
@@ -186,5 +177,4 @@ class BatchTranslationController extends BatchTranslationBaseController
 
         return $view;
     }
-
 }
