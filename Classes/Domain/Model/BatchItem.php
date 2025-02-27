@@ -157,7 +157,7 @@ class BatchItem extends AbstractEntity
      * @param \DateTime|null $translated
      * @return void
      */
-    public function setTranslated(\DateTime $translated = null): void
+    public function setTranslated(?\DateTime $translated = null): void
     {
         $this->translated = $translated;
     }

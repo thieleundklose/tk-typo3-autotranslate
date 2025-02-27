@@ -62,7 +62,7 @@ class Translator implements LoggerAwareInterface
      * @return void
      * @throws \Doctrine\DBAL\Driver\Exception
      */
-    public function translate(string $table, int $recordUid, DataHandler $parentObject = null, ?string $languagesToTranslate = null, string $translateMode = self::TRANSLATE_MODE_BOTH): void
+    public function translate(string $table, int $recordUid, ?DataHandler $parentObject = null, ?string $languagesToTranslate = null, string $translateMode = self::TRANSLATE_MODE_BOTH): void
     {
         if ($this->apiKey === null) {
             return;

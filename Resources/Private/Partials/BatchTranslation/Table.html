@@ -6,11 +6,7 @@
 
     <div class="t3js-group-draggable-container">
         <h1>
-            <f:for each="{createForm.pages}" as="page" iteration="iterator">
-                <f:if condition="{iterator.isFirst}">
-                    {page}
-                </f:if>
-            </f:for>
+            {pageTitle}
         </h1>
         <f:if condition="{batchItemsRecursive -> f:count()}">
             <f:render section="table" arguments="{_all}"/>

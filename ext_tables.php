@@ -22,7 +22,7 @@ if ($versionInformation->getMajorVersion() < 12) {
                 'defaultLegacy, showLogsLegacy, create'
         ],
         [
-            'access' => 'user,group',
+            'access' => 'user',
             'icon' => 'EXT:autotranslate/Resources/Public/Icons/Backend.png',
             'labels' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf',
         ]

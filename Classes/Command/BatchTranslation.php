@@ -46,7 +46,7 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
      */
     protected $typo3Version;
 
-     /**
+    /**
      * @param BatchItemRepository $batchItemRepository
      * @param ConnectionPool $connectionPool
      * @param DataMapper $dataMapper
@@ -152,17 +152,10 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
             ->from('tx_autotranslate_batch_item')
             ->where(
                 // only load items where translate is gerader than translated
-                $this->typo3Version->getMajorVersion() < 11 ?
-                    $queryBuilder->expr()->orX(
-                        $queryBuilder->expr()->isNull('translated'),
-                        $queryBuilder->expr()->gt('translate', 'translated'),
-                    )
-                :
-                    $queryBuilder->expr()->or(
-                        $queryBuilder->expr()->isNull('translated'),
-                        $queryBuilder->expr()->gt('translate', 'translated'),
-                    )
-                ,
+                $queryBuilder->expr()->or(
+                    $queryBuilder->expr()->isNull('translated'),
+                    $queryBuilder->expr()->gt('translate', 'translated'),
+                ),
                 // only load items where error is empty
                 $queryBuilder->expr()->eq('error', $queryBuilder->createNamedParameter('')),
                 // only loaditems with next translation date in the past
@@ -175,11 +168,7 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
             $queryBuilder->setMaxResults($limit);
         }
 
-        if ($this->typo3Version->getMajorVersion() < 11) {
-            $statement = $queryBuilder->execute();
-        } else {
-            $statement = $queryBuilder->executeQuery();
-        }
+        $statement = $queryBuilder->executeQuery();
 
         return $this->dataMapper->map(BatchItem::class, $statement->fetchAllAssociative());
     }
@@ -205,10 +194,6 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
             $queryBuilder->set('translated', $item->getTranslated()->getTimestamp());
         }
 
-        if ($this->typo3Version->getMajorVersion() > 10) {
-            $queryBuilder->executeStatement();
-        } else {
-            $queryBuilder->execute();
-        }
+        $queryBuilder->executeStatement();
     }
 }
