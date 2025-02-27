@@ -3,12 +3,10 @@
 
 ## [2.0.0] - 2025-02-27
 
-### Release
-- Add PHP v8.4 support
+### Added
+- Editors can now also use Batch Translation after approval via TYPO3 access rights
+- PHP v8.4 support
 - Update the DeepL PHP package for compatibility reasons
-
-### Feature
-- Batch translation can now also be released for editors without admin rights. The access rights for pages and target languages ​​are also taken into account.
 
 ## [1.3.2] - 2025-02-26
 
