@@ -21,6 +21,7 @@ use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use ThieleUndKlose\Autotranslate\Service\GlossaryService;
 
 class Translator implements LoggerAwareInterface
 {
@@ -38,6 +39,7 @@ class Translator implements LoggerAwareInterface
     public $siteLanguages = [];
     protected $apiKey = null;
     protected $pageId = null;
+    protected $glossaryService = null;
 
     /**
      * object constructor
@@ -49,6 +51,7 @@ class Translator implements LoggerAwareInterface
         $this->pageId = $pageId;
         $this->apiKey = TranslationHelper::apiKey($pageId);
         $this->siteLanguages = TranslationHelper::siteConfigurationValue($pageId, ['languages']);
+        $this->glossaryService = GeneralUtility::makeInstance(GlossaryService::class);
     }
 
     /**
@@ -232,8 +235,16 @@ class Translator implements LoggerAwareInterface
             $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
             $result = null;
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
+                $options = [TranslateTextOptions::TAG_HANDLING => 'html'];
+
+                // get optional glossary from handled by 3rd party extension
+                $glossary = $this->glossaryService->getGlossary('en', 'de', $this->pageId);
+                if ($glossary) {
+                    $options['glossary'] = $glossary->glossaryId;
+                }
+
                 $translator = new \DeepL\Translator($this->apiKey);
-                $result = $translator->translateText($toTranslate, $deeplSourceLang, $deeplTargetLang, [TranslateTextOptions::TAG_HANDLING => 'html']);
+                $result = $translator->translateText($toTranslate, $deeplSourceLang, $deeplTargetLang, $options);
             }
 
             $keys = array_keys($toTranslate);
@@ -317,6 +328,5 @@ class Translator implements LoggerAwareInterface
                 Records::updateRecord($table, $uid, $fieldsToUpdate);
             }
         }
-
     }
 }

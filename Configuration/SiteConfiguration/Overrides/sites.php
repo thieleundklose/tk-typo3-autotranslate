@@ -8,7 +8,7 @@ $siteConfiguration = isset($_REQUEST['site']) ? GeneralUtility::makeInstance(Sit
 
 // add deepl auth key
 $GLOBALS['SiteConfiguration']['site']['columns']['deeplAuthKey'] = [
-    'label' => 'AuthKey',
+    'label' => 'Deepl API Key',
     'description' => 'Enter your generated API key or generate a new one at https://www.deepl.com/account/',
     'config' => [
         'type' => 'input',
