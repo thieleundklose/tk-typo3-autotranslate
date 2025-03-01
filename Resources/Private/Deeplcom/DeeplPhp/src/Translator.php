@@ -17,12 +17,12 @@ class Translator
     /**
      * Library version.
      */
-    public const VERSION = '1.4.0';
+    public const VERSION = '1.11.1';
 
     /**
      * Implements all HTTP requests and retries.
      */
-    private $client;
+    protected $client;
 
     /**
      * Construct a Translator object wrapping the DeepL API using your authentication key.
@@ -37,6 +37,8 @@ class Translator
         if ($authKey === '') {
             throw new DeepLException('authKey must be a non-empty string');
         }
+        // Validation is currently only logging warnings
+        $_ = TranslatorOptions::isValid($options);
 
         $serverUrl = $options[TranslatorOptions::SERVER_URL] ??
             (self::isAuthKeyFreeAccount($authKey) ? TranslatorOptions::DEFAULT_SERVER_URL_FREE
@@ -67,7 +69,17 @@ class Translator
 
         $proxy = $options[TranslatorOptions::PROXY] ?? null;
 
-        $this->client = new HttpClient($serverUrl, $headers, $timeout, $maxRetries, $logger, $proxy);
+        $http_client = $options[TranslatorOptions::HTTP_CLIENT] ?? null;
+
+        $this->client = new HttpClientWrapper(
+            $serverUrl,
+            $headers,
+            $timeout,
+            $maxRetries,
+            $logger,
+            $proxy,
+            $http_client
+        );
     }
 
     /**
@@ -131,11 +143,12 @@ class Translator
 
     /**
      * Translates specified text string or array of text strings into the target language.
-     * @param $texts string|string[] A single string or array of strings containing input texts to translate.
+     * @param string|string[] $texts A single string or array of strings containing input texts to translate.
      * @param string|null $sourceLang Language code of input text language, or null to use auto-detection.
      * @param string $targetLang Language code of language to translate into.
      * @param array $options Translation options to apply. See \DeepL\TranslateTextOptions.
      * @return TextResult|TextResult[] A TextResult or array of TextResult objects containing translated texts.
+     * @phpstan-return ($texts is array ? TextResult[] : TextResult)
      * @throws DeepLException
      * @see \DeepL\TranslateTextOptions
      */
@@ -147,17 +160,25 @@ class Translator
             $options[TranslateTextOptions::FORMALITY] ?? null,
             $options[TranslateTextOptions::GLOSSARY] ?? null
         );
+        // Always send show_billed_characters=1, remove when the API default is changed to true
+        $params["show_billed_characters"] = "1";
         $this->validateAndAppendTexts($params, $texts);
         $this->validateAndAppendTextOptions($params, $options);
 
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v2/translate',
-            [HttpClient::OPTION_PARAMS => $params]
+            [HttpClientWrapper::OPTION_PARAMS => $params]
         );
         $this->checkStatusCode($response);
 
         list(, $content) = $response;
+
+        // Deepl API responses might have invalid UTF8 sequence
+        // @see https://github.com/DeepLcom/deepl-php/pull/43
+        mb_substitute_character(0xFFFD);
+        $content = mb_convert_encoding($content, 'UTF-8', 'UTF-8');
+
         try {
             $decoded = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
         } catch (JsonException $exception) {
@@ -168,7 +189,9 @@ class Translator
         foreach ($decoded['translations'] as $textResult) {
             $textField = $textResult['text'];
             $detectedSourceLang = $textResult['detected_source_language'];
-            $textResults[] = new TextResult($textField, $detectedSourceLang);
+            $billedCharacters = $textResult['billed_characters'];
+            $modelTypeUsed = $textResult['model_type_used'] ?? null;
+            $textResults[] = new TextResult($textField, $detectedSourceLang, $billedCharacters, $modelTypeUsed);
         }
         return is_array($texts) ? $textResults : $textResults[0];
     }
@@ -200,9 +223,22 @@ class Translator
             throw new DocumentTranslationException("File already exists at output file path $outputFile");
         }
         try {
-            $handle = $this->uploadDocument($inputFile, $sourceLang, $targetLang, $options);
+            $minifier = null;
+            $willMinify = ($options[TranslateDocumentOptions::ENABLE_DOCUMENT_MINIFICATION] ?? false) &&
+                DocumentMinifier::canMinifyFile($inputFile);
+            $fileToUpload = $inputFile;
+            if ($willMinify) {
+                $minifier = new DocumentMinifier();
+                $minifier->minifyDocument($inputFile, true);
+                $fileToUpload = $minifier->getMinifiedDocFile($inputFile);
+            }
+            $handle = $this->uploadDocument($fileToUpload, $sourceLang, $targetLang, $options);
             $status = $this->waitUntilDocumentTranslationComplete($handle);
             $this->downloadDocument($handle, $outputFile);
+            if ($willMinify) {
+                // Translated minified file is at `$outputFile`. Reinsert media (deminify) before returning
+                $minifier->deminifyDocument($outputFile, $outputFile, true);
+            }
             return $status;
         } catch (DeepLException $error) {
             if (file_exists($outputFile)) {
@@ -240,8 +276,8 @@ class Translator
             'POST',
             '/v2/document',
             [
-                HttpClient::OPTION_PARAMS => $params,
-                HttpClient::OPTION_FILE => $inputFile,
+                HttpClientWrapper::OPTION_PARAMS => $params,
+                HttpClientWrapper::OPTION_FILE => $inputFile,
             ]
         );
         $this->checkStatusCode($response);
@@ -269,7 +305,7 @@ class Translator
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             "/v2/document/$handle->documentId",
-            [HttpClient::OPTION_PARAMS => ['document_key' => $handle->documentKey]]
+            [HttpClientWrapper::OPTION_PARAMS => ['document_key' => $handle->documentKey]]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -292,8 +328,8 @@ class Translator
                 'POST',
                 "/v2/document/$handle->documentId/result",
                 [
-                    HttpClient::OPTION_PARAMS => ['document_key' => $handle->documentKey],
-                    HttpClient::OPTION_OUTFILE => $outputFile,
+                    HttpClientWrapper::OPTION_PARAMS => ['document_key' => $handle->documentKey],
+                    HttpClientWrapper::OPTION_OUTFILE => $outputFile,
                 ]
             );
             $this->checkStatusCode($response, true);
@@ -363,7 +399,7 @@ class Translator
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v2/glossaries',
-            [HttpClient::OPTION_PARAMS => $params]
+            [HttpClientWrapper::OPTION_PARAMS => $params]
         );
         $this->checkStatusCode($response, false, true);
         list(, $content) = $response;
@@ -404,7 +440,7 @@ class Translator
         $response = $this->client->sendRequestWithBackoff(
             'POST',
             '/v2/glossaries',
-            [HttpClient::OPTION_PARAMS => $params]
+            [HttpClientWrapper::OPTION_PARAMS => $params]
         );
         $this->checkStatusCode($response, false, true);
         list(, $content) = $response;
@@ -476,7 +512,7 @@ class Translator
         $response = $this->client->sendRequestWithBackoff(
             'GET',
             '/v2/languages',
-            [HttpClient::OPTION_PARAMS => ['type' => $target ? 'target' : null]]
+            [HttpClientWrapper::OPTION_PARAMS => ['type' => $target ? 'target' : 'source']]
         );
         $this->checkStatusCode($response);
         list(, $content) = $response;
@@ -574,20 +610,20 @@ class Translator
      * @param string|string[] $texts User-supplied texts to be checked.
      * @throws DeepLException
      */
-    private function validateAndAppendTexts(array &$params, $texts)
+    protected function validateAndAppendTexts(array &$params, $texts)
     {
         if (is_array($texts)) {
             foreach ($texts as $text) {
-                if (!is_string($text) || strlen($text) === 0) {
+                if (!is_string($text)) {
                     throw new DeepLException(
-                        'texts parameter must be a non-empty string or array of non-empty strings',
+                        'texts parameter must be a string or array of strings',
                     );
                 }
             }
         } else {
-            if (!is_string($texts) || strlen($texts) === 0) {
+            if (!is_string($texts)) {
                 throw new DeepLException(
-                    'texts parameter must be a non-empty string or array of non-empty strings',
+                    'texts parameter must be a string or array of strings',
                 );
             }
         }
@@ -633,6 +669,12 @@ class Translator
             $params[TranslateTextOptions::OUTLINE_DETECTION] =
                 $this->toBoolString($options[TranslateTextOptions::OUTLINE_DETECTION]);
         }
+        if (isset($options[TranslateTextOptions::CONTEXT])) {
+            $params[TranslateTextOptions::CONTEXT] = $options[TranslateTextOptions::CONTEXT];
+        }
+        if (isset($options[TranslateTextOptions::MODEL_TYPE])) {
+            $params[TranslateTextOptions::MODEL_TYPE] = $options[TranslateTextOptions::MODEL_TYPE];
+        }
         if (isset($options[TranslateTextOptions::NON_SPLITTING_TAGS])) {
             $params[TranslateTextOptions::NON_SPLITTING_TAGS] =
                 $this->joinTagList($options[TranslateTextOptions::NON_SPLITTING_TAGS]);
@@ -651,7 +693,7 @@ class Translator
      * Checks the HTTP status code, and in case of failure, throws an exception with diagnostic information.
      * @throws DeepLException
      */
-    private function checkStatusCode(array $response, bool $inDocumentDownload = false, bool $usingGlossary = false)
+    protected function checkStatusCode(array $response, bool $inDocumentDownload = false, bool $usingGlossary = false)
     {
         list($statusCode, $content) = $response;
 
@@ -718,13 +760,19 @@ class Translator
     {
         $libraryVersion = self::VERSION;
         $libraryInfoStr = "deepl-php/$libraryVersion";
-        if ($sendPlatformInfo) {
-            $platformStr = php_uname('s r v m');
-            $phpVersion = phpversion();
-            $libraryInfoStr .= " ($platformStr) php/$phpVersion";
-        }
-        if (!is_null($appInfo)) {
-            $libraryInfoStr .= " $appInfo->appName/$appInfo->appVersion";
+        try {
+            if ($sendPlatformInfo) {
+                $platformStr = php_uname('s') . ' ' . php_uname('r') . ' ' . php_uname('v') . php_uname('m');
+                $phpVersion = phpversion();
+                $libraryInfoStr .= " ($platformStr) php/$phpVersion";
+                $curlVer = curl_version()['version'];
+                $libraryInfoStr .= " curl/$curlVer";
+            }
+            if (!is_null($appInfo)) {
+                $libraryInfoStr .= " $appInfo->appName/$appInfo->appVersion";
+            }
+        } catch (\Exception $e) {
+            // Do not fail request, simply send req with an incomplete user agent string
         }
         return $libraryInfoStr;
     }
