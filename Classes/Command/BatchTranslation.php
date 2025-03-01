@@ -141,7 +141,7 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
      * @param int $limit|null
      * @return array
      */
-    public function findWaitingForRun(int $limit = null): array
+    public function findWaitingForRun(?int $limit = null): array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tx_autotranslate_batch_item');
         $queryBuilder->getRestrictions()->removeAll();
