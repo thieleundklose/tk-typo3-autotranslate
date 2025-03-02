@@ -321,18 +321,15 @@ class TranslationHelper
         }
 
         if ($pageId) {
-
             try {
-
                 $site = $siteFinder->getSiteByPageId($pageId);
-
                 $configuration = $site->getConfiguration();
                 if ($configuration['deeplAuthKey'] ?? null) {
                     return $configuration['deeplAuthKey'];
                 }
-            } catch (SiteNotFoundException $e) {
-            }
+            } catch (SiteNotFoundException $e) {}
         }
+
         // get global apiKey from Extension Settings
         $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('autotranslate');
         if ($extensionConfiguration['apiKey'] ?? null) {
