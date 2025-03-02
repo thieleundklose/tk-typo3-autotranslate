@@ -1,2 +1,5 @@
 # cat=general; type=string; label=Additional supported Tables: Comma seperated list of supported tca elements e.g.: tx_news_domain_model_news. For TYPO3 < v13 do not forget to extend Custom Tables Documentation/Configuration/ExtensionConfiguration/Readme.md
 additionalTables =
+
+# cat=general/O; type=string; label=DeepL API Key
+apiKey =
