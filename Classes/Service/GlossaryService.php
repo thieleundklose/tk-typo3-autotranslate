@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Service;
 
+use DeepL\Translator;
 use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
@@ -17,6 +18,11 @@ final class GlossaryService
 {
 
     /**
+     * @param string $sourceLanguage
+     * @param string $targetLanguage
+     * @param integer $pageId
+     * @param Translator $translator
+     *
      * @return ?Glossary
      *
      * @throws Exception
@@ -26,12 +32,17 @@ final class GlossaryService
     public function getGlossary(
         string $sourceLanguage,
         string $targetLanguage,
-        int $pageId
+        int $pageId,
+        Translator $translator
     ): ?Glossary {
 
         if (!ExtensionManagementUtility::isLoaded('deepltranslate_glossary')) {
             return null;
         }
+
+        // get existend glossary ids
+        $glossaries = $translator->listGlossaries();
+        $glossaryIds = array_map(fn($glossary) => $glossary->glossaryId, $glossaries);
 
         $db = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('pages');
@@ -80,6 +91,7 @@ final class GlossaryService
         $where = $db->expr()->and(
             $db->expr()->eq('source_lang', $db->createNamedParameter($sourceLanguage)),
             $db->expr()->eq('target_lang', $db->createNamedParameter($targetLanguage)),
+            $db->expr()->in('glossary_id', $db->createNamedParameter($glossaryIds, Connection::PARAM_STR_ARRAY)),
             $pidConstraint
         );
 

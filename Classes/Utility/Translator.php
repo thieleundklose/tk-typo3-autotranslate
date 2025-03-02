@@ -235,16 +235,16 @@ class Translator implements LoggerAwareInterface
             $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
             $result = null;
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
-                $options = [TranslateTextOptions::TAG_HANDLING => 'html'];
+                $translator = new \DeepL\Translator($this->apiKey);
+                $translatorOptions = [TranslateTextOptions::TAG_HANDLING => 'html'];
 
                 // get optional glossary from handled by 3rd party extension
-                $glossary = $this->glossaryService->getGlossary('en', 'de', $this->pageId);
+                $glossary = $this->glossaryService->getGlossary($deeplSourceLang, $deeplTargetLang, $this->pageId, $translator);
                 if ($glossary) {
-                    $options['glossary'] = $glossary->glossaryId;
+                    $translatorOptions['glossary'] = $glossary->glossaryId;
                 }
 
-                $translator = new \DeepL\Translator($this->apiKey);
-                $result = $translator->translateText($toTranslate, $deeplSourceLang, $deeplTargetLang, $options);
+                $result = $translator->translateText($toTranslate, $deeplSourceLang, $deeplTargetLang, $translatorOptions);
             }
 
             $keys = array_keys($toTranslate);
