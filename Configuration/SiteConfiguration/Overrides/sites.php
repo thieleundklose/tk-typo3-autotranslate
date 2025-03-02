@@ -181,6 +181,6 @@ $GLOBALS['SiteConfiguration']['site_language']['palettes']['autotranslate'] = [
 
 $GLOBALS['SiteConfiguration']['site_language']['types']['1']['showitem'] = str_replace(
     '--palette--;;default,',
-    '--palette--;;default, --palette--;LLL:EXT:wv_deepltranslate/Resources/Private/Language/locallang.xlf:site_configuration.deepl.title;autotranslate,',
+    '--palette--;;default, --palette--;LLL:EXT:autotranslate/Resources/Private/Language/locallang.xlf:site_configuration.deepl.title;autotranslate,',
     $GLOBALS['SiteConfiguration']['site_language']['types']['1']['showitem']
 );
