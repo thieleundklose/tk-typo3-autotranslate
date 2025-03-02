@@ -239,7 +239,7 @@ class Translator implements LoggerAwareInterface
                 $translatorOptions = [TranslateTextOptions::TAG_HANDLING => 'html'];
 
                 // get optional glossary from handled by 3rd party extension
-                if ($deeplSourceLang && $deeplTargetLang) {
+                if ($deeplSourceLang && $deeplTargetLang && TranslationHelper::glossaryEnabled($this->pageId)) {
                     $glossary = $this->glossaryService->getGlossary($deeplSourceLang, $deeplTargetLang, $this->pageId, $translator);
                     if ($glossary) {
                         $translatorOptions['glossary'] = $glossary->glossaryId;

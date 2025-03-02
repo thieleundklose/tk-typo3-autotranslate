@@ -3,6 +3,7 @@
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 $siteConfiguration = isset($_REQUEST['site']) ? GeneralUtility::makeInstance(SiteFinder::class)->getSiteByIdentifier($_REQUEST['site'])->getConfiguration(): null;
 
@@ -19,6 +20,24 @@ $GLOBALS['SiteConfiguration']['site']['columns']['deeplAuthKey'] = [
     ],
 ];
 $palettes['deeplAuthKey'] = ['showitem' => 'deeplAuthKey'];
+
+$GLOBALS['SiteConfiguration']['site']['columns']['autotranslateUseDeeplGlossary'] = [
+    'label' => 'Enable the use of the DeepL Translate glossary',
+    'description' => 'In TYPO3 >= v12 you can use DeepL Glossaries from https://extensions.typo3.org/extension/deepltranslate_glossary',
+    'config' => [
+        'type' => 'check',
+        'renderType' => 'checkboxToggle',
+        'default' => 0,
+        'readOnly' => !ExtensionManagementUtility::isLoaded('deepltranslate_glossary'),
+        'items' => [
+            [
+                0 => '',
+                1 => ''
+            ]
+        ]
+    ],
+];
+$palettes['deeplGlossary'] = ['showitem' => 'autotranslateUseDeeplGlossary'];
 
 // add translateable tables
 $translateableTables = TranslationHelper::translateableTables();

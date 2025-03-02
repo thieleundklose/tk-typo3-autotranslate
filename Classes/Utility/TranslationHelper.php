@@ -303,6 +303,31 @@ class TranslationHelper
     }
 
     /**
+     * Receive state to use glossary
+     *
+     * @param int
+     * @return bool
+     */
+    public static function glossaryEnabled(int $pageId): bool
+    {
+        if (!ExtensionManagementUtility::isLoaded('deepltranslate_glossary')) {
+            return false;
+        }
+
+        try {
+            $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
+            $site = $siteFinder->getSiteByPageId($pageId);
+
+            $configuration = $site->getConfiguration();
+            if ($configuration['autotranslateUseDeeplGlossary'] ?? null) {
+                return (bool)$configuration['autotranslateUseDeeplGlossary'];
+            }
+        } catch (SiteNotFoundException $e) {}
+
+        return false;
+    }
+
+    /**
      * Receive api key by page from site configuration.
      *
      * @param int|null $pageId

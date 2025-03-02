@@ -35,11 +35,6 @@ final class GlossaryService
         int $pageId,
         Translator $translator
     ): ?Glossary {
-
-        if (!ExtensionManagementUtility::isLoaded('deepltranslate_glossary')) {
-            return null;
-        }
-
         // get existend glossary ids
         $glossaries = $translator->listGlossaries();
         $glossaryIds = array_map(fn($glossary) => $glossary->glossaryId, $glossaries);
