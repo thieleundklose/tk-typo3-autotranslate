@@ -24,6 +24,7 @@ use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\SiteFinder;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 
@@ -334,6 +335,14 @@ class TranslationHelper
         $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('autotranslate');
         if ($extensionConfiguration['apiKey'] ?? null) {
             return $extensionConfiguration['apiKey'];
+        }
+
+        // get global apiKey from 3rd party Extension Settings as fallback
+        if (ExtensionManagementUtility::isLoaded('deepltranslate_glossary')) {
+            $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('deepltranslate_core');
+            if ($extensionConfiguration['apiKey'] ?? null) {
+                return $extensionConfiguration['apiKey'];
+            }
         }
 
         // get first apiKey from site configuration
