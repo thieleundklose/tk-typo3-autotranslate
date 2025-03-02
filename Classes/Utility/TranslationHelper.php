@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /*
@@ -17,6 +18,7 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Utility;
 
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 use TYPO3\CMS\Core\Information\Typo3Version;
@@ -311,24 +313,41 @@ class TranslationHelper
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
 
         if (empty($pageId)) {
-            // get first apiKey from site configuration
-            $sites = $siteFinder->getAllSites();
-            foreach ($sites as $site) {
-                $configuration = $site->getConfiguration();
-                if (!empty($configuration['deeplAuthKey'])) {
-                    return $configuration['deeplAuthKey'];
-                }
+            // get pageId from context
+            $context = GeneralUtility::makeInstance(Context::class);
+            if ($context->hasAspect('page')) {
+                $pageId = $context->getPropertyFromAspect('page', 'id');
             }
-            return null;
         }
 
-        try {
-            $site = $siteFinder->getSiteByPageId($pageId);
-            $configuration = $site->getConfiguration();
-            return $configuration['deeplAuthKey'] ?? null;
-        } catch (SiteNotFoundException $e) {
-            return null;
+        if ($pageId) {
+
+            try {
+
+                $site = $siteFinder->getSiteByPageId($pageId);
+
+                $configuration = $site->getConfiguration();
+                if ($configuration['deeplAuthKey'] ?? null) {
+                    return $configuration['deeplAuthKey'];
+                }
+            } catch (SiteNotFoundException $e) {
+            }
         }
+        // get global apiKey from Extension Settings
+        $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('autotranslate');
+        if ($extensionConfiguration['apiKey'] ?? null) {
+            return $extensionConfiguration['apiKey'];
+        }
+
+        // get first apiKey from site configuration
+        $sites = $siteFinder->getAllSites();
+        foreach ($sites as $site) {
+            $configuration = $site->getConfiguration();
+            if ($configuration['deeplAuthKey'] ?? null) {
+                return $configuration['deeplAuthKey'];
+            }
+        }
+        return null;
     }
 
     /**
