@@ -13,7 +13,7 @@
     "license": "GPL-2.0-or-later",
     "require": {
         "typo3/cms-core": "^11.5 || ^12.4 || ^13.4",
-        "deeplcom/deepl-php": "^1.4",
+        "deeplcom/deepl-php": "^1.5",
         "php": ">= 7.4 < 8.5"
     },
     "require-dev": {
