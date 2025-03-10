@@ -1,14 +1,8 @@
 # Site Configurations
 
-The basic configuration must be done via the TYPO3 page configuration.
+The basic configuration must be done via **Site Management / Sites / Autotranslate**.
 
 ![DeepL](../../Images/SiteConfiguration.png)
-
-### DeepL API-Key
-
-The DeepL API key can be configured in the site configuration module under the DeepL tab.
-
-![DeepL](../../Images/DeepLApiKey.png)
 
 ### Translatable Languages
 

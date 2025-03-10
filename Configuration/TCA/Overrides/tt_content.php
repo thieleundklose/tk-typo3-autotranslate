@@ -48,9 +48,9 @@ $tempColumns = [
 ];
 ExtensionManagementUtility::addTCAcolumns('tt_content', $tempColumns, 1);
 
-ExtensionManagementUtility::addToAllTCAtypes(
+ExtensionManagementUtility::addFieldsToPalette(
     'tt_content',
-    'autotranslate_exclude,autotranslate_languages,autotranslate_last',
-    '',
+    'language',
+    '--linebreak--,autotranslate_exclude,--linebreak--,autotranslate_languages,--linebreak--,autotranslate_last',
     'after:' . $GLOBALS['TCA']['tt_content']['ctrl']['transOrigPointerField']
-);
+ );
