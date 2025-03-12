@@ -70,12 +70,6 @@ class Translator implements LoggerAwareInterface
 
         $record = Records::getRecord($table, $recordUid);
 
-        // load translation columns for table
-        $columns = TranslationHelper::translationTextfields($this->pageId, $table);
-        if ($columns === null) {
-            return;
-        }
-
         // exit if record is localized one
         $parentField = TranslationHelper::translationOrigPointerField($table);
         if ($parentField === null || $record[$parentField] > 0) {
@@ -84,6 +78,12 @@ class Translator implements LoggerAwareInterface
 
         // exit if record is marked for exclude
         if ($record[self::AUTOTRANSLATE_EXCLUDE] === 1) {
+            return;
+        }
+
+        // load translation columns for table
+        $columns = TranslationHelper::translationTextfields($this->pageId, $table);
+        if ($columns === null) {
             return;
         }
 
