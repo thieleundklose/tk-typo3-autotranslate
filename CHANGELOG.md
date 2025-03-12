@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0] - 2025-03-12
+
+### Fix
+- Stabilization
+
+### Feature
+- Possibility to define the DeepL API key globally for all sites in the extension configuration
+
 ## [1.3.2] - 2025-02-26
 
 ### Fix
