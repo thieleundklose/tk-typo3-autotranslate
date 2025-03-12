@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.1.0] - 2025-03-11
+## [2.1.0] - 2025-03-12
 
 ### Fix
 - Stabilization backward compatibility
