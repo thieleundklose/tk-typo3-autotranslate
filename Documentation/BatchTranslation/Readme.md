@@ -1,8 +1,8 @@
-# Batch translation
+# BatchTranslation
 
 ### Backend Module
 
-Batch translation jobs can be created on the pages via the list view, but it is better to use the backend module.
+BatchTranslation jobs can be created on the pages via the list view, but it is better to use the backend module.
 
 **Functions of the module**
 - Create new translation jobs

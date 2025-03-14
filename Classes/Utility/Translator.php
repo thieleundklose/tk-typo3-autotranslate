@@ -21,6 +21,7 @@ use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use ThieleUndKlose\Autotranslate\Service\GlossaryService;
 
 class Translator implements LoggerAwareInterface
 {
@@ -38,6 +39,7 @@ class Translator implements LoggerAwareInterface
     public $siteLanguages = [];
     protected $apiKey = null;
     protected $pageId = null;
+    protected $glossaryService = null;
 
     /**
      * object constructor
@@ -47,8 +49,9 @@ class Translator implements LoggerAwareInterface
      */
     function __construct(int $pageId) {
         $this->pageId = $pageId;
-        $this->apiKey = TranslationHelper::apiKey($pageId);
-        $this->siteLanguages = TranslationHelper::siteConfigurationValue($pageId, ['languages']);
+        $this->apiKey = TranslationHelper::apiKey($this->pageId);
+        $this->siteLanguages = TranslationHelper::siteConfigurationValue($this->pageId, ['languages']);
+        $this->glossaryService = GeneralUtility::makeInstance(GlossaryService::class);
     }
 
     /**
@@ -70,12 +73,6 @@ class Translator implements LoggerAwareInterface
 
         $record = Records::getRecord($table, $recordUid);
 
-        // load translation columns for table
-        $columns = TranslationHelper::translationTextfields($this->pageId, $table);
-        if ($columns === null) {
-            return;
-        }
-
         // exit if record is localized one
         $parentField = TranslationHelper::translationOrigPointerField($table);
         if ($parentField === null || $record[$parentField] > 0) {
@@ -84,6 +81,12 @@ class Translator implements LoggerAwareInterface
 
         // exit if record is marked for exclude
         if ($record[self::AUTOTRANSLATE_EXCLUDE] === 1) {
+            return;
+        }
+
+        // load translation columns for table
+        $columns = TranslationHelper::translationTextfields($this->pageId, $table);
+        if ($columns === null) {
             return;
         }
 
@@ -233,7 +236,17 @@ class Translator implements LoggerAwareInterface
             $result = null;
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
                 $translator = new \DeepL\Translator($this->apiKey);
-                $result = $translator->translateText($toTranslate, $deeplSourceLang, $deeplTargetLang, [TranslateTextOptions::TAG_HANDLING => 'html']);
+                $translatorOptions = [TranslateTextOptions::TAG_HANDLING => 'html'];
+
+                // get optional glossary from handled by 3rd party extension
+                if ($deeplSourceLang && $deeplTargetLang && TranslationHelper::glossaryEnabled($this->pageId)) {
+                    $glossary = $this->glossaryService->getGlossary($deeplSourceLang, $deeplTargetLang, $this->pageId, $translator);
+                    if ($glossary) {
+                        $translatorOptions['glossary'] = $glossary->glossaryId;
+                    }
+                }
+
+                $result = $translator->translateText($toTranslate, $deeplSourceLang, $deeplTargetLang, $translatorOptions);
             }
 
             $keys = array_keys($toTranslate);
@@ -317,6 +330,5 @@ class Translator implements LoggerAwareInterface
                 Records::updateRecord($table, $uid, $fieldsToUpdate);
             }
         }
-
     }
 }

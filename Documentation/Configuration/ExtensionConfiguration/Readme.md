@@ -1,6 +1,6 @@
 # Extension Settings
 
-Here you can define which 3rd party content should be supported.
+Here you can define DeepL API Key and which 3rd party content should be supported.
 
 **After adding tables, a database compare must be performed using the install tool**
 
