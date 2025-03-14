@@ -174,7 +174,7 @@ class Translator
 
         list(, $content) = $response;
 
-        // Deepl API responses might have invalid UTF8 sequence
+        // DeepL API responses might have invalid UTF8 sequence
         // @see https://github.com/DeepLcom/deepl-php/pull/43
         mb_substitute_character(0xFFFD);
         $content = mb_convert_encoding($content, 'UTF-8', 'UTF-8');

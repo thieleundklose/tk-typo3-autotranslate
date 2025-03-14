@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /*
@@ -17,11 +18,13 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Utility;
 
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\SiteFinder;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 
@@ -300,6 +303,31 @@ class TranslationHelper
     }
 
     /**
+     * Receive state to use glossary
+     *
+     * @param int
+     * @return bool
+     */
+    public static function glossaryEnabled(int $pageId): bool
+    {
+        if (!ExtensionManagementUtility::isLoaded('deepltranslate_glossary')) {
+            return false;
+        }
+
+        try {
+            $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
+            $site = $siteFinder->getSiteByPageId($pageId);
+
+            $configuration = $site->getConfiguration();
+            if ($configuration['autotranslateUseDeeplGlossary'] ?? null) {
+                return (bool)$configuration['autotranslateUseDeeplGlossary'];
+            }
+        } catch (SiteNotFoundException $e) {}
+
+        return false;
+    }
+
+    /**
      * Receive api key by page from site configuration.
      *
      * @param int|null $pageId
@@ -311,24 +339,46 @@ class TranslationHelper
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
 
         if (empty($pageId)) {
-            // get first apiKey from site configuration
-            $sites = $siteFinder->getAllSites();
-            foreach ($sites as $site) {
-                $configuration = $site->getConfiguration();
-                if (!empty($configuration['deeplAuthKey'])) {
-                    return $configuration['deeplAuthKey'];
-                }
+            // get pageId from context
+            $context = GeneralUtility::makeInstance(Context::class);
+            if ($context->hasAspect('page')) {
+                $pageId = $context->getPropertyFromAspect('page', 'id');
             }
-            return null;
         }
 
-        try {
-            $site = $siteFinder->getSiteByPageId($pageId);
-            $configuration = $site->getConfiguration();
-            return $configuration['deeplAuthKey'] ?? null;
-        } catch (SiteNotFoundException $e) {
-            return null;
+        if ($pageId) {
+            try {
+                $site = $siteFinder->getSiteByPageId($pageId);
+                $configuration = $site->getConfiguration();
+                if ($configuration['deeplAuthKey'] ?? null) {
+                    return $configuration['deeplAuthKey'];
+                }
+            } catch (SiteNotFoundException $e) {}
         }
+
+        // get global apiKey from Extension Settings
+        $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('autotranslate');
+        if ($extensionConfiguration['apiKey'] ?? null) {
+            return $extensionConfiguration['apiKey'];
+        }
+
+        // get global apiKey from 3rd party Extension Settings as fallback
+        if (ExtensionManagementUtility::isLoaded('deepltranslate_glossary')) {
+            $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('deepltranslate_core');
+            if ($extensionConfiguration['apiKey'] ?? null) {
+                return $extensionConfiguration['apiKey'];
+            }
+        }
+
+        // get first apiKey from site configuration
+        $sites = $siteFinder->getAllSites();
+        foreach ($sites as $site) {
+            $configuration = $site->getConfiguration();
+            if ($configuration['deeplAuthKey'] ?? null) {
+                return $configuration['deeplAuthKey'];
+            }
+        }
+        return null;
     }
 
     /**
