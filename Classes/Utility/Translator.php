@@ -232,7 +232,10 @@ class Translator implements LoggerAwareInterface
             $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
                 $translator = new \DeepL\Translator($this->apiKey);
-                $result = $translator->translateText($toTranslate, $deeplSourceLang, $deeplTargetLang, [TranslateTextOptions::TAG_HANDLING => 'html']);
+                $result = $translator->translateText($toTranslate, $deeplSourceLang, $deeplTargetLang, [
+                    TranslateTextOptions::TAG_HANDLING => 'html',
+                    TranslateTextOptions::SPLIT_SENTENCES => true
+                ]);
             }
 
             $keys = array_keys($toTranslate);
