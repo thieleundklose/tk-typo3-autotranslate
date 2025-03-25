@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.4.1] - 2025-03-25
+
+### Fixes
+- Keep line breaks in translations, thx to Jahn Blechinger (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/34)
+
 ## [1.4.0] - 2025-03-12
 
 ### Fix
