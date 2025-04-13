@@ -1,5 +1,12 @@
 # Changelog
 
+
+## [2.1.2] - 2025-04-13
+
+### Fixes
+- Stabilizations on TCA dependencies
+- Support for 3rd party extensions with allowLanguageSynchronization like tt_address, thx to Wolfgang Wagner (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/26)
+
 ## [2.1.1] - 2025-03-25
 
 ### Fixes
