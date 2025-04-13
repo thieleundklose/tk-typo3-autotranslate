@@ -9,7 +9,7 @@ $tempColumns = [
     'autotranslate_exclude' => [
         'exclude' => 1,
         'label' => $llPath . 'autotranslate_exclude',
-        'displayCond' => 'FIELD:' . $GLOBALS['TCA']['tt_content']['ctrl']['translationSource'] . ':<=:0',
+        'displayCond' => 'FIELD:' . $GLOBALS['TCA']['tt_content']['ctrl']['transOrigPointerField'] . ':<=:0',
         'config' => [
             'type' => 'check',
             'renderType' => 'checkboxToggle',
@@ -25,7 +25,7 @@ $tempColumns = [
     'autotranslate_languages' => [
         'exclude' => 1,
         'label' => $llPath . 'autotranslate_languages',
-        'displayCond' => 'FIELD:' . $GLOBALS['TCA']['tt_content']['ctrl']['translationSource'] . ':<=:0',
+        'displayCond' => 'FIELD:' . $GLOBALS['TCA']['tt_content']['ctrl']['transOrigPointerField'] . ':<=:0',
         'config' => [
             'type' => 'select',
             'renderType' => 'selectCheckBox',
@@ -35,7 +35,7 @@ $tempColumns = [
      'autotranslate_last' => [
         'exclude' => 1,
         'label' => $llPath . 'autotranslate_last',
-        'displayCond' => 'FIELD:' . $GLOBALS['TCA']['tt_content']['ctrl']['translationSource'] . ':>:0',
+        'displayCond' => 'FIELD:' . $GLOBALS['TCA']['tt_content']['ctrl']['transOrigPointerField'] . ':>:0',
         'config' => [
             'type' => 'input',
             'renderType' => 'inputDateTime',
