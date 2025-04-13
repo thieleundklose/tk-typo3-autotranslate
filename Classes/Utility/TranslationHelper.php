@@ -394,7 +394,7 @@ class TranslationHelper
 
         // Filter the tables to only include those that exist in $GLOBALS['TCA']
         return array_filter($tables, function ($table) {
-            return isset($GLOBALS['TCA'][$table]['ctrl']['translationSource']);
+            return isset($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']);
         });
     }
 }

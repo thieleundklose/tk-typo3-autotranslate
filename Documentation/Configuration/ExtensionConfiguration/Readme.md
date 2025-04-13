@@ -19,3 +19,5 @@ CREATE TABLE tx_table_name_item (
     autotranslate_last int(11) DEFAULT '0' NOT NULL,
 );
 ```
+
+> [!NOTE] If fields from third-party extensions that have allowLanguageSynchronization enabled (tt_address) are to be translated, the backend cache must be cleared once after editing the site configuration.
