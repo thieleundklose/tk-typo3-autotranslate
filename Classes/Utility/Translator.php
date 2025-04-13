@@ -236,13 +236,16 @@ class Translator implements LoggerAwareInterface
             $result = null;
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
                 $translator = new \DeepL\Translator($this->apiKey);
-                $translatorOptions = [TranslateTextOptions::TAG_HANDLING => 'html'];
+                $translatorOptions = [
+                    TranslateTextOptions::TAG_HANDLING => 'html',
+                    TranslateTextOptions::SPLIT_SENTENCES => true
+                ];
 
                 // get optional glossary from handled by 3rd party extension
                 if ($deeplSourceLang && $deeplTargetLang && TranslationHelper::glossaryEnabled($this->pageId)) {
                     $glossary = $this->glossaryService->getGlossary($deeplSourceLang, $deeplTargetLang, $this->pageId, $translator);
                     if ($glossary) {
-                        $translatorOptions['glossary'] = $glossary->glossaryId;
+                        $translatorOptions[TranslateTextOptions::GLOSSARY] = $glossary->glossaryId;
                     }
                 }
 
