@@ -196,7 +196,6 @@ class Translator implements LoggerAwareInterface
 
             // Translate properties with given service
             $translatedColumns = $this->translateRecordProperties($record, (int)$languageId, $columns);
-
             if (count($translatedColumns) > 0) {
                 Records::updateRecord($table, $localizedUid, $translatedColumns);
             }
@@ -248,27 +247,62 @@ class Translator implements LoggerAwareInterface
                         $translatorOptions[TranslateTextOptions::GLOSSARY] = $glossary->glossaryId;
                     }
                 }
+                if (isset($toTranslate['pi_flexform'])) {
+                    $xml = simplexml_load_string($record['pi_flexform']);
+
+                    foreach ($xml->xpath('//field') as $field) {
+                        $value = (string)$field->value;
+                        if (!empty(trim($value))
+                            && strpos($value, '<') === false
+                            && is_string($value)
+                            && !is_numeric($value)
+                            && $value !== ''
+                        ) {
+                            $translationResult = $translator->translateText(
+                                [$value],
+                                $deeplSourceLang,
+                                $deeplTargetLang,
+                                $translatorOptions
+                            );
+                            if (!empty($translationResult)) {
+                                $field->value[0] = $translationResult[0]->text;
+                            }
+                        }
+                    }
+
+                    $translatedColumns = [
+                        'pi_flexform' => $xml->asXML(),
+                        'hidden' => $record['hidden'],
+                        self::AUTOTRANSLATE_LAST => time()
+                    ];
+                }
 
                 $result = $translator->translateText($toTranslate, $deeplSourceLang, $deeplTargetLang, $translatorOptions);
-            }
+                $keys = array_keys($toTranslate);
 
-            $keys = array_keys($toTranslate);
-            if (!empty($result)) {
-                foreach ($result as $k => $v) {
-                    $translatedColumns[$keys[$k]] = $v->text;
+                if (!empty($result)) {
+                    foreach ($result as $k => $v) {
+                        $translatedColumns[$keys[$k]] = $v->text;
+                    }
                 }
+
+                if (!isset($translatedColumns['hidden'])) {
+                    $translatedColumns['hidden'] = $record['hidden'];
+                }
+                if (!isset($translatedColumns[self::AUTOTRANSLATE_LAST])) {
+                    $translatedColumns[self::AUTOTRANSLATE_LAST] = time();
+                }
+
+                return $translatedColumns;
             }
 
             // synchronized properties
             $translatedColumns['hidden'] = $record['hidden'];
             $translatedColumns[self::AUTOTRANSLATE_LAST] = time();
 
-            if (isset($record['pi_flexform'])) {
-                $translatedColumns['pi_flexform'] = $record['pi_flexform'];
-            }
-
             LogUtility::log($this->logger, 'Successful translated to target language {deeplTargetLang}.', ['deeplTargetLang' => $deeplTargetLang, 'toTranslate' => $toTranslate, 'result' => $result, 'translatedColumns' => $translatedColumns]);
         } catch (\Exception $e) {
+
             LogUtility::log($this->logger, 'Translation Error: {error}.', ['error' => $e->getMessage()], LogUtility::MESSAGE_ERROR);
         }
 
