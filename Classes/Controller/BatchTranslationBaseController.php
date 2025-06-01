@@ -299,7 +299,7 @@ class BatchTranslationBaseController extends ActionController
         $this->addFlashMessage(
             $message,
             $title,
-            $this->typo3Version->getMajorVersion() > 12 ? $this->mapSeverity($severity) : $severity
+            $this->typo3Version->getMajorVersion() > 11 ? $this->mapSeverity($severity) : $severity
         );
     }
 
