@@ -1,5 +1,14 @@
 # Changelog
 
+
+## [1.4.2] - 2025-06-01
+
+### Feature
+- Attribute translation for title tags of links in html content, thx to t-bittner (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/35)
+
+### Stabilizations
+- Request processing of CLI queries for batch translations, thx to bznovak (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/40)
+
 ## [1.4.1] - 2025-03-25
 
 ### Fixes
