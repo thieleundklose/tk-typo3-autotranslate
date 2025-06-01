@@ -231,6 +231,7 @@ class Translator implements LoggerAwareInterface
             $deeplSourceLang = $this->deeplSourceLanguage();
             $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
+                $toTranslate = $this->extractAndReplaceTranslatableHtmlAttributes($toTranslate);
                 $translator = new \DeepL\Translator($this->apiKey);
                 $result = $translator->translateText($toTranslate, $deeplSourceLang, $deeplTargetLang, [
                     TranslateTextOptions::TAG_HANDLING => 'html',
@@ -240,8 +241,21 @@ class Translator implements LoggerAwareInterface
 
             $keys = array_keys($toTranslate);
             if (!empty($result)) {
+                $translatedAttributes = [];
                 foreach ($result as $k => $v) {
-                    $translatedColumns[$keys[$k]] = $v->text;
+                    $field = $keys[$k];
+                    if (strpos($field, '__ATTR__') === 0) {
+                        $translatedAttributes[$field] = $v->text;
+                    }
+                }
+
+                foreach ($result as $k => $v) {
+                    $field = $keys[$k];
+                    if (strpos($field, '__ATTR__') === 0) {
+                        continue;
+                    }
+                    $translatedValue = $this->restoreTranslatedHtmlAttributes($v->text, $translatedAttributes);
+                    $translatedColumns[$field] = $translatedValue;
                 }
             }
 
@@ -259,6 +273,125 @@ class Translator implements LoggerAwareInterface
         }
 
         return $translatedColumns;
+    }
+
+    /**
+     * Ersetzt Platzhalter im HTML wieder durch die übersetzten Attributwerte.
+     *
+     * @param string $html
+     * @param array $attrTranslations [Platzhalter => Übersetzung]
+     * @return string
+     */
+    private function restoreTranslatedHtmlAttributes(string $html, array $attrTranslations): string
+    {
+        foreach ($attrTranslations as $placeholder => $translatedValue) {
+            $html = str_replace($placeholder, $translatedValue, $html);
+        }
+        return $html;
+    }
+
+    /**
+     * Ersetzt übersetzbare HTML-Attribute durch Platzhalter und gibt das modifizierte Array
+     * sowie die Mapping-Tabelle zurück.
+     *
+     * @param array $toTranslate
+     * @return array [array $modifiedToTranslate, array $attrMap]
+     */
+    private function extractAndReplaceTranslatableHtmlAttributes(array $toTranslate): array
+    {
+        $attributeMap = [
+            ['tag' => 'a', 'attr' => 'title'],
+            // weitere Attribute nach Bedarf ergänzen
+        ];
+
+        $attrMap = [];
+        $attrCounter = 1;
+
+        foreach ($toTranslate as $field => &$value) {
+            if ($this->isHtml($value)) {
+                foreach ($attributeMap as $map) {
+                    $found = $this->extractHtmlAttributes($value, $map['tag'], $map['attr']);
+                    foreach ($found as $attrValue) {
+                        $placeholder = '__ATTR__' . $attrCounter . '__';
+                        $attrMap[$placeholder] = $attrValue;
+                        $value = $this->replaceHtmlAttributeWithPlaceholder($value, $map['tag'], $map['attr'], $attrValue, $placeholder);
+                        $attrCounter++;
+                    }
+                }
+            }
+        }
+        unset($value);
+
+        // Füge die Attribute als eigene Einträge zum Übersetzen hinzu
+        foreach ($attrMap as $placeholder => $original) {
+            $toTranslate[$placeholder] = $original;
+        }
+
+        return $toTranslate;
+    }
+
+    private function isHtml(string $value): bool {
+        return $value !== strip_tags($value);
+    }
+
+    /**
+     * Extrahiert alle Werte eines bestimmten Attributs anhand eines Tag-Namens aus HTML.
+     *
+     * @param string $html Der HTML-String
+     * @param string $tagName Der Tag-Name (z.B. 'a')
+     * @param string $attributeName Das Attribut (z.B. 'title')
+     * @return array Array mit allen gefundenen Attributwerten
+     */
+    private function extractHtmlAttributes(string $html, string $tagName, string $attributeName): array
+    {
+        $values = [];
+        if (trim($html) === '') {
+            return $values;
+        }
+
+        $doc = new \DOMDocument();
+        // Fehler unterdrücken, falls ungültiges HTML
+        @$doc->loadHTML('<?xml encoding="utf-8" ?>' . $html);
+
+        $xpath = new \DOMXPath($doc);
+        // XPath-Query für alle gewünschten Attribute
+        $query = sprintf('//' . $tagName . '[@' . $attributeName . ']');
+        foreach ($xpath->query($query) as $node) {
+            /** @var \DOMElement $node */
+            $values[] = $node->getAttribute($attributeName);
+        }
+        return $values;
+    }
+
+    /**
+     * Ersetzt ein bestimmtes Attribut eines Tags in einem HTML-String durch einen Platzhalter.
+     *
+     * @param string $html Der HTML-String
+     * @param string $tag Der Tag-Namen (z.B. 'a')
+     * @param string $attr Das Attribut (z.B. 'title')
+     * @param string $original Der Originalwert des Attributs, der ersetzt werden soll
+     * @param string $placeholder Der Platzhalter, der den Originalwert ersetzen soll
+     * @return string Der modifizierte HTML-String
+     */
+    private function replaceHtmlAttributeWithPlaceholder(string $html, string $tag, string $attr, string $original, string $placeholder): string
+    {
+        $doc = new \DOMDocument();
+        @$doc->loadHTML('<?xml encoding="utf-8" ?>' . $html);
+        $xpath = new \DOMXPath($doc);
+        $query = sprintf('//' . $tag . '[@' . $attr . ']');
+        foreach ($xpath->query($query) as $node) {
+            /** @var \DOMElement $node */
+            if ($node->getAttribute($attr) === $original) {
+                $node->setAttribute($attr, $placeholder);
+            }
+        }
+        // body extrahieren, da loadHTML immer ein vollständiges HTML-Dokument erzeugt
+        $body = $doc->getElementsByTagName('body')->item(0);
+        $innerHTML = '';
+        foreach ($body->childNodes as $child) {
+            $innerHTML .= $doc->saveHTML($child);
+        }
+        return $innerHTML;
     }
 
     /**
