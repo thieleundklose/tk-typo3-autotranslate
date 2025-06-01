@@ -37,5 +37,3 @@ $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Utility']
 $GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][Configuration::class] = [
     'className' => ConfigurationXclass::class,
 ];
-
-

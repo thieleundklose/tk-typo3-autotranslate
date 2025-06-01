@@ -56,5 +56,4 @@ foreach (TranslationHelper::additionalTables() as $table) {
         'after:' . $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']
     );
 
-    // behaviour adjustments for text fields are applied in ext_localconf.php
 }

@@ -15,6 +15,7 @@ final class DisableLanguageSyncListener
     {
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
         $sites = $siteFinder->getAllSites();
+        $tca = $event->getTca();
 
         foreach ($sites as $site) {
             foreach (TranslationHelper::additionalTables() as $table) {
@@ -29,12 +30,14 @@ final class DisableLanguageSyncListener
                 );
                 foreach ($textFields as $field) {
                     if (
-                        $GLOBALS['TCA'][$table]['columns'][$field]['config']['behaviour']['allowLanguageSynchronization'] ?? null === true
+                        $tca[$table]['columns'][$field]['config']['behaviour']['allowLanguageSynchronization'] ?? null === true
                     ) {
-                        $GLOBALS['TCA'][$table]['columns'][$field]['config']['behaviour']['allowLanguageSynchronization'] = false;
+                        $tca[$table]['columns'][$field]['config']['behaviour']['allowLanguageSynchronization'] = false;
                     }
                 }
             }
         }
+
+        $event->setTca($tca);
     }
 }
