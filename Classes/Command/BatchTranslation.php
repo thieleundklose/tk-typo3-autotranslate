@@ -14,8 +14,9 @@ use Symfony\Component\Console\Output\OutputInterface;
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
 use ThieleUndKlose\Autotranslate\Domain\Repository\BatchItemRepository;
 use ThieleUndKlose\Autotranslate\Service\BatchTranslationService;
-use TYPO3\CMS\Core\Core\Bootstrap;
+use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper;
 
@@ -106,8 +107,10 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        // Init _cli_ backend user, needed to execute command directly from CLI
-        Bootstrap::initializeBackendAuthentication();
+        if (PHP_SAPI === 'cli') {
+            echo 'Running from CLI, setting application type to BE' . PHP_EOL;
+            $GLOBALS['TYPO3_REQUEST'] = (new ServerRequest())->withAttribute('applicationType', SystemEnvironmentBuilder::REQUESTTYPE_BE);
+        }
 
         $translationsPerRun = (int)$input->getArgument('translationsPerRun');
         $successfulTranslations = 0;
