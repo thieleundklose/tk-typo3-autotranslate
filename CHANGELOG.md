@@ -1,6 +1,12 @@
 # Changelog
 
 
+## [2.1.3] - 2025-06-01
+
+### Stabilizations
+- Remove deprecations
+- Request processing of CLI queries for batch translations, thx to bznovak (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/40)
+
 ## [2.1.2] - 2025-04-13
 
 ### Fixes
