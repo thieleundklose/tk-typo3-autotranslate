@@ -273,13 +273,19 @@ class Translator implements LoggerAwareInterface
                 }
             }
 
-            // synchronized properties
-            $translatedColumns['hidden'] = $record['hidden'];
+
+            $extConf = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Configuration\ExtensionConfiguration::class)->get('autotranslate');
+
+            $fieldsToCopy = array_map('trim', explode(',', $extConf['fieldsToCopy'] ?? ''));
+
+            foreach ($record as $field => $value) {
+                if (isset($record[$field]) && !isset($translatedColumns[$field]) && in_array($field, $fieldsToCopy, true)) {
+                    $translatedColumns[$field] = $value;
+                }
+            }
+
             $translatedColumns[self::AUTOTRANSLATE_LAST] = time();
 
-            if (isset($record['pi_flexform'])) {
-                $translatedColumns['pi_flexform'] = $record['pi_flexform'];
-            }
 
             LogUtility::log($this->logger, 'Successful translated to target language {deeplTargetLang}.', ['deeplTargetLang' => $deeplTargetLang, 'toTranslate' => $toTranslate, 'result' => $result, 'translatedColumns' => $translatedColumns]);
         } catch (\Exception $e) {
