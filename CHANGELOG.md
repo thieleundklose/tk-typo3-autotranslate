@@ -1,7 +1,7 @@
 # Changelog
 
 
-## [2.1.4] - 2025-06-01
+## [2.2.0] - 2025-06-02
 
 ### Stabilizations
 - use PSR-14 event for TCA adjustments because ob exception in production, thx to Thomas Schöne (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/47 / Pull request: https://github.com/thieleundklose/tk-typo3-autotranslate/pull/46)
