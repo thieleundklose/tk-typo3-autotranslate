@@ -22,6 +22,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThieleUndKlose\Autotranslate\Service\GlossaryService;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 
 class Translator implements LoggerAwareInterface
 {
@@ -273,19 +274,17 @@ class Translator implements LoggerAwareInterface
                 }
             }
 
-
-            $extConf = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Configuration\ExtensionConfiguration::class)->get('autotranslate');
-
-            $fieldsToCopy = array_map('trim', explode(',', $extConf['fieldsToCopy'] ?? ''));
-
+            // add fields to copy in translation from extension configuration
+            $fieldsToCopy = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('autotranslate', 'fieldsToCopy');
+            $fields = $fieldsToCopy ? GeneralUtility::trimExplode(',', $fieldsToCopy, true) : [];
             foreach ($record as $field => $value) {
-                if (isset($record[$field]) && !isset($translatedColumns[$field]) && in_array($field, $fieldsToCopy, true)) {
+                if (isset($record[$field]) && !isset($translatedColumns[$field]) && in_array($field, $fields, true)) {
                     $translatedColumns[$field] = $value;
                 }
             }
 
+            // set date and time of translation
             $translatedColumns[self::AUTOTRANSLATE_LAST] = time();
-
 
             LogUtility::log($this->logger, 'Successful translated to target language {deeplTargetLang}.', ['deeplTargetLang' => $deeplTargetLang, 'toTranslate' => $toTranslate, 'result' => $result, 'translatedColumns' => $translatedColumns]);
         } catch (\Exception $e) {
