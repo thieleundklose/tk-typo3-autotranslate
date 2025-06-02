@@ -176,7 +176,7 @@ class TranslationHelper
     public static function defaultLanguage(?array $siteLanguages): SiteLanguage
     {
         if (empty($siteLanguages)) {
-            return [];
+            throw new SiteNotFoundException('No site languages found.', 1633031234);
         }
 
         return $siteLanguages[0];
