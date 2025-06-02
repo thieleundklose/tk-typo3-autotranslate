@@ -4,7 +4,8 @@
 ## [2.2.0] - 2025-06-02
 
 ### Stabilizations
-- use PSR-14 event for TCA adjustments because ob exception in production, thx to Thomas Schöne (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/47 / Pull request: https://github.com/thieleundklose/tk-typo3-autotranslate/pull/46)
+- Keep original values for given fields in translated records, thx to Thomas Schöne (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/37 / Pull request: https://github.com/thieleundklose/tk-typo3-autotranslate/pull/36)
+- Use PSR-14 event for TCA adjustments because ob exception in production, thx to Thomas Schöne (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/47 / Pull request: https://github.com/thieleundklose/tk-typo3-autotranslate/pull/46)
 
 ## [2.1.3] - 2025-06-01
 
