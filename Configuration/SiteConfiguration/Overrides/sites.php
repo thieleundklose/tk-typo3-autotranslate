@@ -40,14 +40,14 @@ $GLOBALS['SiteConfiguration']['site']['columns']['autotranslateUseDeeplGlossary'
 $palettes['deeplGlossary'] = ['showitem' => 'autotranslateUseDeeplGlossary'];
 
 // add translateable tables
-$translateableTables = TranslationHelper::translateableTables();
+$tablesToTranslate = TranslationHelper::tablesToTranslate();
 
 $possibleTranslationLanguages = array_map(function ($v) {
     return $v['languageId'] . ' => ' . ( isset($v['title']) ? $v['title'] : 'no title defined' );
 }, TranslationHelper::possibleTranslationLanguages($siteConfiguration['languages'] ?? []));
 $possibleTranslationLanguagesDescription = !empty($possibleTranslationLanguages) ? 'Comma seperated list of language uids. (' . implode(', ', $possibleTranslationLanguages) . ')' : 'First define Languages in Site Configuration.';
 
-foreach ($translateableTables as $table) {
+foreach ($tablesToTranslate as $table) {
     $tableUpperCamelCase = GeneralUtility::underscoredToUpperCamelCase($table);
 
     $additionalFields = [];

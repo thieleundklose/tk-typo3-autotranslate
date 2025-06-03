@@ -41,7 +41,7 @@ class TranslationHelper
      *
      * @return string[]
      */
-    public static function translateableTables(): array
+    public static function tablesToTranslate(): array
     {
         return array_merge(
             self::COLUMN_TRANSLATEABLE_TABLES,

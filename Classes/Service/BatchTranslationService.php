@@ -61,8 +61,8 @@ class BatchTranslationService implements LoggerAwareInterface
 
         // init translation service
         $translator = GeneralUtility::makeInstance(Translator::class, $item->getPid());
-        $translateAbleTables = TranslationHelper::translateableTables();
-        foreach ($translateAbleTables as $table) {
+        $tablesToTranslate = TranslationHelper::tablesToTranslate();
+        foreach ($tablesToTranslate as $table) {
 
             if ($table === 'pages') {
                 // translate page

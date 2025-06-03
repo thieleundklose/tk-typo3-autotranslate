@@ -35,7 +35,7 @@ class Loader
         $sites = $siteFinder->getAllSites();
 
         foreach ($sites as $site) {
-            foreach (TranslationHelper::translateableTables() as $table) {
+            foreach (TranslationHelper::tablesToTranslate() as $table) {
                 $settings = TranslationHelper::translationSettingsDefaults($site->getConfiguration(), $table);
                 if (!$settings) {
                     continue;

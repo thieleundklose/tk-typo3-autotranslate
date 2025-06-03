@@ -43,7 +43,7 @@ class DataHandler implements SingletonInterface
         $recordUid,
         array $fields,
         \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject
-    ) 
+    )
     {
 
         // Skip auto translation if hook is suspended. @see processCmdmap() for detailed description.
@@ -63,7 +63,7 @@ class DataHandler implements SingletonInterface
 
         $pid = $parentObject->getPID($table, $recordUid);
         $pageId = ($pid === 0 && $table === 'pages') ? $recordUid : $pid;
-        
+
         // Skip auto translation if page id is not set, because no site configuration could be exist on root page 0.
         if (empty($pageId)) {
             return;
@@ -71,7 +71,7 @@ class DataHandler implements SingletonInterface
 
         $translator = GeneralUtility::makeInstance(Translator::class, $pageId);
 
-        if (in_array($table, TranslationHelper::translateableTables())) {
+        if (in_array($table, TranslationHelper::tablesToTranslate())) {
             $translator->translate($table, (int)$recordUid, $parentObject);
         }
 
