@@ -9,6 +9,7 @@ use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
 use TYPO3\CMS\Core\Site\SiteFinder;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class BatchTranslationService implements LoggerAwareInterface
@@ -102,6 +103,10 @@ class BatchTranslationService implements LoggerAwareInterface
      */
     private function translateGridElements(Translator $translator, array $constraints, BatchItem $item): void
     {
+        if (!ExtensionManagementUtility::isLoaded('gridelements')) {
+            return;
+        }
+
         // Find only top-level containers first
         $topLevelContainerConstraints = array_merge($constraints, [
             "CType = 'gridelements_pi1'",
@@ -180,6 +185,9 @@ class BatchTranslationService implements LoggerAwareInterface
      */
     private function isGridElementOrChild(array $record): bool
     {
-        return $record['CType'] === 'gridelements_pi1' || $record['tx_gridelements_container'] > 0;
+        if (!ExtensionManagementUtility::isLoaded('gridelements')) {
+            return false;
+        }
+        return $record['CType'] === 'gridelements_pi1' || ($record && $record['tx_gridelements_container'] > 0);
     }
 }
