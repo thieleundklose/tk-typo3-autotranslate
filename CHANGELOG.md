@@ -1,9 +1,10 @@
 # Changelog
 
 
-## [2.2.0] - 2025-06-02
+## [2.2.0] - 2025-06-03
 
 ### Stabilizations
+- Add grid support for batch translations, thx to Thomas Schöne (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/42 / Pull request: https://github.com/thieleundklose/tk-typo3-autotranslate/pull/41)
 - Keep original values for given fields in translated records, thx to Thomas Schöne (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/37 / Pull request: https://github.com/thieleundklose/tk-typo3-autotranslate/pull/36)
 - Use PSR-14 event for TCA adjustments because ob exception in production, thx to Thomas Schöne (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/47 / Pull request: https://github.com/thieleundklose/tk-typo3-autotranslate/pull/46)
 
