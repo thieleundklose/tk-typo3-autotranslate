@@ -22,6 +22,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThieleUndKlose\Autotranslate\Service\GlossaryService;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 
 class Translator implements LoggerAwareInterface
 {
@@ -235,6 +236,7 @@ class Translator implements LoggerAwareInterface
             $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
             $result = null;
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
+                $toTranslate = $this->extractAndReplaceTranslatableHtmlAttributes($toTranslate);
                 $translator = new \DeepL\Translator($this->apiKey);
                 $translatorOptions = [
                     TranslateTextOptions::TAG_HANDLING => 'html',
@@ -249,23 +251,69 @@ class Translator implements LoggerAwareInterface
                     }
                 }
 
-                $result = $translator->translateText($toTranslate, $deeplSourceLang, $deeplTargetLang, $translatorOptions);
+                // it is experimental to add flexform fields to translation
+                // TODO let define which fields in flexform should be translated to prevent translating settings
+                if (isset($toTranslate['pi_flexform'])) {
+                    $xml = simplexml_load_string($record['pi_flexform']);
+
+                    foreach ($xml->xpath('//field') as $field) {
+                        $value = (string)$field->value;
+                        if (!empty(trim($value))
+                            && strpos($value, '<') === false
+                            && is_string($value)
+                            && !is_numeric($value)
+                            && $value !== ''
+                        ) {
+                            $translationResult = $translator->translateText(
+                                [$value],
+                                $deeplSourceLang,
+                                $deeplTargetLang,
+                                $translatorOptions
+                            );
+                            if (!empty($translationResult)) {
+                                $field->value[0] = $translationResult[0]->text;
+                            }
+                        }
+                    }
+
+                    $translatedColumns['pi_flexform'] = $xml->asXML();
+                    unset($toTranslate['pi_flexform']);
+                }
+
+                $result = empty($toTranslate) ? [] : $translator->translateText($toTranslate, $deeplSourceLang, $deeplTargetLang, $translatorOptions);
             }
 
             $keys = array_keys($toTranslate);
             if (!empty($result)) {
+                $translatedAttributes = [];
                 foreach ($result as $k => $v) {
-                    $translatedColumns[$keys[$k]] = $v->text;
+                    $field = $keys[$k];
+                    if (strpos($field, '__ATTR__') === 0) {
+                        $translatedAttributes[$field] = $v->text;
+                    }
+                }
+
+                foreach ($result as $k => $v) {
+                    $field = $keys[$k];
+                    if (strpos($field, '__ATTR__') === 0) {
+                        continue;
+                    }
+                    $translatedValue = $this->restoreTranslatedHtmlAttributes($v->text, $translatedAttributes);
+                    $translatedColumns[$field] = $translatedValue;
                 }
             }
 
-            // synchronized properties
-            $translatedColumns['hidden'] = $record['hidden'];
-            $translatedColumns[self::AUTOTRANSLATE_LAST] = time();
-
-            if (isset($record['pi_flexform'])) {
-                $translatedColumns['pi_flexform'] = $record['pi_flexform'];
+            // add fields to copy in translation from extension configuration
+            $fieldsToCopy = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('autotranslate', 'fieldsToCopy');
+            $fields = $fieldsToCopy ? GeneralUtility::trimExplode(',', $fieldsToCopy, true) : [];
+            foreach ($record as $field => $value) {
+                if (isset($record[$field]) && !isset($translatedColumns[$field]) && in_array($field, $fields, true)) {
+                    $translatedColumns[$field] = $value;
+                }
             }
+
+            // set date and time of translation
+            $translatedColumns[self::AUTOTRANSLATE_LAST] = time();
 
             LogUtility::log($this->logger, 'Successful translated to target language {deeplTargetLang}.', ['deeplTargetLang' => $deeplTargetLang, 'toTranslate' => $toTranslate, 'result' => $result, 'translatedColumns' => $translatedColumns]);
         } catch (\Exception $e) {
@@ -273,6 +321,125 @@ class Translator implements LoggerAwareInterface
         }
 
         return $translatedColumns;
+    }
+
+    /**
+     * Ersetzt Platzhalter im HTML wieder durch die übersetzten Attributwerte.
+     *
+     * @param string $html
+     * @param array $attrTranslations [Platzhalter => Übersetzung]
+     * @return string
+     */
+    private function restoreTranslatedHtmlAttributes(string $html, array $attrTranslations): string
+    {
+        foreach ($attrTranslations as $placeholder => $translatedValue) {
+            $html = str_replace($placeholder, $translatedValue, $html);
+        }
+        return $html;
+    }
+
+    /**
+     * Ersetzt übersetzbare HTML-Attribute durch Platzhalter und gibt das modifizierte Array
+     * sowie die Mapping-Tabelle zurück.
+     *
+     * @param array $toTranslate
+     * @return array [array $modifiedToTranslate, array $attrMap]
+     */
+    private function extractAndReplaceTranslatableHtmlAttributes(array $toTranslate): array
+    {
+        $attributeMap = [
+            ['tag' => 'a', 'attr' => 'title'],
+            // weitere Attribute nach Bedarf ergänzen
+        ];
+
+        $attrMap = [];
+        $attrCounter = 1;
+
+        foreach ($toTranslate as $field => &$value) {
+            if ($this->isHtml($value)) {
+                foreach ($attributeMap as $map) {
+                    $found = $this->extractHtmlAttributes($value, $map['tag'], $map['attr']);
+                    foreach ($found as $attrValue) {
+                        $placeholder = '__ATTR__' . $attrCounter . '__';
+                        $attrMap[$placeholder] = $attrValue;
+                        $value = $this->replaceHtmlAttributeWithPlaceholder($value, $map['tag'], $map['attr'], $attrValue, $placeholder);
+                        $attrCounter++;
+                    }
+                }
+            }
+        }
+        unset($value);
+
+        // Füge die Attribute als eigene Einträge zum Übersetzen hinzu
+        foreach ($attrMap as $placeholder => $original) {
+            $toTranslate[$placeholder] = $original;
+        }
+
+        return $toTranslate;
+    }
+
+    private function isHtml(string $value): bool {
+        return $value !== strip_tags($value);
+    }
+
+    /**
+     * Extrahiert alle Werte eines bestimmten Attributs anhand eines Tag-Namens aus HTML.
+     *
+     * @param string $html Der HTML-String
+     * @param string $tagName Der Tag-Name (z.B. 'a')
+     * @param string $attributeName Das Attribut (z.B. 'title')
+     * @return array Array mit allen gefundenen Attributwerten
+     */
+    private function extractHtmlAttributes(string $html, string $tagName, string $attributeName): array
+    {
+        $values = [];
+        if (trim($html) === '') {
+            return $values;
+        }
+
+        $doc = new \DOMDocument();
+        // Fehler unterdrücken, falls ungültiges HTML
+        @$doc->loadHTML('<?xml encoding="utf-8" ?>' . $html);
+
+        $xpath = new \DOMXPath($doc);
+        // XPath-Query für alle gewünschten Attribute
+        $query = sprintf('//' . $tagName . '[@' . $attributeName . ']');
+        foreach ($xpath->query($query) as $node) {
+            /** @var \DOMElement $node */
+            $values[] = $node->getAttribute($attributeName);
+        }
+        return $values;
+    }
+
+    /**
+     * Ersetzt ein bestimmtes Attribut eines Tags in einem HTML-String durch einen Platzhalter.
+     *
+     * @param string $html Der HTML-String
+     * @param string $tag Der Tag-Namen (z.B. 'a')
+     * @param string $attr Das Attribut (z.B. 'title')
+     * @param string $original Der Originalwert des Attributs, der ersetzt werden soll
+     * @param string $placeholder Der Platzhalter, der den Originalwert ersetzen soll
+     * @return string Der modifizierte HTML-String
+     */
+    private function replaceHtmlAttributeWithPlaceholder(string $html, string $tag, string $attr, string $original, string $placeholder): string
+    {
+        $doc = new \DOMDocument();
+        @$doc->loadHTML('<?xml encoding="utf-8" ?>' . $html);
+        $xpath = new \DOMXPath($doc);
+        $query = sprintf('//' . $tag . '[@' . $attr . ']');
+        foreach ($xpath->query($query) as $node) {
+            /** @var \DOMElement $node */
+            if ($node->getAttribute($attr) === $original) {
+                $node->setAttribute($attr, $placeholder);
+            }
+        }
+        // body extrahieren, da loadHTML immer ein vollständiges HTML-Dokument erzeugt
+        $body = $doc->getElementsByTagName('body')->item(0);
+        $innerHTML = '';
+        foreach ($body->childNodes as $child) {
+            $innerHTML .= $doc->saveHTML($child);
+        }
+        return $innerHTML;
     }
 
     /**
