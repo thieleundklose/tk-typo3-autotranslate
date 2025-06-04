@@ -9,6 +9,7 @@ use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
 use TYPO3\CMS\Core\Site\SiteFinder;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class BatchTranslationService implements LoggerAwareInterface
@@ -61,8 +62,8 @@ class BatchTranslationService implements LoggerAwareInterface
 
         // init translation service
         $translator = GeneralUtility::makeInstance(Translator::class, $item->getPid());
-        $translateAbleTables = TranslationHelper::translateableTables();
-        foreach ($translateAbleTables as $table) {
+        $tablesToTranslate = TranslationHelper::tablesToTranslate();
+        foreach ($tablesToTranslate as $table) {
 
             if ($table === 'pages') {
                 // translate page
@@ -78,15 +79,115 @@ class BatchTranslationService implements LoggerAwareInterface
                     $constraints[] = $GLOBALS['TCA'][$table]['ctrl']['delete'] . ' = 0';
                 }
 
-                // get and translate other content placed on page
-                $records = Records::getRecords($table, 'uid', $constraints);
-                foreach ($records as $uid) {
-                    $translator->translate($table, $uid, null, (string)$item->getSysLanguageUid(), $item->getMode());
+                if ($table === 'tt_content') {
+                    $this->translateGridElements($translator, $constraints, $item);
+                    $this->translateRegularContent($translator, $constraints, $item);
+                } else {
+                    $records = Records::getRecords($table, 'uid', $constraints);
+                    foreach ($records as $uid) {
+                        $translator->translate($table, $uid, null, (string)$item->getSysLanguageUid(), $item->getMode());
+                    }
                 }
             }
         }
-
         return true;
     }
 
+    /**
+     * Translates Grid-Elements and their child elements
+     *
+     * @param Translator $translator
+     * @param array $constraints
+     * @param BatchItem $item
+     * @return void
+     */
+    private function translateGridElements(Translator $translator, array $constraints, BatchItem $item): void
+    {
+        if (!ExtensionManagementUtility::isLoaded('gridelements')) {
+            return;
+        }
+
+        // Find only top-level containers first
+        $topLevelContainerConstraints = array_merge($constraints, [
+            "CType = 'gridelements_pi1'",
+            "tx_gridelements_container = 0"
+        ]);
+        $topLevelContainers = Records::getRecords('tt_content', 'uid', $topLevelContainerConstraints);
+
+        foreach ($topLevelContainers as $containerUid) {
+            // Translate container and its children recursively
+            $this->translateContainerAndChildren($translator, $constraints, $containerUid, $item);
+        }
+    }
+
+    /**
+     * Recursively translates a container and all its children
+     *
+     * @param Translator $translator
+     * @param array $constraints
+     * @param int $containerUid
+     * @param BatchItem $item
+     * @return void
+     */
+    private function translateContainerAndChildren(Translator $translator, array $constraints, int $containerUid, BatchItem $item): void
+    {
+        // First translate the container itself
+        $translator->translate('tt_content', $containerUid, null, (string)$item->getSysLanguageUid(), $item->getMode());
+
+        // Get all direct children
+        $childConstraints = array_merge($constraints, [
+            "tx_gridelements_container = " . $containerUid
+        ]);
+        $childElements = Records::getRecords('tt_content', 'uid', $childConstraints);
+
+        foreach ($childElements as $childUid) {
+            $record = Records::getRecord('tt_content', $childUid);
+
+            if ($record['CType'] === 'gridelements_pi1') {
+                // If it's a container, translate it and its children recursively
+                $this->translateContainerAndChildren($translator, $constraints, $childUid, $item);
+            } else {
+                // If it's a regular content element, translate it
+                $translator->translate('tt_content', $childUid, null, (string)$item->getSysLanguageUid(), $item->getMode());
+            }
+        }
+    }
+
+    /**
+     * Translates regular content elements (non-Grid-Elements)
+     *
+     * @param Translator $translator
+     * @param array $constraints
+     * @param BatchItem $item
+     * @return void
+     */
+    private function translateRegularContent(Translator $translator, array $constraints, BatchItem $item): void
+    {
+        $records = Records::getRecords('tt_content', 'uid', $constraints);
+
+        foreach ($records as $uid) {
+            $record = Records::getRecord('tt_content', $uid);
+
+            // Skip if it's a Grid-Container or child element
+            if ($this->isGridElementOrChild($record)) {
+                continue;
+            }
+
+            $translator->translate('tt_content', $uid, null, (string)$item->getSysLanguageUid(), $item->getMode());
+        }
+    }
+
+    /**
+     * Checks if a record is a Grid-Element or child element
+     *
+     * @param array $record
+     * @return bool
+     */
+    private function isGridElementOrChild(array $record): bool
+    {
+        if (!ExtensionManagementUtility::isLoaded('gridelements')) {
+            return false;
+        }
+        return $record['CType'] === 'gridelements_pi1' || ($record && $record['tx_gridelements_container'] > 0);
+    }
 }

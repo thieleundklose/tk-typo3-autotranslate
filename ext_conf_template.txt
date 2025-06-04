@@ -3,3 +3,6 @@ additionalTables =
 
 # cat=general/O; type=string; label=DeepL API Key
 apiKey =
+
+# cat=general/O; type=string; label=excluded fields: Comma separated list of fields that should used in translated records
+fieldsToCopy = pi_flexform, hidden

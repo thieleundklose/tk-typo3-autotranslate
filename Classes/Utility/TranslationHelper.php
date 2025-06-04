@@ -41,7 +41,7 @@ class TranslationHelper
      *
      * @return string[]
      */
-    public static function translateableTables(): array
+    public static function tablesToTranslate(): array
     {
         return array_merge(
             self::COLUMN_TRANSLATEABLE_TABLES,
@@ -176,7 +176,7 @@ class TranslationHelper
     public static function defaultLanguage(?array $siteLanguages): SiteLanguage
     {
         if (empty($siteLanguages)) {
-            return [];
+            throw new SiteNotFoundException('No site languages found.', 1633031234);
         }
 
         return $siteLanguages[0];

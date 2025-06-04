@@ -1,9 +1,7 @@
 <?php
 
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
-use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 foreach (TranslationHelper::additionalTables() as $table) {
     $extKey = 'autotranslate';
@@ -58,17 +56,4 @@ foreach (TranslationHelper::additionalTables() as $table) {
         'after:' . $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']
     );
 
-
-    // remove allowLanguageSynchronization from the fields you want to translate. Otherwise, translations would be reset. (tt_address)
-    $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-    $sites = $siteFinder->getAllSites();
-    foreach($sites as $site) {
-        $settings = TranslationHelper::translationSettingsDefaults($site->getConfiguration(), $table);
-        $textFields = GeneralUtility::trimExplode(',', $settings['autotranslateTextfields'] ?? '', true);
-        foreach ($textFields as $field) {
-            if ($GLOBALS['TCA'][$table]['columns'][$field]['config']['behaviour']['allowLanguageSynchronization'] ?? null === true) {
-                $GLOBALS['TCA'][$table]['columns'][$field]['config']['behaviour']['allowLanguageSynchronization'] = false;
-            }
-        }
-    }
 }
