@@ -38,6 +38,7 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
      */
     public function defaultLegacyAction()
     {
+        $this->addDeeplApiKeyInfoMessage();
         $this->initializeModuleTemplate();
         $this->view->assignMultiple($this->getBatchTranslationData());
     }

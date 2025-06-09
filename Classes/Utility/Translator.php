@@ -50,7 +50,7 @@ class Translator implements LoggerAwareInterface
      */
     function __construct(int $pageId) {
         $this->pageId = $pageId;
-        $this->apiKey = TranslationHelper::apiKey($this->pageId);
+        list('key' => $this->apiKey) = TranslationHelper::apiKey($this->pageId);
         $this->siteLanguages = TranslationHelper::siteConfigurationValue($this->pageId, ['languages']);
         $this->glossaryService = GeneralUtility::makeInstance(GlossaryService::class);
     }
@@ -68,8 +68,25 @@ class Translator implements LoggerAwareInterface
      */
     public function translate(string $table, int $recordUid, ?DataHandler $parentObject = null, ?string $languagesToTranslate = null, string $translateMode = self::TRANSLATE_MODE_BOTH): void
     {
-        if ($this->apiKey === null) {
-            return;
+
+        $deeplApiKeyDetails = DeeplApiHelper::checkApiKey($this->apiKey);
+        if ($deeplApiKeyDetails['error']){
+            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
+                'error' => $deeplApiKeyDetails['error']
+            ]);
+            throw new \RuntimeException('DeepL API Key is not valid: ' . $deeplApiKeyDetails['error']);
+        }
+        if (!$deeplApiKeyDetails['isValid']) {
+            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
+                'error' => 'No API Key given.'
+            ]);
+            throw new \RuntimeException('DeepL API Key is not valid: No API Key given.');
+        }
+        if ($deeplApiKeyDetails['charactersLeft'] <= 0) {
+            LogUtility::log($this->logger, 'DeepL API Key has no characters left: {charactersLeft}', [
+                'charactersLeft' => $deeplApiKeyDetails['charactersLeft']
+            ]);
+            throw new \RuntimeException('DeepL API Key has no characters left: ' . $deeplApiKeyDetails['charactersLeft']);
         }
 
         $record = Records::getRecord($table, $recordUid);
@@ -238,6 +255,7 @@ class Translator implements LoggerAwareInterface
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
                 $toTranslate = $this->extractAndReplaceTranslatableHtmlAttributes($toTranslate);
                 $translator = new \DeepL\Translator($this->apiKey);
+                // check for valid api key
                 $translatorOptions = [
                     TranslateTextOptions::TAG_HANDLING => 'html',
                     TranslateTextOptions::SPLIT_SENTENCES => true
