@@ -334,7 +334,7 @@ class TranslationHelper
      * @return string|null
      * @throws SiteNotFoundException
      */
-    public static function apiKey(?int $pageId = null): ?string
+    public static function apiKey(?int $pageId = null): array
     {
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
 
@@ -351,7 +351,10 @@ class TranslationHelper
                 $site = $siteFinder->getSiteByPageId($pageId);
                 $configuration = $site->getConfiguration();
                 if ($configuration['deeplAuthKey'] ?? null) {
-                    return $configuration['deeplAuthKey'];
+                    return [
+                        'key' => $configuration['deeplAuthKey'],
+                        'source' => 'Site configuration of page ' . $pageId
+                    ];
                 }
             } catch (SiteNotFoundException $e) {}
         }
@@ -359,14 +362,20 @@ class TranslationHelper
         // get global apiKey from Extension Settings
         $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('autotranslate');
         if ($extensionConfiguration['apiKey'] ?? null) {
-            return $extensionConfiguration['apiKey'];
+            return [
+                'key' => $extensionConfiguration['apiKey'],
+                'source' => 'Extension settings of autotranslate'
+            ];
         }
 
         // get global apiKey from 3rd party Extension Settings as fallback
         if (ExtensionManagementUtility::isLoaded('deepltranslate_glossary')) {
             $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('deepltranslate_core');
             if ($extensionConfiguration['apiKey'] ?? null) {
-                return $extensionConfiguration['apiKey'];
+                return [
+                    'key' => $extensionConfiguration['apiKey'],
+                    'source' => 'Extension settings of deepltranslate_core'
+                ];
             }
         }
 
@@ -375,10 +384,16 @@ class TranslationHelper
         foreach ($sites as $site) {
             $configuration = $site->getConfiguration();
             if ($configuration['deeplAuthKey'] ?? null) {
-                return $configuration['deeplAuthKey'];
+                return [
+                    'key' => $configuration['deeplAuthKey'],
+                    'source' => 'Site configuration of page ' . $site->getRootPageId()
+                ];
             }
         }
-        return null;
+        return [
+            'key' => null,
+            'source' => null
+        ];
     }
 
     /**
