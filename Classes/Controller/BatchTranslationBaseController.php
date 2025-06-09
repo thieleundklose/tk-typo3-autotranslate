@@ -110,6 +110,11 @@ class BatchTranslationBaseController extends ActionController
     protected array $menuLevelItems = [0, 1, 2, 3, 4, 250];
 
     /**
+     * @var array
+     */
+    protected array $deeplApiKeyDetails = [];
+
+    /**
      * get batch translation data
      * @return array
      */
@@ -367,6 +372,57 @@ class BatchTranslationBaseController extends ActionController
         parent::initializeAction();
     }
 
+    protected function addDeeplApiKeyInfoMessage(): void
+    {
+        $apiKeyDetails = \ThieleUndKlose\Autotranslate\Utility\TranslationHelper::apiKey($this->pageUid ?? null);
+        $apiKey = $apiKeyDetails['key'] ?? null;
+
+        $this->deeplApiKeyDetails = \ThieleUndKlose\Autotranslate\Utility\DeeplApiHelper::checkApiKey($apiKey);
+
+        if ($apiKey) {
+            $maskedApiKey = '';
+            $count = 0;
+            for ($i = 0; $i < strlen($apiKey); $i++) {
+                $char = $apiKey[$i];
+                if ($char === '-') {
+                    $maskedApiKey .= '-';
+                } elseif ($count < 20) {
+                    $maskedApiKey .= '*';
+                    $count++;
+                } else {
+                    $maskedApiKey .= $char;
+                }
+            }
+        } else {
+            $maskedApiKey = '(not set)';
+        }
+
+        $description = [];
+        $messageType = self::MESSAGE_INFO;
+
+        if ($this->deeplApiKeyDetails['usage']) {
+            $usage = $this->deeplApiKeyDetails['usage'];
+            if (is_object($usage) && method_exists($usage, '__toString')) {
+                $usage = (string)$usage;
+            }
+            $usage = str_replace(PHP_EOL, ' ', $usage);
+            $usage = str_replace('Characters: ', '', $usage);
+            $description[] = trim($usage) . ' Characters';
+        }
+        if ($this->deeplApiKeyDetails['error']) {
+            $description[] = $this->deeplApiKeyDetails['error'];
+            $messageType = self::MESSAGE_ERROR;
+        }
+
+        if (!empty($description)) {
+            $this->addMessage(
+                'DeepL API Key: ' . $maskedApiKey,
+                implode(PHP_EOL, $description),
+                $messageType
+            );
+        }
+    }
+
     /**
      * Collect batch items from given argument
      *
@@ -409,34 +465,43 @@ class BatchTranslationBaseController extends ActionController
             }
         }
 
-        if ($this->request->hasArgument('execute')) {
-            $items = $this->getBatchItemsFromArgument('execute');
-            foreach ($items as $item) {
-                if (!$item->isExecutable()) {
-                    $this->addMessage(
-                        'Item can not be translated',
-                        sprintf('Item with uid %s could not be translated. Check the error and reset it.', $item->getUid()),
-                        self::MESSAGE_ERROR
-                    );
-                    continue;
+        try {
+            if ($this->request->hasArgument('execute')) {
+                $items = $this->getBatchItemsFromArgument('execute');
+                foreach ($items as $item) {
+                    if (!$item->isExecutable()) {
+                        $this->addMessage(
+                            'Item can not be translated',
+                            sprintf('Item with uid %s could not be translated. Check the error and reset it.', $item->getUid()),
+                            self::MESSAGE_ERROR
+                        );
+                        continue;
+                    }
+
+                    $res = $this->batchTranslationService->translate($item);
+                    if ($res === true) {
+                        $item->markAsTranslated();
+                        $this->addMessage(
+                            'Successfully translated',
+                            sprintf('Item with uid %s was translated.', $item->getUid()),
+                            self::MESSAGE_OK
+                        );
+                    } else {
+                        $this->addMessage(
+                            'Error while translating',
+                            sprintf('Item with uid %s could not be translated.', $item->getUid()),
+                            self::MESSAGE_ERROR
+                        );
+                    }
+                    $this->batchItemRepository->update($item);
                 }
-                $res = $this->batchTranslationService->translate($item);
-                if ($res === true) {
-                    $item->markAsTranslated();
-                    $this->addMessage(
-                        'Successfully translated',
-                        sprintf('Item with uid %s was translated.', $item->getUid()),
-                        self::MESSAGE_OK
-                    );
-                } else {
-                    $this->addMessage(
-                        'Error while translating',
-                        sprintf('Item with uid %s could not be translated.', $item->getUid()),
-                        self::MESSAGE_ERROR
-                    );
-                }
-                $this->batchItemRepository->update($item);
             }
+        } catch (Exception $e) {
+            $this->addMessage(
+                'Error during translation',
+                'An error occurred while translating the items: ' . $e->getMessage(),
+                self::MESSAGE_ERROR
+            );
         }
 
         if ($this->request->hasArgument('reset')) {

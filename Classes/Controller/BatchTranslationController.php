@@ -37,6 +37,8 @@ class BatchTranslationController extends BatchTranslationBaseController
      */
     public function defaultAction(): ResponseInterface
     {
+        $this->addDeeplApiKeyInfoMessage();
+
         $view = $this->initializeModuleTemplate($this->request);
         $view->assignMultiple($this->getBatchTranslationData());
 

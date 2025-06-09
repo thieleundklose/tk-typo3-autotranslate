@@ -21,6 +21,7 @@ class DeeplApiHelper
             return [
                 'isValid' => false,
                 'usage' => null,
+                'charactersLeft' => 0,
                 'error' => null,
             ];
         }
@@ -28,27 +29,35 @@ class DeeplApiHelper
         try {
             $translator = new Translator($apiKey);
             $usage = $translator->getUsage();
+            $charactersLeft = null;
+            if (is_object($usage) && isset($usage->character)) {
+                $charactersLeft = $usage->character->limit - $usage->character->count;
+            }
             return [
                 'isValid' => true,
                 'usage' => $usage,
+                'charactersLeft' => $charactersLeft,
                 'error' => null,
             ];
         } catch (AuthorizationException $e) {
             return [
                 'isValid' => false,
                 'usage' => null,
+                'charactersLeft' => 0,
                 'error' => $e->getMessage(),
             ];
         } catch (DeepLException $e) {
             return [
                 'isValid' => false,
                 'usage' => null,
+                'charactersLeft' => 0,
                 'error' => 'DeepL error: ' . $e->getMessage(),
             ];
         } catch (\Throwable $e) {
             return [
                 'isValid' => false,
                 'usage' => null,
+                'charactersLeft' => 0,
                 'error' => 'Unexpected error: ' . $e->getMessage(),
             ];
         }

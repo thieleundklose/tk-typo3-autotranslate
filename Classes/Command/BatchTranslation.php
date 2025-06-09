@@ -14,6 +14,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
 use ThieleUndKlose\Autotranslate\Domain\Repository\BatchItemRepository;
 use ThieleUndKlose\Autotranslate\Service\BatchTranslationService;
+use ThieleUndKlose\Autotranslate\Utility\LogUtility;
 use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\ServerRequest;
@@ -122,13 +123,20 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
             return Command::SUCCESS;
         }
 
-        foreach ($batchItemsToRun as $item) {
-            $res = $this->batchTranslationService->translate($item);
-            if ($res === true) {
-                $successfulTranslations++;
-                $item->markAsTranslated();
-                $this->updateBatchItem($item);
+        try {
+            foreach ($batchItemsToRun as $item) {
+                $res = $this->batchTranslationService->translate($item);
+                if ($res === true) {
+                    $successfulTranslations++;
+                    $item->markAsTranslated();
+                    $this->updateBatchItem($item);
+                }
             }
+
+        } catch (\Exception $e) {
+            LogUtility::log($this->logger, 'Error during batch translation: {error}', ['error' => $e->getMessage()], LogUtility::MESSAGE_ERROR);
+            $output->writeln('Error initializing translation service: ' . $e->getMessage());
+            return Command::FAILURE;
         }
 
         $this->logTranslationStats($successfulTranslations, $translationsPerRun);

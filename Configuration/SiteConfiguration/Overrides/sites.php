@@ -1,5 +1,6 @@
 <?php
 
+use ThieleUndKlose\Autotranslate\Utility\DeeplApiHelper;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
@@ -9,10 +10,34 @@ $siteConfiguration = isset($_REQUEST['site']) ? GeneralUtility::makeInstance(Sit
 
 $palettes = [];
 
+$deeplAuthKeyDescription = ['Enter your generated API key or generate a new one at https://www.deepl.com/account/'];
+
+if (!empty($siteConfiguration['deeplAuthKey'])) {
+    $source = null;
+    $apiKey = $siteConfiguration['deeplAuthKey'];
+} else {
+    list('key' => $apiKey, 'source' => $source) = TranslationHelper::apiKey();
+}
+
+$deeplApiKeyDetails = DeeplApiHelper::checkApiKey($apiKey);
+if ($source) {
+    $maskedApiKey = str_repeat('*', 20) . substr($apiKey, 20);
+    $deeplAuthKeyDescription[] = 'Defined: ' . $source . ' (' . $maskedApiKey . ')';
+}
+if ($deeplApiKeyDetails['usage']) {
+    $usage = $deeplApiKeyDetails['usage'];
+    $usage = str_replace(PHP_EOL, ' ', $usage);
+    $usage = str_replace('Characters: ', '', $usage);
+    $deeplAuthKeyDescription[] = $usage. ' Characters';
+}
+if ($deeplApiKeyDetails['error']) {
+    $deeplAuthKeyDescription[] = $deeplApiKeyDetails['error'];
+}
+
 // add deepl auth key
 $GLOBALS['SiteConfiguration']['site']['columns']['deeplAuthKey'] = [
     'label' => 'DeepL API key (overwrites the one from the extension settings to use a special key for this page configuration)',
-    'description' => 'Enter your generated API key or generate a new one at https://www.deepl.com/account/',
+    'description' => implode(PHP_EOL, $deeplAuthKeyDescription),
     'config' => [
         'type' => 'input',
         'size' => 50,
@@ -140,15 +165,19 @@ $GLOBALS['SiteConfiguration']['site']['types']['0']['showitem'] .= ', --div--;Au
 
 // settings for deepl translation source
 $deeplSourceLangItems = [];
-$apiKey = TranslationHelper::apiKey();
-if (empty($apiKey)) {
-    $deeplSourceLangItems[] = ['Please define deepl api key first', ''];
+
+if (!$deeplApiKeyDetails['isValid']) {
+    $deeplSourceLangItems[] = ['Please define valid DeepL api key first', ''];
 } else {
     $deeplSourceLangItems[] = ['Please Choose'];
-    $translator = new \DeepL\Translator($apiKey);
-    $sourceLanguages = $translator->getSourceLanguages();
-    foreach ($sourceLanguages as $sourceLanguage) {
-        $deeplSourceLangItems[] = [$sourceLanguage->name, $sourceLanguage->code];
+    try {
+        $translator = new \DeepL\Translator($apiKey);
+        $sourceLanguages = $translator->getSourceLanguages();
+        foreach ($sourceLanguages as $sourceLanguage) {
+            $deeplSourceLangItems[] = [$sourceLanguage->name, $sourceLanguage->code];
+        }
+    } catch (\Exception $e) {
+        // exception too many requests
     }
 }
 
@@ -163,20 +192,24 @@ $GLOBALS['SiteConfiguration']['site_language']['columns']['deeplSourceLang'] = [
         'minitems' => 0,
         'maxitems' => 1,
         'size' => 1,
+        'readOnly' => !$deeplApiKeyDetails['isValid'] || count($deeplSourceLangItems) === 1,
     ],
 ];
 
 // settings for deepl translation target
 $deeplTargetLangItems = [];
-$apiKey = TranslationHelper::apiKey();
-if (empty($apiKey)) {
-    $deeplTargetLangItems[] = ['Please define deepl api key first', ''];
+if (!$deeplApiKeyDetails['isValid']) {
+    $deeplTargetLangItems[] = ['Please define valid DeepL api key first', ''];
 } else {
     $deeplTargetLangItems[] = ['Please Choose'];
-    $translator = new \DeepL\Translator($apiKey);
-    $targetLanguages = $translator->getTargetLanguages();
-    foreach ($targetLanguages as $targetLanguage) {
-        $deeplTargetLangItems[] = [$targetLanguage->name, $targetLanguage->code];
+    try {
+        $translator = new \DeepL\Translator($apiKey);
+        $targetLanguages = $translator->getTargetLanguages();
+        foreach ($targetLanguages as $targetLanguage) {
+            $deeplTargetLangItems[] = [$targetLanguage->name, $targetLanguage->code];
+        }
+    } catch (\Exception $e) {
+        // exception too many requests
     }
 }
 
@@ -191,6 +224,7 @@ $GLOBALS['SiteConfiguration']['site_language']['columns']['deeplTargetLang'] = [
         'minitems' => 0,
         'maxitems' => 1,
         'size' => 1,
+        'readOnly' => !$deeplApiKeyDetails['isValid'] || count($deeplTargetLangItems) === 1,
     ],
 ];
 
