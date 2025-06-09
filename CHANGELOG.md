@@ -1,6 +1,12 @@
 # Changelog
 
 
+## [2.2.1] - 2025-06-09
+
+### Stabilizations
+- Added API key check to prevent site module breaks, thanks to Rainer Becker / saneinsane ([Issue #56](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/56))
+
+
 ## [2.2.0] - 2025-06-04
 
 ### Feature
