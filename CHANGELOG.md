@@ -3,8 +3,14 @@
 
 ## [2.2.1] - 2025-06-09
 
+### Bugfix
+- Backend authentication for CLI execution of batch translation to use the data handler to localize content elements
+
 ### Stabilizations
 - API key check added to prevent site module breaks, the extension now provides feedback whether an API key is valid and whether the quota has been used up, thanks to Rainer Becker / saneinsane ([Issue #56](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/56))
+
+### Feature
+- Show usage and quota in backend module, thanks to Rainer Becker / saneinsane ([Issue #54](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/54))
 
 
 ## [2.2.0] - 2025-06-04
