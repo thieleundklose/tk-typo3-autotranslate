@@ -4,7 +4,7 @@
 ## [2.2.1] - 2025-06-09
 
 ### Stabilizations
-- Added API key check to prevent site module breaks, thanks to Rainer Becker / saneinsane ([Issue #56](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/56))
+- API key check added to prevent site module breaks, the extension now provides feedback whether an API key is valid and whether the quota has been used up, thanks to Rainer Becker / saneinsane ([Issue #56](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/56))
 
 
 ## [2.2.0] - 2025-06-04
