@@ -12,7 +12,6 @@
 ### Feature
 - Show usage and quota in backend module, thanks to Rainer Becker / saneinsane ([Issue #54](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/54))
 
-
 ## [2.2.0] - 2025-06-04
 
 ### Feature
