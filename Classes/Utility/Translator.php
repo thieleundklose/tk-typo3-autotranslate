@@ -374,15 +374,18 @@ class Translator implements LoggerAwareInterface
         $attrCounter = 1;
 
         foreach ($toTranslate as $field => &$value) {
-            if ($this->isHtml($value)) {
-                foreach ($attributeMap as $map) {
-                    $found = $this->extractHtmlAttributes($value, $map['tag'], $map['attr']);
-                    foreach ($found as $attrValue) {
-                        $placeholder = '__ATTR__' . $attrCounter . '__';
-                        $attrMap[$placeholder] = $attrValue;
-                        $value = $this->replaceHtmlAttributeWithPlaceholder($value, $map['tag'], $map['attr'], $attrValue, $placeholder);
-                        $attrCounter++;
-                    }
+
+            if (!is_string($value) || trim($value) === '' || !$this->isHtml($value)) {
+                continue;
+            }
+
+            foreach ($attributeMap as $map) {
+                $found = $this->extractHtmlAttributes($value, $map['tag'], $map['attr']);
+                foreach ($found as $attrValue) {
+                    $placeholder = '__ATTR__' . $attrCounter . '__';
+                    $attrMap[$placeholder] = $attrValue;
+                    $value = $this->replaceHtmlAttributeWithPlaceholder($value, $map['tag'], $map['attr'], $attrValue, $placeholder);
+                    $attrCounter++;
                 }
             }
         }
