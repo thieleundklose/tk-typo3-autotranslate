@@ -1,6 +1,11 @@
 # Changelog
 
 
+## [2.2.2] - 2025-06-14
+
+### Fixes
+- TypeError on HTML Attribute detection, thanks to Wolfgang Wagner ([Issue #60](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/60))
+
 ## [2.2.1] - 2025-06-09
 
 ### Fixes
@@ -22,22 +27,22 @@
 ## [2.1.3] - 2025-06-01
 
 ### Features
-- Attribute translation for title tags of links in html content, thx to t-bittner (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/35)
+- Attribute translation for title tags of links in html content, thanks to t-bittner (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/35)
 
 ### Stabilizations
 - Remove deprecations
-- Request processing of CLI queries for batch translations, thx to bznovak (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/40)
+- Request processing of CLI queries for batch translations, thanks to bznovak (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/40)
 
 ## [2.1.2] - 2025-04-13
 
 ### Fixes
 - Stabilizations on TCA dependencies
-- Support for 3rd party extensions with allowLanguageSynchronization like tt_address, thx to Wolfgang Wagner (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/26)
+- Support for 3rd party extensions with allowLanguageSynchronization like tt_address, thanks to Wolfgang Wagner (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/26)
 
 ## [2.1.1] - 2025-03-25
 
 ### Fixes
-- Keep line breaks in translations, thx to Jahn Blechinger (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/34)
+- Keep line breaks in translations, thanks to Jahn Blechinger (Issue: https://github.com/thieleundklose/tk-typo3-autotranslate/issues/34)
 
 ## [2.1.0] - 2025-03-14
 
@@ -66,7 +71,7 @@
 
 ### Fixes
 - Handling of delete tca definition on additional tables
-- Stabilizations, thx to Rico Sonntag
+- Stabilizations, thanks to Rico Sonntag
 
 ## [1.3.0] - 2025-02-20
 
@@ -99,7 +104,7 @@
 ## [1.1.1] - 2024-09-18
 
 ### Features
-- Added the option to select a source language for DeepL translations in the page configuration. Otherwise, when translating individual words, the source language is often incorrectly recognized, thx to Schorsch.
+- Added the option to select a source language for DeepL translations in the page configuration. Otherwise, when translating individual words, the source language is often incorrectly recognized, thanks to Schorsch.
 
 ## [1.1.0] - 2024-09-09
 
@@ -110,7 +115,7 @@
 ## [1.0.4] - 2024-05-22
 
 ### Fixes
-- The news extension loaded condition did not work due to an incorrect extension key, thx to SventB
+- The news extension loaded condition did not work due to an incorrect extension key, thanks to SventB
 
 ## [1.0.3] - 2024-05-02
 
