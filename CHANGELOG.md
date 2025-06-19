@@ -1,6 +1,11 @@
 # Changelog
 
 
+## [2.2.3] - 2025-06-19
+
+### Stabilizations
+- Added index for big page trees like 1000+ pages, thanks to Thomas Schöne ([Issue #64](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/64) / [Pull request #63](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/63))
+
 ## [2.2.2] - 2025-06-14
 
 ### Fixes
