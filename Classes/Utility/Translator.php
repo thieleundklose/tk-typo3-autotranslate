@@ -184,11 +184,14 @@ class Translator implements LoggerAwareInterface
                             $dataHandler->start([], []);
                             $translatedSysFileReferenceUid = $dataHandler->localize('sys_file_reference', $referenceUid, $languageId);
 
+                            $hidden = Records::getRecord('sys_file_reference', $referenceUid, 'hidden') ?? 0;
+
                             Records::updateRecord(
                                 'sys_file_reference',
                                 $translatedSysFileReferenceUid,
                                 [
                                     'uid_foreign' => $localizedContents[$languageId][$recordUid],
+                                    'hidden' => $hidden,
                                 ]
                             );
 
