@@ -137,18 +137,19 @@ class Translator implements LoggerAwareInterface
             if (!$existingTranslation) {
                 $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
                 $dataHandler->start([], []);
-
                 $localizedUid = $dataHandler->localize($table, $recordUid, $languageId);
-                if ($localizedUid === false) {
-                    LogUtility::log($this->logger, 'No Translation of {table} with uid {uid} because DataHandler localize failed.', [
-                        'table' => $table,
-                        'uid' => $recordUid
-                    ]);
-                    continue;
-                }
             } else {
                 $localizedUid = $existingTranslation['uid'];
             }
+
+            if ($localizedUid === null || $localizedUid === false) {
+                LogUtility::log($this->logger, 'No Translation of {table} with uid {uid} because DataHandler localize failed.', [
+                    'table' => $table,
+                    'uid' => $recordUid
+                ]);
+                continue;
+            }
+
             $localizedContents[$languageId][$recordUid] = $localizedUid;
 
             $columnsSysFileLanguage = TranslationHelper::translationTextfields($this->pageId, 'sys_file_reference');
