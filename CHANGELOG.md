@@ -1,6 +1,11 @@
 # Changelog
 
 
+## [2.2.3] - 2025-07-07
+
+### Fixes
+- Optimization for determining the page ID due to php variable type check error, thanks tot-bittner ([Issue #67](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/67))
+
 ## [2.2.2] - 2025-06-14
 
 ### Fixes
