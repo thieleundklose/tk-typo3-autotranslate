@@ -13,6 +13,7 @@ use TYPO3\CMS\Core\Http\HtmlResponse;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use Psr\Http\Message\ResponseInterface;
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
+use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -37,7 +38,6 @@ class BatchTranslationController extends BatchTranslationBaseController
      */
     public function defaultAction(): ResponseInterface
     {
-        $this->addDeeplApiKeyInfoMessage();
 
         $view = $this->initializeModuleTemplate($this->request);
         $view->assignMultiple($this->getBatchTranslationData());
@@ -84,6 +84,7 @@ class BatchTranslationController extends BatchTranslationBaseController
             // ToDo: Implement multiselect reset action
         ]);
 
+        $this->addDeeplApiKeyInfoMessage();
         return $view->renderResponse('Default');
     }
 
@@ -105,10 +106,10 @@ class BatchTranslationController extends BatchTranslationBaseController
     public function showLogsAction(): ResponseInterface
     {
         $view = $this->initializeModuleTemplate($this->request);
-        $this->addMessage(
+        $this->addFlashMessage(
             'Not yet implemented.',
             'Planned for future versions.',
-            self::MESSAGE_WARNING
+            FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_WARNING)
         );
 
         return $view->renderResponse('ShowLogs');
@@ -180,10 +181,10 @@ class BatchTranslationController extends BatchTranslationBaseController
 
         $view->setFlashMessageQueue($this->getFlashMessageQueue());
         if ($this->pageUid === 0) {
-            $this->addMessage(
+            $this->addFlashMessage(
                 'No page selected',
                 'Please select a page first.',
-                self::MESSAGE_WARNING
+                FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_WARNING)
             );
         }
 

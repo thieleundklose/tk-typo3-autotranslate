@@ -1,8 +1,4 @@
 <?php
-
-use ThieleUndKlose\Autotranslate\Xclass\Deepltranslate\Core\Configuration as ConfigurationXclass;
-use WebVision\Deepltranslate\Core\Configuration;
-
 defined('TYPO3') or die();
 
 $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['processCmdmapClass']['autotranslate'] =
@@ -34,6 +30,6 @@ $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Utility']
 ];
 
 // xlass optional 3rd party extension to use apiKey dependent on site config
-$GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][Configuration::class] = [
-    'className' => ConfigurationXclass::class,
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][\WebVision\Deepltranslate\Core\Configuration::class] = [
+    'className' => \ThieleUndKlose\Autotranslate\Xclass\Deepltranslate\Core\Configuration::class,
 ];
