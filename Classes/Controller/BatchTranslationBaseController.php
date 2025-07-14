@@ -8,6 +8,7 @@ use Exception;
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
 use ThieleUndKlose\Autotranslate\Domain\Repository\BatchItemRepository;
 use ThieleUndKlose\Autotranslate\Service\BatchTranslationService;
+use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
 use ThieleUndKlose\Autotranslate\Utility\PageUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
@@ -20,7 +21,6 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
-use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
 
@@ -29,12 +29,6 @@ use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
  */
 class BatchTranslationBaseController extends ActionController
 {
-    const MESSAGE_NOTICE = -2;
-    const MESSAGE_INFO = -1;
-    const MESSAGE_OK = 0;
-    const MESSAGE_WARNING = 1;
-    const MESSAGE_ERROR = 2;
-
     /**
      * @var PersistenceManager
      */
@@ -149,11 +143,10 @@ class BatchTranslationBaseController extends ActionController
             $siteConfiguration = $siteFinder->getSiteByPageId($this->pageUid);
             $data['rootPageId'] = $siteConfiguration->getRootPageId();
         } catch(Exception $e) {
-
-            $this->addMessage(
+            $this->addFlashMessage(
                 'No site configuration found',
                 'Please select a configured page first or create a new configuration for this page.',
-                self::MESSAGE_WARNING
+                FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_WARNING)
             );
 
         }
@@ -165,10 +158,10 @@ class BatchTranslationBaseController extends ActionController
         $languages = array_filter($languages, fn($language) => $backendUser->checkLanguageAccess($language->getLanguageId()));
 
         if (empty($languages)) {
-            $this->addMessage(
+            $this->addFlashMessage(
                 'No target language available',
                 'Please choose another page or contact the administrator.',
-                self::MESSAGE_WARNING
+                FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_WARNING)
             );
         }
 
@@ -187,10 +180,10 @@ class BatchTranslationBaseController extends ActionController
             $batchItem->setPid($this->pageUid);
             $batchItem->setTranslate(new \DateTime());
         } else {
-            $this->addMessage(
+            $this->addFlashMessage(
                 'No translations available on selected page',
                 'Please choose another page or contact the administrator.',
-                self::MESSAGE_WARNING
+                FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_WARNING)
             );
         }
 
@@ -286,50 +279,10 @@ class BatchTranslationBaseController extends ActionController
             }
         }
 
-        $this->addMessage(
+        $this->addFlashMessage(
             'Queue items created',
             $counter . ' items created with given parameters for page with uid ' . $this->pageUid . '.',
         );
-    }
-
-    /**
-     * Add a message to the flash message queue, overwritten by child controllers
-     * @param string $title
-     * @param string $message
-     * @param int $severity
-     * @return void
-     */
-    protected function addMessage(string $title, string $message, int $severity = self::MESSAGE_OK): void
-    {
-        $this->addFlashMessage(
-            $message,
-            $title,
-            $this->typo3Version->getMajorVersion() > 11 ? $this->mapSeverity($severity) : $severity
-        );
-    }
-
-    /**
-     * Map old FlashMessage constants to new ContextualFeedbackSeverity constants.
-     *
-     * @param int $oldSeverity
-     * @return ContextualFeedbackSeverity
-     */
-    private function mapSeverity(int $oldSeverity): ContextualFeedbackSeverity
-    {
-        switch ($oldSeverity) {
-            case self::MESSAGE_NOTICE:
-                return ContextualFeedbackSeverity::NOTICE;
-            case self::MESSAGE_INFO:
-                return ContextualFeedbackSeverity::INFO;
-            case self::MESSAGE_OK:
-                return ContextualFeedbackSeverity::OK;
-            case self::MESSAGE_WARNING:
-                return ContextualFeedbackSeverity::WARNING;
-            case self::MESSAGE_ERROR:
-                return ContextualFeedbackSeverity::ERROR;
-            default:
-                throw new \InvalidArgumentException('Invalid severity level');
-        }
     }
 
     /**
@@ -398,7 +351,7 @@ class BatchTranslationBaseController extends ActionController
         }
 
         $description = [];
-        $messageType = self::MESSAGE_INFO;
+        $messageType = FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_INFO);
 
         if ($this->deeplApiKeyDetails['usage']) {
             $usage = $this->deeplApiKeyDetails['usage'];
@@ -411,11 +364,11 @@ class BatchTranslationBaseController extends ActionController
         }
         if ($this->deeplApiKeyDetails['error']) {
             $description[] = $this->deeplApiKeyDetails['error'];
-            $messageType = self::MESSAGE_ERROR;
+            $messageType = FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_ERROR);
         }
 
         if (!empty($description)) {
-            $this->addMessage(
+            $this->addFlashMessage(
                 'DeepL API Key: ' . $maskedApiKey,
                 implode(PHP_EOL, $description),
                 $messageType
@@ -456,10 +409,9 @@ class BatchTranslationBaseController extends ActionController
             $items = $this->getBatchItemsFromArgument('delete');
             foreach ($items as $item) {
                 $this->batchItemRepository->remove($item);
-                $this->addMessage(
+                $this->addFlashMessage(
                     'Successfully deleted',
-                    sprintf('Item with uid %s was deleted.', $item->getUid()),
-                    self::MESSAGE_OK
+                    sprintf('Item with uid %s was deleted.', $item->getUid())
                 );
                 $reload = true;
             }
@@ -470,10 +422,10 @@ class BatchTranslationBaseController extends ActionController
                 $items = $this->getBatchItemsFromArgument('execute');
                 foreach ($items as $item) {
                     if (!$item->isExecutable()) {
-                        $this->addMessage(
+                        $this->addFlashMessage(
                             'Item can not be translated',
                             sprintf('Item with uid %s could not be translated. Check the error and reset it.', $item->getUid()),
-                            self::MESSAGE_ERROR
+                            FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_ERROR)
                         );
                         continue;
                     }
@@ -481,26 +433,25 @@ class BatchTranslationBaseController extends ActionController
                     $res = $this->batchTranslationService->translate($item);
                     if ($res === true) {
                         $item->markAsTranslated();
-                        $this->addMessage(
+                        $this->addFlashMessage(
                             'Successfully translated',
                             sprintf('Item with uid %s was translated.', $item->getUid()),
-                            self::MESSAGE_OK
                         );
                     } else {
-                        $this->addMessage(
+                        $this->addFlashMessage(
                             'Error while translating',
                             sprintf('Item with uid %s could not be translated.', $item->getUid()),
-                            self::MESSAGE_ERROR
+                            FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_ERROR)
                         );
                     }
                     $this->batchItemRepository->update($item);
                 }
             }
         } catch (Exception $e) {
-            $this->addMessage(
+            $this->addFlashMessage(
                 'Error during translation',
                 'An error occurred while translating the items: ' . $e->getMessage(),
-                self::MESSAGE_ERROR
+                FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_ERROR)
             );
         }
 
@@ -509,10 +460,9 @@ class BatchTranslationBaseController extends ActionController
             foreach ($items as $item) {
                 $item->setTranslated();
                 $item->setError('');
-                $this->addMessage(
+                $this->addFlashMessage(
                     'Reset successful',
-                    sprintf('Translated date for item with uid %s was removed.', $item->getUid()),
-                    self::MESSAGE_OK
+                    sprintf('Translated date for item with uid %s was removed.', $item->getUid())
                 );
                 $this->batchItemRepository->update($item);
             }

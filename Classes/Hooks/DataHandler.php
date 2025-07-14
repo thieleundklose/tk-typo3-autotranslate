@@ -16,10 +16,13 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Hooks;
 
+use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
 
 class DataHandler implements SingletonInterface
 {
@@ -71,10 +74,19 @@ class DataHandler implements SingletonInterface
 
         $translator = GeneralUtility::makeInstance(Translator::class, $pageId);
 
-        if (in_array($table, TranslationHelper::tablesToTranslate())) {
-            $translator->translate($table, (int)$recordUid, $parentObject);
+        try {
+            if (in_array($table, TranslationHelper::tablesToTranslate())) {
+                $translator->translate($table, (int)$recordUid, $parentObject);
+            }
+        } catch (\Exception $e) {
+            FlashMessageUtility::addMessage(
+                'Error during translation: ' . $e->getMessage(),
+                'Translation Error',
+                FlashMessageUtility::MESSAGE_WARNING
+            );
         }
 
+        return;
     }
 
     /**

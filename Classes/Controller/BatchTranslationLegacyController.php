@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Controller;
 
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
+use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
 use TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\Components\Menu\Menu;
 use TYPO3\CMS\Backend\Template\Components\Menu\MenuItem;
@@ -25,10 +26,10 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
     public function showLogsLegacyAction()
     {
         $this->initializeModuleTemplate();
-        $this->addMessage(
+        $this->addFlashMessage(
             'Not yet implemented.',
             'Planned for future versions.',
-            self::MESSAGE_WARNING
+            FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_WARNING)
         );
     }
 
@@ -38,9 +39,9 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
      */
     public function defaultLegacyAction()
     {
-        $this->addDeeplApiKeyInfoMessage();
         $this->initializeModuleTemplate();
         $this->view->assignMultiple($this->getBatchTranslationData());
+        $this->addDeeplApiKeyInfoMessage();
     }
 
     /**
@@ -148,10 +149,10 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
         $this->view->getModuleTemplate()->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
 
         if ($this->pageUid === 0) {
-            $this->addMessage(
+            $this->addFlashMessage(
                 'No page selected',
                 'Please select a page first.',
-                self::MESSAGE_WARNING
+                FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_WARNING)
             );
 
         }

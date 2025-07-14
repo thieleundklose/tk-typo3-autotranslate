@@ -1,6 +1,13 @@
 # Changelog
 
 
+## [2.2.3] - 2025-07-14
+
+### Fixes
+- Translation of the field title of pages and header of content elements: & becomes &amp;, thanks to Andreas Kessel ([Issue #49](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/49))
+- $localizedUid being null during record localization, thanks to Andreas Kessel ([Issue #39](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/39))
+- Optimization for determining the page ID due to php variable type check error, thanks to tot-bittner ([Issue #67](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/67))
+
 ## [2.2.2] - 2025-06-14
 
 ### Fixes
