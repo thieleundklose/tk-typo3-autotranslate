@@ -1,7 +1,7 @@
 # Changelog
 
 
-## [2.2.3] - 2025-07-13
+## [2.2.3] - 2025-07-14
 
 ### Fixes
 - Translation of the field title of pages and header of content elements: & becomes &amp;, thanks to Andreas Kessel ([Issue #49](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/49))
