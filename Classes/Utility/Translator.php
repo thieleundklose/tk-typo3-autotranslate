@@ -23,6 +23,7 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThieleUndKlose\Autotranslate\Service\GlossaryService;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use WebVision\Deepltranslate\Glossary\Domain\Dto\Glossary;
 
 class Translator implements LoggerAwareInterface
 {
@@ -137,18 +138,19 @@ class Translator implements LoggerAwareInterface
             if (!$existingTranslation) {
                 $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
                 $dataHandler->start([], []);
-
                 $localizedUid = $dataHandler->localize($table, $recordUid, $languageId);
-                if ($localizedUid === false) {
-                    LogUtility::log($this->logger, 'No Translation of {table} with uid {uid} because DataHandler localize failed.', [
-                        'table' => $table,
-                        'uid' => $recordUid
-                    ]);
-                    continue;
-                }
             } else {
                 $localizedUid = $existingTranslation['uid'];
             }
+
+            if ($localizedUid === null || $localizedUid === false) {
+                LogUtility::log($this->logger, 'No Translation of {table} with uid {uid} because DataHandler localize failed.', [
+                    'table' => $table,
+                    'uid' => $recordUid
+                ]);
+                continue;
+            }
+
             $localizedContents[$languageId][$recordUid] = $localizedUid;
 
             $columnsSysFileLanguage = TranslationHelper::translationTextfields($this->pageId, 'sys_file_reference');
@@ -202,7 +204,7 @@ class Translator implements LoggerAwareInterface
                             } else {
                                 $recordSysFileReference = Records::getRecord('sys_file_reference', $referenceUid);
                             }
-                            $translatedColumns = $this->translateRecordProperties($recordSysFileReference, (int)$languageId, $columnsSysFileLanguage);
+                            $translatedColumns = $this->translateRecordProperties($recordSysFileReference, (int)$languageId, $columnsSysFileLanguage, $table);
                             if (count($translatedColumns)) {
                                 Records::updateRecord('sys_file_reference', $translatedSysFileReferenceUid, $translatedColumns);
                             }
@@ -213,7 +215,7 @@ class Translator implements LoggerAwareInterface
 
 
             // Translate properties with given service
-            $translatedColumns = $this->translateRecordProperties($record, (int)$languageId, $columns);
+            $translatedColumns = $this->translateRecordProperties($record, (int)$languageId, $columns, $table);
 
             if (count($translatedColumns) > 0) {
                 Records::updateRecord($table, $localizedUid, $translatedColumns);
@@ -236,9 +238,10 @@ class Translator implements LoggerAwareInterface
      * @param array $record
      * @param int $targetLanguageUid
      * @param array $columns
+     * @param string $table
      * @return array
      */
-    public function translateRecordProperties(array $record, int $targetLanguageUid, array $columns): array
+    public function translateRecordProperties(array $record, int $targetLanguageUid, array $columns, string $table): array
     {
         // create translation array from source record by keys from fielmap
         $translatedColumns = [];
@@ -252,21 +255,14 @@ class Translator implements LoggerAwareInterface
             $deeplSourceLang = $this->deeplSourceLanguage();
             $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
             $result = null;
+            $glossary = null;
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
                 $toTranslate = $this->extractAndReplaceTranslatableHtmlAttributes($toTranslate);
                 $translator = new \DeepL\Translator($this->apiKey);
-                // check for valid api key
-                $translatorOptions = [
-                    TranslateTextOptions::TAG_HANDLING => 'html',
-                    TranslateTextOptions::SPLIT_SENTENCES => true
-                ];
 
                 // get optional glossary from handled by 3rd party extension
                 if ($deeplSourceLang && $deeplTargetLang && TranslationHelper::glossaryEnabled($this->pageId)) {
                     $glossary = $this->glossaryService->getGlossary($deeplSourceLang, $deeplTargetLang, $this->pageId, $translator);
-                    if ($glossary) {
-                        $translatorOptions[TranslateTextOptions::GLOSSARY] = $glossary->glossaryId;
-                    }
                 }
 
                 // it is experimental to add flexform fields to translation
@@ -282,11 +278,13 @@ class Translator implements LoggerAwareInterface
                             && !is_numeric($value)
                             && $value !== ''
                         ) {
-                            $translationResult = $translator->translateText(
+                            $translationResult = $this->translateText(
+                                $record,
+                                $table,
                                 [$value],
                                 $deeplSourceLang,
                                 $deeplTargetLang,
-                                $translatorOptions
+                                $glossary
                             );
                             if (!empty($translationResult)) {
                                 $field->value[0] = $translationResult[0]->text;
@@ -298,7 +296,7 @@ class Translator implements LoggerAwareInterface
                     unset($toTranslate['pi_flexform']);
                 }
 
-                $result = empty($toTranslate) ? [] : $translator->translateText($toTranslate, $deeplSourceLang, $deeplTargetLang, $translatorOptions);
+                $result = empty($toTranslate) ? [] : $this->translateText($record, $table, $toTranslate, $deeplSourceLang, $deeplTargetLang, $glossary);
             }
 
             $keys = array_keys($toTranslate);
@@ -341,11 +339,114 @@ class Translator implements LoggerAwareInterface
         return $translatedColumns;
     }
 
+    private function translateText(array $record, string $table, array $toTranslate, ?string $deeplSourceLang, string $deeplTargetLang, ?Glossary $glossary): array
+    {
+        $translator = new \DeepL\Translator($this->apiKey);
+        $baseOptions = [
+            TranslateTextOptions::SPLIT_SENTENCES => true,
+        ];
+
+        if ($glossary) {
+            $baseOptions[TranslateTextOptions::GLOSSARY] = $glossary->glossaryId;
+        }
+        $htmlOptions = array_merge($baseOptions, [
+            TranslateTextOptions::TAG_HANDLING => 'html',
+        ]);
+
+        $richtextMap = $this->mapRichtextFields($toTranslate, $table, $record);
+
+        $toTranslateText = [];
+        $toTranslateHtml = [];
+
+        foreach ($toTranslate as $field => $value) {
+            if (!($richtextMap[$field] ?? false)) {
+                $toTranslateText[$field] = $value;
+            } else {
+                $toTranslateHtml[$field] = $value;
+            }
+        }
+
+        $translatedTextFields = !empty($toTranslateText) ? $translator->translateText(
+            $toTranslateText,
+            $deeplSourceLang,
+            $deeplTargetLang,
+            $baseOptions
+        ) : [];
+
+        $translatedHtmlFields = !empty($toTranslateHtml) ? $translator->translateText(
+            $toTranslateHtml,
+            $deeplSourceLang,
+            $deeplTargetLang,
+            $htmlOptions
+        ) : [];
+
+
+        // to bring back order of fields as in $toTranslate
+        $mergedResults = [];
+        $textIndex = 0;
+        $htmlIndex = 0;
+
+        foreach (array_keys($toTranslate) as $field) {
+            if (array_key_exists($field, $toTranslateText)) {
+                $mergedResults[] = $translatedTextFields[$textIndex] ?? null;
+                $textIndex++;
+            } elseif (array_key_exists($field, $toTranslateHtml)) {
+                $mergedResults[] = $translatedHtmlFields[$htmlIndex] ?? null;
+                $htmlIndex++;
+            }
+        }
+
+        return $mergedResults;
+    }
+
+
     /**
-     * Ersetzt Platzhalter im HTML wieder durch die übersetzten Attributwerte.
+     * Gibt ein Array zurück, das für jedes Feld aus $toTranslate angibt, ob es ein Richtext-Feld ist.
+     *
+     * @param array $toTranslate
+     * @param string $table
+     * @param array $record
+     * @return array [ 'fieldname' => bool ]
+     */
+    public function mapRichtextFields(array $toTranslate, string $table, array $record): array
+    {
+        $result = [];
+        foreach (array_keys($toTranslate) as $columnName) {
+            $result[$columnName] = $this->isRichtextField($record, $table, $columnName);
+        }
+        return $result;
+    }
+
+    /**
+     * check if the field is a richtext field
+     *
+     * @param array $record
+     * @param string $table
+     * @param string $columnName
+     * @return boolean
+     */
+    function isRichtextField(array $record, string $table, string $columnName): bool
+    {
+        // get tca configuration for the field
+        $fieldConfig = $GLOBALS['TCA'][$table]['columns'][$columnName]['config'] ?? null;
+        if (!$fieldConfig) {
+            return false;
+        }
+
+        // check for CType specific configuration
+        $ctype = $record['CType'] ?? null;
+        if ($ctype && isset($GLOBALS['TCA'][$table]['types'][$ctype]['columnsOverrides'][$columnName]['config'])) {
+            $fieldConfig = $GLOBALS['TCA'][$table]['types'][$ctype]['columnsOverrides'][$columnName]['config'];
+        }
+
+        // check if the field is a richtext field
+        return isset($fieldConfig['enableRichtext']) && $fieldConfig['enableRichtext'] === true;
+    }
+    /**
+     * Replaces placeholders in the HTML with the translated attribute values.
      *
      * @param string $html
-     * @param array $attrTranslations [Platzhalter => Übersetzung]
+     * @param array $attrTranslations [placeholder => translation]
      * @return string
      */
     private function restoreTranslatedHtmlAttributes(string $html, array $attrTranslations): string
@@ -357,8 +458,8 @@ class Translator implements LoggerAwareInterface
     }
 
     /**
-     * Ersetzt übersetzbare HTML-Attribute durch Platzhalter und gibt das modifizierte Array
-     * sowie die Mapping-Tabelle zurück.
+     * Replaces translatable HTML attributes with placeholders and returns the modified array
+     * and the mapping table.
      *
      * @param array $toTranslate
      * @return array [array $modifiedToTranslate, array $attrMap]
@@ -367,28 +468,31 @@ class Translator implements LoggerAwareInterface
     {
         $attributeMap = [
             ['tag' => 'a', 'attr' => 'title'],
-            // weitere Attribute nach Bedarf ergänzen
+            // add more attributes as needed
         ];
 
         $attrMap = [];
         $attrCounter = 1;
 
         foreach ($toTranslate as $field => &$value) {
-            if ($this->isHtml($value)) {
-                foreach ($attributeMap as $map) {
-                    $found = $this->extractHtmlAttributes($value, $map['tag'], $map['attr']);
-                    foreach ($found as $attrValue) {
-                        $placeholder = '__ATTR__' . $attrCounter . '__';
-                        $attrMap[$placeholder] = $attrValue;
-                        $value = $this->replaceHtmlAttributeWithPlaceholder($value, $map['tag'], $map['attr'], $attrValue, $placeholder);
-                        $attrCounter++;
-                    }
+
+            if (!is_string($value) || trim($value) === '' || !$this->isHtml($value)) {
+                continue;
+            }
+
+            foreach ($attributeMap as $map) {
+                $found = $this->extractHtmlAttributes($value, $map['tag'], $map['attr']);
+                foreach ($found as $attrValue) {
+                    $placeholder = '__ATTR__' . $attrCounter . '__';
+                    $attrMap[$placeholder] = $attrValue;
+                    $value = $this->replaceHtmlAttributeWithPlaceholder($value, $map['tag'], $map['attr'], $attrValue, $placeholder);
+                    $attrCounter++;
                 }
             }
         }
         unset($value);
 
-        // Füge die Attribute als eigene Einträge zum Übersetzen hinzu
+        // Add the attributes as separate entries to translate
         foreach ($attrMap as $placeholder => $original) {
             $toTranslate[$placeholder] = $original;
         }
