@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.2.5] - 2025-07-15
+
+### Fixes
+- (Un)Check all button is not working in TYPO3 v13, thanks to Rainer Becker ([Issue #57](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/57))
 
 ## [2.2.4] - 2025-07-14
 
