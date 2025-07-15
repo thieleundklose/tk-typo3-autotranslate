@@ -8,7 +8,7 @@ $EM_CONF[$_EXTKEY] = [
     'author_company' => 'Thiele & Klose GmbH',
     'author_email' => 'typo3@thieleundklose.de',
     'state' => 'stable',
-    'version' => '2.2.4',
+    'version' => '2.2.5',
     'constraints' => [
         'depends' => [
             'typo3' => '11.5.0-13.9.99',
@@ -23,7 +23,8 @@ $EM_CONF[$_EXTKEY] = [
     'autoload' => [
         'psr-4' => [
             'ThieleUndKlose\\Autotranslate\\' => 'Classes/',
-            'DeepL\\' => 'Resources/Private/Deeplcom/DeeplPhp/src/',
+            'DeepL\\' => 'Resources/Vendor/Deeplcom/DeeplPhp/src/',
+            'Http\\Discovery\\' => 'Resources/Vendor/php-http/discovery/src/',
         ],
 	],
 ];
