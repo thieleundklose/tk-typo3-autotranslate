@@ -23,7 +23,8 @@ $EM_CONF[$_EXTKEY] = [
     'autoload' => [
         'psr-4' => [
             'ThieleUndKlose\\Autotranslate\\' => 'Classes/',
-            'DeepL\\' => 'Resources/Private/Deeplcom/DeeplPhp/src/',
+            'DeepL\\' => 'Resources/Vendor/Deeplcom/DeeplPhp/src/',
+            'Http\\Discovery\\' => 'Resources/Vendor/php-http/discovery/src/',
         ],
 	],
 ];
