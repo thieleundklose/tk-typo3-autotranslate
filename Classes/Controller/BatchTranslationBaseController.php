@@ -7,8 +7,10 @@ namespace ThieleUndKlose\Autotranslate\Controller;
 use Exception;
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
 use ThieleUndKlose\Autotranslate\Domain\Repository\BatchItemRepository;
+use ThieleUndKlose\Autotranslate\Domain\Repository\LogRepository;
 use ThieleUndKlose\Autotranslate\Service\BatchTranslationService;
 use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
+use ThieleUndKlose\Autotranslate\Utility\LogUtility;
 use ThieleUndKlose\Autotranslate\Utility\PageUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
@@ -73,6 +75,20 @@ class BatchTranslationBaseController extends ActionController
     }
 
     /**
+     * @var LogRepository
+     */
+    protected $logRepository;
+
+    /**
+     * @param LogRepository $logRepository
+     * @return void
+     */
+    public function injectLogRepository(LogRepository $logRepository): void
+    {
+        $this->logRepository = $logRepository;
+    }
+
+    /**
      * @var Typo3Version
      */
     protected $typo3Version;
@@ -107,6 +123,79 @@ class BatchTranslationBaseController extends ActionController
      * @var array
      */
     protected array $deeplApiKeyDetails = [];
+
+
+    /**
+     * get batch translation data
+     * @return array
+     */
+    public function getLogData(): array
+    {
+        $this->handleLogActionArguments();
+
+        $rowPage = BackendUtility::getRecordWSOL('pages', $this->pageUid);
+
+        $data = [
+            'pageUid' => $this->pageUid,
+            'levels' => $this->levels,
+            'pageTitle' => $rowPage['title'],
+        ];
+
+        if ($this->moduleName !== null) {
+            $data['moduleName'] = $this->moduleName;
+        }
+
+        $logs = $this->logRepository->findAll();
+        foreach ($logs as &$log) {
+            if (isset($log['time_micro'])) {
+                $log['time_seconds'] = (int)$log['time_micro'];
+            }
+            $context = [];
+            if (!empty($log['data'])) {
+                $context = json_decode($log['data'], true) ?? [];
+            }
+
+            // Decode log data depending on TYPO3 version
+            if (!empty($log['data'])) {
+                if ($this->typo3Version->getMajorVersion() >= 13) {
+                    // TYPO3 v13: JSON format
+                    $decoded = json_decode($log['data'], true);
+                    $log['dataDecoded'] = is_array($decoded) ? $decoded : [];
+                } else {
+
+                    // TYPO3 v11/v12: var_export format with prefix
+                    if (strpos($log['data'], '- ') === 0) {
+                        $log['data'] = substr($log['data'], 2); // Remove "- "
+                    }
+
+                    $decoded = json_decode($log['data'], true);
+                    $log['dataDecoded'] = is_array($decoded) ? $decoded : [];
+
+                }
+            } else {
+                $log['dataDecoded'] = [];
+            }
+
+            // Interpolate message placeholders
+            $log['parsed_message'] = LogUtility::interpolate($log['message'], $log['dataDecoded']);
+
+            if (isset($log['time_micro'])) {
+                $dt = \DateTime::createFromFormat('U.u', sprintf('%.6f', $log['time_micro']));
+                $log['formattedDate'] = $dt ? $dt->format('Y-m-d H:i:s.u') : '';
+            }
+        }
+        unset($log);
+
+        // $data['logs'] = $logs;
+
+        $logsGroupedByRequestId = [];
+        foreach ($logs as $log) {
+            $logsGroupedByRequestId[$log['request_id']][] = $log;
+        }
+        $data['logsGroupedByRequestId'] = $logsGroupedByRequestId;
+
+        return $data;
+    }
 
     /**
      * get batch translation data
@@ -165,9 +254,6 @@ class BatchTranslationBaseController extends ActionController
             );
         }
 
-        $typo3Version = GeneralUtility::makeInstance(Typo3Version::class);
-        $majorVersion = $typo3Version->getMajorVersion();
-
         // Filter items by users access rights
         $batchItemsRecursive = array_filter($batchItemsRecursive->toArray(), function ($batchItem) use ($backendUser, $languages) {
             $rowBatchItem = BackendUtility::getRecordWSOL('pages', $batchItem->getPid());
@@ -221,7 +307,6 @@ class BatchTranslationBaseController extends ActionController
                     'redirectAction' => $this->request->getControllerActionName(),
                     'batchItem' =>  $batchItem ?? null,
                 ],
-                'typo3Version' => $majorVersion,
             ]
         );
 
@@ -475,6 +560,34 @@ class BatchTranslationBaseController extends ActionController
     }
 
     /**
+     * Function to handle actions like delete, execute or other
+     */
+    protected function handleLogActionArguments()
+    {
+        $reload = false;
+
+        if ($this->request->hasArgument('delete')) {
+            $uids = GeneralUtility::trimExplode(',', $this->request->getArgument('delete'));
+            foreach ($uids as $uid) {
+                $this->logRepository->deleteByRequestId($uid);
+                $reload = true;
+            }
+            if ($reload) {
+                $this->addFlashMessage(
+                'Successfully deleted',
+                sprintf('%s log entries were deleted.', count($uids))
+            );
+            }
+
+        }
+
+        if ($reload) {
+            $this->persistenceManager->persistAll();
+            $this->reloadPage();
+        }
+    }
+
+    /**
      * Reload the current page.
      *
      * @param int $pageUid
@@ -493,7 +606,23 @@ class BatchTranslationBaseController extends ActionController
     {
 
         $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
-        $uri = $uriBuilder->buildUriFromRoute($this->moduleName, ['id' => $pageUid]);
+        if ($this->typo3Version->getMajorVersion() < 12) {
+            // TYPO3 v11: legacy module argument structure
+            $arguments = [
+                'id' => $pageUid,
+                strtolower('tx_autotranslate_' . $this->moduleName) => [
+                    'action' => $this->request->getControllerActionName()
+                ]
+            ];
+        } else {
+            // TYPO3 v12+: modern argument structure
+            $arguments = [
+                'id' => $pageUid,
+                'action' => $this->request->getControllerActionName()
+            ];
+        }
+
+        $uri = $uriBuilder->buildUriFromRoute($this->moduleName, $arguments);
 
         header('Location: ' . $uri);
         exit;
