@@ -6,3 +6,6 @@ apiKey =
 
 # cat=general/O; type=string; label=Fields to be copied into translated records: Comma separated list of fields
 fieldsToCopy = pi_flexform, hidden
+
+# cat=general; type=boolean; label=Enable debug mode for Autotranslate
+debug = 0
