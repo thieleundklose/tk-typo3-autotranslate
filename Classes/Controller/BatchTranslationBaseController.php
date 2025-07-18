@@ -159,14 +159,15 @@ class BatchTranslationBaseController extends ActionController
                     $log['dataDecoded'] = is_array($decoded) ? $decoded : [];
                 } else {
 
-                    // TYPO3 v11/v12: var_export format with prefix
+                    // TYPO3 v11/v12: Log data is typically in var_export format with a "- " prefix.
+                    // The prefix is removed before attempting to decode the data as JSON.
                     if (strpos($log['data'], '- ') === 0) {
                         $log['data'] = substr($log['data'], 2); // Remove "- "
                     }
 
+                    // Attempt to decode the log data as JSON after removing the prefix.
                     $decoded = json_decode($log['data'], true);
                     $log['dataDecoded'] = is_array($decoded) ? $decoded : [];
-
                 }
             } else {
                 $log['dataDecoded'] = [];
