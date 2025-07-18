@@ -48,6 +48,22 @@ class LogRepository
         return $rows;
     }
 
+    /**
+     * Deletes all log entries from the database.
+     *
+     * @return void
+     */
+    public function deleteAll(): void
+    {
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('tx_autotranslate_log');
+
+        $queryBuilder = $connection->createQueryBuilder();
+        $queryBuilder
+            ->delete('tx_autotranslate_log')
+            ->executeStatement();
+    }
+
     public function findByRequestId(string $requestId): array
     {
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)

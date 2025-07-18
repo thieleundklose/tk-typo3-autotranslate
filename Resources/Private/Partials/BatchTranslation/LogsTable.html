@@ -7,19 +7,39 @@
     <f:if condition="{tk:typo3Version()} > 11">
         <f:then>
             <f:variable name="reloadHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, action: 'showLogs'})}" />
+            <f:variable name="deleteAllHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, action: 'showLogs', deleteAll: 1})}" />
         </f:then>
         <f:else>
             <f:variable name="reloadHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, tx_autotranslate_web_autotranslatem1: {action: 'showLogsLegacy'}})}" />
+            <f:variable name="deleteAllHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, tx_autotranslate_web_autotranslatem1: {action: 'showLogsLegacy', deleteAll: 1}})}" />
         </f:else>
     </f:if>
 
     <div class="t3js-group-draggable-container">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h1 class="mb-0">{pageTitle}</h1>
-            <a href="{reloadHref}" class="btn btn-default">
-                <core:icon identifier="actions-refresh" />
-                <f:translate key="LLL:EXT:core/Resources/Private/Language/locallang_common.xlf:refresh" default="Refresh" />
-            </a>
+            <div>
+                <a href="{reloadHref}" class="btn btn-default">
+                    <core:icon identifier="actions-refresh" />
+                    <f:translate key="LLL:EXT:core/Resources/Private/Language/locallang_common.xlf:refresh" default="Refresh" />
+                </a>
+                <f:if condition="{logsGroupedByRequestId -> f:count()}">
+                    <a
+                        data-bs-toggle="tooltip"
+                        href="{deleteAllHref}"
+                        class="btn btn-danger ms-2 t3js-modal-trigger"
+                        data-severity="warning"
+                        data-title="{f:translate(key:'LLL:EXT:backend/Resources/Private/Language/locallang_alt_doc.xlf:label.confirm.delete_record.title')}"
+                        data-button-close-text="{f:translate(key:'LLL:EXT:core/Resources/Private/Language/locallang_common.xlf:cancel')}"
+                        data-bs-content="{f:translate(key:'confirm_log',arguments:'{0:requestId}')}"
+                        title="{f:translate(key:'delete')}"
+                        data-button-ok-text="{f:translate(key:'confirm_log.delete.yes')}"
+                    >
+                        <core:icon identifier="actions-edit-delete" />
+                        <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:clear_all_logs" default="Clear All Logs" />
+                    </a>
+                </f:if>
+            </div>
         </div>
         <f:if condition="{logsGroupedByRequestId -> f:count()}">
             <f:render section="table" arguments="{_all}"/>

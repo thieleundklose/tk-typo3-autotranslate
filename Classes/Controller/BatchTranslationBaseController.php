@@ -581,6 +581,15 @@ class BatchTranslationBaseController extends ActionController
 
         }
 
+        if ($this->request->hasArgument('deleteAll')) {
+            $this->logRepository->deleteAll();
+            $reload = true;
+            $this->addFlashMessage(
+                'Successfully deleted',
+                'Log entries were deleted.'
+            );
+        }
+
         if ($reload) {
             $this->persistenceManager->persistAll();
             $this->reloadPage();
