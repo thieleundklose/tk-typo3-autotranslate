@@ -1,5 +1,11 @@
 # Changelog
 
+
+## [2.3.0] - 2025-07-18
+
+### Features
+- Log output and options for deleting logs in the backend module, log deactivation possible in the extension settings
+
 ## [2.2.5] - 2025-07-15
 
 ### Fixes
