@@ -150,10 +150,6 @@ class BatchTranslationBaseController extends ActionController
             if (isset($log['time_micro'])) {
                 $log['time_seconds'] = (int)$log['time_micro'];
             }
-            $context = [];
-            if (!empty($log['data'])) {
-                $context = json_decode($log['data'], true) ?? [];
-            }
 
             // Decode log data depending on TYPO3 version
             if (!empty($log['data'])) {
@@ -186,7 +182,7 @@ class BatchTranslationBaseController extends ActionController
         }
         unset($log);
 
-        // $data['logs'] = $logs;
+        $data['logItemsCount'] = $this->logRepository->countAll();
 
         $logsGroupedByRequestId = [];
         foreach ($logs as $log) {
@@ -574,9 +570,9 @@ class BatchTranslationBaseController extends ActionController
             }
             if ($reload) {
                 $this->addFlashMessage(
-                'Successfully deleted',
-                sprintf('%s log entries were deleted.', count($uids))
-            );
+                    'Successfully deleted',
+                    sprintf('%s log entries were deleted.', count($uids))
+                );
             }
 
         }

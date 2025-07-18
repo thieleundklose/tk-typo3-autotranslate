@@ -8,10 +8,30 @@ use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 
 class LogRepository
 {
+    public function countAll(): int
+    {
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable('tx_autotranslate_log');
+
+        $queryBuilder = $connection->createQueryBuilder();
+        $requestIds = $queryBuilder
+            ->select('request_id')
+            ->from('tx_autotranslate_log')
+            ->groupBy('request_id')
+            ->executeQuery()
+            ->fetchFirstColumn();
+
+        if (empty($requestIds)) {
+            return 0;
+        }
+
+        return count($requestIds);
+    }
+
     public function findAll(int $limit = 100): array
     {
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-        ->getConnectionForTable('tx_autotranslate_log');
+            ->getConnectionForTable('tx_autotranslate_log');
 
         // 1. the 100 latest request_id groups
         $queryBuilder = $connection->createQueryBuilder();
@@ -32,18 +52,18 @@ class LogRepository
 
         // 2. all items of this group
         $rows = $queryBuilder
-        ->select('*')
-        ->from('tx_autotranslate_log')
-        ->where(
-            $queryBuilder->expr()->in(
-                'request_id',
-                $queryBuilder->createNamedParameter($requestIds, Connection::PARAM_STR_ARRAY)
+            ->select('*')
+            ->from('tx_autotranslate_log')
+            ->where(
+                $queryBuilder->expr()->in(
+                    'request_id',
+                    $queryBuilder->createNamedParameter($requestIds, Connection::PARAM_STR_ARRAY)
+                )
             )
-        )
-        ->orderBy('time_micro', 'DESC')
-        ->addOrderBy('request_id', 'DESC')
-        ->executeQuery()
-        ->fetchAllAssociative();
+            ->orderBy('time_micro', 'DESC')
+            ->addOrderBy('request_id', 'DESC')
+            ->executeQuery()
+            ->fetchAllAssociative();
 
         return $rows;
     }

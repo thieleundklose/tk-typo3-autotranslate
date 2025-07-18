@@ -196,7 +196,7 @@
                             <tfoot>
                                 <tr>
                                     <td colspan="10">
-                                        {logsGroupedByRequestId -> f:count()} Entries
+                                        {logsGroupedByRequestId -> f:count()} <f:if condition="{logItemsCount} > {logsGroupedByRequestId -> f:count()}">of {logItemsCount} </f:if>Entries
                                     </td>
                                 </tr>
                             </tfoot>
