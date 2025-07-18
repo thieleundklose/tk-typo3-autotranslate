@@ -126,7 +126,7 @@ class BatchTranslationBaseController extends ActionController
 
 
     /**
-     * get batch translation data
+     * get log data
      * @return array
      */
     public function getLogData(): array
