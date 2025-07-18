@@ -76,6 +76,9 @@ class DeeplApiHelper
      */
     public static function getCachedLanguages(string $apiKey, string $type = 'source'): array
     {
+        if (!in_array($type, ['source', 'target'], true)) {
+            throw new \InvalidArgumentException(sprintf('Invalid type "%s". Allowed values are "source" or "target".', $type));
+        }
         $cacheIdentifier = 'deepl_' . $type . '_languages_' . md5($apiKey);
 
         /** @var \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend $cache */
