@@ -1,0 +1,211 @@
+<html
+    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+    xmlns:tk="http://typo3.org/ns/ThieleUndKlose/Autotranslate/ViewHelpers"
+    data-namespace-typo3-fluid="true"
+>
+    <f:if condition="{tk:typo3Version()} > 11">
+        <f:then>
+            <f:variable name="reloadHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, action: 'showLogs'})}" />
+            <f:variable name="deleteAllHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, action: 'showLogs', deleteAll: 1})}" />
+        </f:then>
+        <f:else>
+            <f:variable name="reloadHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, tx_autotranslate_web_autotranslatem1: {action: 'showLogsLegacy'}})}" />
+            <f:variable name="deleteAllHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, tx_autotranslate_web_autotranslatem1: {action: 'showLogsLegacy', deleteAll: 1}})}" />
+        </f:else>
+    </f:if>
+
+    <div class="t3js-group-draggable-container">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1 class="mb-0">{pageTitle}</h1>
+            <div>
+                <a href="{reloadHref}" class="btn btn-default">
+                    <core:icon identifier="actions-refresh" />
+                    <f:translate key="LLL:EXT:core/Resources/Private/Language/locallang_common.xlf:refresh" default="Refresh" />
+                </a>
+                <f:if condition="{logsGroupedByRequestId -> f:count()}">
+                    <a
+                        data-bs-toggle="tooltip"
+                        href="{deleteAllHref}"
+                        class="btn btn-danger ms-2 t3js-modal-trigger"
+                        data-severity="warning"
+                        data-title="{f:translate(key:'LLL:EXT:backend/Resources/Private/Language/locallang_alt_doc.xlf:label.confirm.delete_record.title')}"
+                        data-button-close-text="{f:translate(key:'LLL:EXT:core/Resources/Private/Language/locallang_common.xlf:cancel')}"
+                        data-bs-content="{f:translate(key:'confirm_log',arguments:'{0:requestId}')}"
+                        title="{f:translate(key:'delete')}"
+                        data-button-ok-text="{f:translate(key:'confirm_log.delete.yes')}"
+                    >
+                        <core:icon identifier="actions-edit-delete" />
+                        <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:clear_all_logs" default="Clear All Logs" />
+                    </a>
+                </f:if>
+            </div>
+        </div>
+        <f:if condition="{logsGroupedByRequestId -> f:count()}">
+            <f:render section="table" arguments="{_all}"/>
+        </f:if>
+    </div>
+
+    <f:section name="table">
+
+    <div class="panel panel-default autotranslate-panel">
+
+            <f:if condition="{tk:typo3Version()} > 11">
+                <div class="panel-heading multi-record-selection-panel">
+                    <div class="panel-heading-row">
+                        <div class="panel-heading-title">
+                            {f:translate(key: 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.noselect')}
+                        </div>
+                        <div class="panel-heading-actions">
+                            <form name="tx_autotranslate_form_group_toggle_hidden" id="tx_autotranslate_form_group_toggle_hidden" method="post">
+                                <button type="button"
+                                        class="btn btn-sm btn-default t3js-toggle-table"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#autotranslate-task-group-list"
+                                        aria-expanded="true"
+                                >
+                                    <core:icon identifier="actions-view-list-collapse" size="small" />
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <f:render partial="BatchTranslation/MultiRecordSelectionActions" arguments="{actions: actions}"/>
+                </div>
+            </f:if>
+
+            <form data-multi-record-selection-form="task-group-list" name="tx_autotranslate_form_list" id="tx_autotranslate_form_list" method="post">
+                <div class="panel-collapse collapse show" id="autotranslate-task-group-list" data-table="task-group-list">
+                    <div class="table-fit">
+                        <table class="table table-striped table-hover table-autotranslate-logs">
+                            <thead>
+                                <tr>
+                                    <f:if condition="{tk:typo3Version()} > 11">
+                                        <th data-sort-method="none">
+                                            <div class="btn-group dropdown">
+                                                <button type="button"
+                                                    class="dropdown-toggle dropdown-toggle-link t3js-multi-record-selection-check-actions-toggle"
+                                                    data-bs-toggle="dropdown"
+                                                    data-bs-boundary="window"
+                                                    aria-expanded="false"
+                                                    aria-label="{f:translate(key: 'LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.openSelectionOptions')}"
+                                                >
+                                                    <core:icon identifier="actions-selection" size="small" />
+                                                </button>
+                                                <ul class="dropdown-menu t3js-multi-record-selection-check-actions">
+                                                    <li>
+                                                        <button
+                                                            type="button"
+                                                            class="dropdown-item"
+                                                            data-multi-record-selection-check-action="check-all"
+                                                            title="{f:translate(key: 'LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.checkAll')}"
+                                                        >
+                                                                <span class="dropdown-item-columns">
+                                                                    <span class="dropdown-item-column dropdown-item-column-icon" aria-hidden="true">
+                                                                        <core:icon identifier="actions-selection-elements-all" size="small" />
+                                                                    </span>
+                                                                    <span class="dropdown-item-column dropdown-item-column-title">
+                                                                        <f:translate key="LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.checkAll" />
+                                                                    </span>
+                                                                </span>
+                                                        </button>
+                                                    </li>
+                                                    <li>
+                                                        <button
+                                                            type="button"
+                                                            class="dropdown-item"
+                                                            data-multi-record-selection-check-action="check-none"
+                                                            title="{f:translate(key: 'LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.uncheckAll')}"
+                                                        >
+                                                                <span class="dropdown-item-columns">
+                                                                    <span class="dropdown-item-column dropdown-item-column-icon" aria-hidden="true">
+                                                                        <core:icon identifier="actions-selection-elements-none" size="small" />
+                                                                    </span>
+                                                                    <span class="dropdown-item-column dropdown-item-column-title">
+                                                                        <f:translate key="LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.uncheckAll" />
+                                                                    </span>
+                                                                </span>
+                                                        </button>
+                                                    </li>
+                                                    <li>
+                                                        <button
+                                                            type="button"
+                                                            class="dropdown-item"
+                                                            data-multi-record-selection-check-action="toggle"
+                                                            title="{f:translate(key: 'LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.toggleSelection')}"
+                                                        >
+                                                                <span class="dropdown-item-columns">
+                                                                    <span class="dropdown-item-column dropdown-item-column-icon" aria-hidden="true">
+                                                                        <core:icon identifier="actions-selection-elements-invert" size="small" />
+                                                                    </span>
+                                                                    <span class="dropdown-item-column dropdown-item-column-title">
+                                                                        <f:translate key="LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.toggleSelection" />
+                                                                    </span>
+                                                                </span>
+                                                        </button>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </th>
+                                    </f:if>
+                                    <th><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_log.request_id"/> / <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_log.data"/></th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody data-multi-record-selection-row-selection="true">
+                                <f:for each="{logsGroupedByRequestId}" as="group" key="requestId">
+                                    <f:if condition="{tk:typo3Version()} > 11">
+                                        <f:then>
+                                            <f:variable name="actionDeleteHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, action: 'showLogs', delete: requestId})}" />
+                                        </f:then>
+                                        <f:else>
+                                            <f:variable name="actionDeleteHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, tx_autotranslate_web_autotranslatem1: {action: 'showLogsLegacy', delete: requestId}})}" />
+                                        </f:else>
+                                    </f:if>
+                                    <tr
+                                        title="id={requestId}"
+                                        data-multi-record-selection-element="true"
+                                        data-uid="{requestId}"
+                                    >
+                                        <f:if condition="{tk:typo3Version()} > 11">
+                                            <td class="col-checkbox">
+                                                <span class="form-check form-check-type-toggle"><input class="form-check-input t3js-multi-record-selection-check" type="checkbox"></span>
+                                            </td>
+                                        </f:if>
+                                        <td><strong>{requestId}</strong></td>
+                                        <td class="nowrap col-control">
+                                            <div class="btn-group">
+                                                <a data-bs-toggle="tooltip" class="btn btn-default t3js-modal-trigger" href="{actionDeleteHref}" data-severity="warning" data-title="{f:translate(key:'LLL:EXT:backend/Resources/Private/Language/locallang_alt_doc.xlf:label.confirm.delete_record.title')}" data-button-close-text="{f:translate(key:'LLL:EXT:core/Resources/Private/Language/locallang_common.xlf:cancel')}" data-bs-content="{f:translate(key:'confirm_log',arguments:'{0:requestId}')}" title="{f:translate(key:'delete')}" data-button-ok-text="{f:translate(key:'LLL:EXT:backend/Resources/Private/Language/locallang_alt_doc.xlf:buttons.confirm.delete_record.yes')}">
+                                                    <core:icon identifier="actions-edit-delete"/>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+
+                                    <f:for each="{group}" as="record">
+                                        <tr
+                                            class="{f:if(condition:record.error, then:'danger')}"
+                                        >
+                                            <td colspan="{f:if(condition:'{tk:typo3Version() > 11}', then:3, else:2)}">
+                                                <f:if condition="{record.dataDecoded->f:count()}"><f:then><f:debug inline="1" title="{record.time_seconds -> f:format.date(format: 'Y-m-d H:i:s')}: {record.parsed_message}">{record.dataDecoded}</f:debug></f:then><f:else>&mdash;</f:else></f:if>
+                                            </td>
+
+                                        </tr>
+                                    </f:for>
+                                </f:for>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="10">
+                                        {logsGroupedByRequestId -> f:count()} <f:if condition="{logItemsCount} > {logsGroupedByRequestId -> f:count()}">of {logItemsCount} </f:if>Entries
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+
+    </f:section>
+</html>

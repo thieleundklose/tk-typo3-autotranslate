@@ -120,6 +120,15 @@
 			<trans-unit id="autotranslate_batch.function.reset.content" xml:space="preserve">
 				<source>Are you sure you want to reset all selected records?</source>
 			</trans-unit>
+            <trans-unit id="autotranslate_log.request_id" xml:space="preserve">
+				<source>Request ID</source>
+			</trans-unit>
+            <trans-unit id="autotranslate_log.data" xml:space="preserve">
+				<source>Log(s)</source>
+			</trans-unit>
+            <trans-unit id="autotranslate_log.clear_all_logs" xml:space="preserve">
+				<source>Clear All</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>

@@ -17,6 +17,8 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Utility;
 
 use Psr\Log\LoggerInterface;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class LogUtility
 {
@@ -34,6 +36,11 @@ class LogUtility
      */
     public static function log(LoggerInterface $logger, string $message, array $data = [], int $type = self::MESSAGE_INFO): void
     {
+        $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('autotranslate');
+        if (!($extensionConfiguration['debug'] ?? null)) {
+            return;
+        }
+
         switch ($type) {
             case self::MESSAGE_INFO:
                     $logger->info($message, $data);
