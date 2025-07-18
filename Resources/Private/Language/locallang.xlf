@@ -9,6 +9,12 @@
             <trans-unit id="confirm" resname="confirm">
                 <source>Are you sure you want to delete the batch translation item '%s'?</source>
             </trans-unit>
+            <trans-unit id="confirm_log" resname="confirm_log">
+                <source>Are you sure you want to delete all logs?</source>
+            </trans-unit>
+            <trans-unit id="confirm_log.delete.yes" resname="confirm_log.delete.yes">
+                <source>Yes</source>
+            </trans-unit>
             <trans-unit id="function_links_add_items" resname="function_links_add_items">
                 <source>Add to translations</source>
             </trans-unit>

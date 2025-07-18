@@ -26,11 +26,7 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
     public function showLogsLegacyAction()
     {
         $this->initializeModuleTemplate();
-        $this->addFlashMessage(
-            'Not yet implemented.',
-            'Planned for future versions.',
-            FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_WARNING)
-        );
+        $this->view->assignMultiple($this->getLogData());
     }
 
     /**
@@ -122,31 +118,33 @@ class BatchTranslationLegacyController extends BatchTranslationBaseController
         }
         $this->view->getModuleTemplate()->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
 
-        // Recursive Level Items
-        /** @var Menu $menu */
-        $menu = GeneralUtility::makeInstance(Menu::class);
-        $menu->setIdentifier("BatchTranslationMenuLevels");
+        if ($this->actionMethodName === 'default') {
+            // Recursive Level Items
+            /** @var Menu $menu */
+            $menu = GeneralUtility::makeInstance(Menu::class);
+            $menu->setIdentifier("BatchTranslationMenuLevels");
 
-        /** @var UriBuilder $uriBuilder */
-        $uriBuilder = $this->objectManager->get(UriBuilder::class);
-        $uriBuilder->setRequest($this->request);
+            /** @var UriBuilder $uriBuilder */
+            $uriBuilder = $this->objectManager->get(UriBuilder::class);
+            $uriBuilder->setRequest($this->request);
 
-        // Add menu items
-        /** @var MenuItem $menuItem */
-        $menuItem = GeneralUtility::makeInstance(MenuItem::class);
-        foreach ($this->menuLevelItems as $level) {
-            $menuItem->setTitle(
-                $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $level)
-            );
-            $uri = $uriBuilder->reset()->uriFor(
-                'defaultLegacy',
-                ['levels' => $level],
-                'BatchTranslationLegacy'
-            );
-            $menuItem->setActive($this->levels === $level)->setHref($uri);
-            $menu->addMenuItem($menuItem);
+            // Add menu items
+            /** @var MenuItem $menuItem */
+            $menuItem = GeneralUtility::makeInstance(MenuItem::class);
+            foreach ($this->menuLevelItems as $level) {
+                $menuItem->setTitle(
+                    $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $level)
+                );
+                $uri = $uriBuilder->reset()->uriFor(
+                    'defaultLegacy',
+                    ['levels' => $level],
+                    'BatchTranslationLegacy'
+                );
+                $menuItem->setActive($this->levels === $level)->setHref($uri);
+                $menu->addMenuItem($menuItem);
+            }
+            $this->view->getModuleTemplate()->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
         }
-        $this->view->getModuleTemplate()->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
 
         if ($this->pageUid === 0) {
             $this->addFlashMessage(

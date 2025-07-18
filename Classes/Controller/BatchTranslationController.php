@@ -106,11 +106,28 @@ class BatchTranslationController extends BatchTranslationBaseController
     public function showLogsAction(): ResponseInterface
     {
         $view = $this->initializeModuleTemplate($this->request);
-        $this->addFlashMessage(
-            'Not yet implemented.',
-            'Planned for future versions.',
-            FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_WARNING)
-        );
+        $view->assignMultiple($this->getLogData());
+
+        $requestUri = $this->request->getAttribute('normalizedParams')->getRequestUri();
+        $languageService = $this->getLanguageService();
+
+        $view->assign('actions', [
+            new Action(
+                'delete',
+                [
+                    'idField' => 'uid',
+                    'tableName' => 'tx_autotranslate_log',
+                    'title' => $languageService->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.delete.title'),
+                    'content' => $languageService->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.delete.content'),
+                    'ok' => $languageService->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:cm.delete'),
+                    'cancel' => $languageService->sL('LLL:EXT:core/Resources/Private/Language/locallang_core.xlf:labels.cancel'),
+                    'returnUrl' => $requestUri,
+                ],
+                'actions-edit-delete',
+                'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.delete'
+            )
+            // ToDo: Implement multiselect reset action
+        ]);
 
         return $view->renderResponse('ShowLogs');
     }
@@ -152,20 +169,22 @@ class BatchTranslationController extends BatchTranslationBaseController
         }
         $view->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
 
-        // Recursive Level Items
-        $menu = $view->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
-        $menu->setIdentifier('BatchTranslationLevels');
-        foreach ($this->menuLevelItems as $level) {
-            /** @var MenuItem $menuItem */
-            $menuItem = $menu->makeMenuItem()
-                ->setTitle($this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $level))
-                ->setHref($this->uriBuilder->reset()->uriFor(
-                    'default',
-                    ['levels' => $level],
-                    'BatchTranslation'
-                ))
-                ->setActive($this->levels === $level);
-            $menu->addMenuItem($menuItem);
+        if ($this->request->getControllerActionName() === 'default') {
+            // Recursive Level Items
+            $menu = $view->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
+            $menu->setIdentifier('BatchTranslationLevels');
+            foreach ($this->menuLevelItems as $level) {
+                /** @var MenuItem $menuItem */
+                $menuItem = $menu->makeMenuItem()
+                    ->setTitle($this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $level))
+                    ->setHref($this->uriBuilder->reset()->uriFor(
+                        'default',
+                        ['levels' => $level],
+                        'BatchTranslation'
+                    ))
+                    ->setActive($this->levels === $level);
+                $menu->addMenuItem($menuItem);
+            }
         }
 
         $view->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
