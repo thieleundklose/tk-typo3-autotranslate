@@ -5,14 +5,7 @@
     data-namespace-typo3-fluid="true"
 >
 
-    <f:if condition="{tk:typo3Version()} > 11">
-        <f:then>
-            <f:variable name="reloadHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid})}" />
-        </f:then>
-        <f:else>
-            <f:variable name="reloadHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid})}" />
-        </f:else>
-    </f:if>
+    <f:variable name="reloadHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid})}" />
 
     <div class="t3js-group-draggable-container">
         <div class="d-flex justify-content-between align-items-center mb-3">
