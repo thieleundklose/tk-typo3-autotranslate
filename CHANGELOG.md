@@ -1,5 +1,9 @@
 # Changelog
 
+## [2.3.1] - 2025-07-23
+
+### Stabilizations
+- The DeepL source and target languages are now cached using the TYPO3 Cache Framework (“Autotranslate” cache), which ensures automatic cleanup when clearing the cache and no duplicate cache/data directories.
 
 ## [2.3.0] - 2025-07-18
 
