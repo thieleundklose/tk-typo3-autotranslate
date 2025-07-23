@@ -170,15 +170,10 @@ if (!$deeplApiKeyDetails['isValid']) {
     $deeplSourceLangItems[] = ['Please define valid DeepL api key first', ''];
 } else {
     $deeplSourceLangItems[] = ['Please Choose'];
-    try {
-        $translator = new \DeepL\Translator($apiKey);
-        $sourceLanguages = $translator->getSourceLanguages();
-        foreach ($sourceLanguages as $sourceLanguage) {
-            $deeplSourceLangItems[] = [$sourceLanguage->name, $sourceLanguage->code];
-        }
-    } catch (\Exception $e) {
-        // exception too many requests
-    }
+    $deeplSourceLangItems = array_merge(
+        $deeplSourceLangItems,
+        DeepLApiHelper::getCachedLanguages($apiKey, 'source')
+    );
 }
 
 $GLOBALS['SiteConfiguration']['site_language']['columns']['deeplSourceLang'] = [
@@ -202,15 +197,10 @@ if (!$deeplApiKeyDetails['isValid']) {
     $deeplTargetLangItems[] = ['Please define valid DeepL api key first', ''];
 } else {
     $deeplTargetLangItems[] = ['Please Choose'];
-    try {
-        $translator = new \DeepL\Translator($apiKey);
-        $targetLanguages = $translator->getTargetLanguages();
-        foreach ($targetLanguages as $targetLanguage) {
-            $deeplTargetLangItems[] = [$targetLanguage->name, $targetLanguage->code];
-        }
-    } catch (\Exception $e) {
-        // exception too many requests
-    }
+    $deeplTargetLangItems = array_merge(
+        $deeplTargetLangItems,
+        DeepLApiHelper::getCachedLanguages($apiKey, 'target')
+    );
 }
 
 $GLOBALS['SiteConfiguration']['site_language']['columns']['deeplTargetLang'] = [

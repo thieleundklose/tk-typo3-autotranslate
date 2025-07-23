@@ -6,6 +6,10 @@ namespace ThieleUndKlose\Autotranslate\Utility;
 use DeepL\Translator;
 use DeepL\AuthorizationException;
 use DeepL\DeepLException;
+use TYPO3\CMS\Core\Cache\CacheManager;
+use TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException;
+use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class DeeplApiHelper
 {
@@ -60,6 +64,59 @@ class DeeplApiHelper
                 'charactersLeft' => 0,
                 'error' => 'Unexpected error: ' . $e->getMessage(),
             ];
+        }
+    }
+
+    /**
+     * Get DeepL languages (source or target) with caching in var/cache/autotranslate.
+     *
+     * @param string $apiKey
+     * @param string $type 'source' or 'target'
+     * @return array
+     */
+    public static function getCachedLanguages(string $apiKey, string $type = 'source'): array
+    {
+        if (!in_array($type, ['source', 'target'], true)) {
+            throw new \InvalidArgumentException(sprintf('Invalid type "%s". Allowed values are "source" or "target".', $type));
+        }
+        $cacheIdentifier = 'deepl_' . $type . '_languages_' . md5($apiKey);
+
+        /** @var \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend $cache */
+        $cache = null;
+        try {
+            $cache = GeneralUtility::makeInstance(
+                CacheManager::class
+            )->getCache('autotranslate');
+        } catch (NoSuchCacheException $e) {
+            // Cache not configured, fallback to direct API call
+        }
+
+        // Try to fetch from cache
+        if ($cache && $cache->has($cacheIdentifier)) {
+            $data = $cache->get($cacheIdentifier);
+            if (is_array($data)) {
+                return $data;
+            }
+        }
+
+        // Not in cache: fetch from DeepL
+        try {
+            $translator = new \DeepL\Translator($apiKey);
+            if ($type === 'source') {
+                $languages = $translator->getSourceLanguages();
+            } else {
+                $languages = $translator->getTargetLanguages();
+            }
+            $result = [];
+            foreach ($languages as $language) {
+                $result[] = [$language->name, $language->code];
+            }
+            if ($cache) {
+                $cache->set($cacheIdentifier, $result, [], 86400 * 7); // 7 days cache-lifetime
+            }
+            return $result;
+        } catch (\Exception $e) {
+            return [];
         }
     }
 }

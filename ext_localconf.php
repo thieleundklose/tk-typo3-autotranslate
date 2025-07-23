@@ -33,3 +33,7 @@ $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Utility']
 $GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][\WebVision\Deepltranslate\Core\Configuration::class] = [
     'className' => \ThieleUndKlose\Autotranslate\Xclass\Deepltranslate\Core\Configuration::class,
 ];
+
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['autotranslate'] = [
+    'backend' => \TYPO3\CMS\Core\Cache\Backend\FileBackend::class,
+];
