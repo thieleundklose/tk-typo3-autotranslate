@@ -52,6 +52,9 @@ class DataHandler implements SingletonInterface
             return;
         }
 
+        $languageField = $GLOBALS['TCA'][$table]['ctrl']['languageField'] ?? 'sys_language_uid';
+        $languageUid = isset($parentObject->datamap[$table][$recordUid][$languageField]) ? (int)$parentObject->datamap[$table][$recordUid][$languageField] : null;
+
         // Skip auto translation if page created on root level.
         if ($table == 'pages' && $status == 'new' && $fields['pid'] === 0) {
             return;
@@ -60,6 +63,13 @@ class DataHandler implements SingletonInterface
         // replace real record uid if is new record
         if (isset($parentObject->substNEWwithIDs[$recordUid])) {
             $recordUid = $parentObject->substNEWwithIDs[$recordUid];
+        }
+        if (!isset($GLOBALS['TCA'][$table]['columns']['autotranslate_languages'])) {
+            return;
+        }
+        if ($languageUid && $languageUid > 0) {
+            $parentObject->updateDB($table, $recordUid, ['autotranslate_languages' => NULL]);
+            return;
         }
 
         $pid = $parentObject->getPID($table, $recordUid);

@@ -2,14 +2,15 @@
 
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
+$table = 'pages';
 $extKey = 'autotranslate';
 $llPath = 'LLL:EXT:' . $extKey . '/Resources/Private/Language/locallang_db.xlf:';
-
+$languageField = $GLOBALS['TCA'][$table]['ctrl']['languageField'] ?? 'sys_language_uid';
 $tempColumns = [
     'autotranslate_exclude' => [
         'exclude' => 1,
         'label' => $llPath . 'autotranslate_exclude',
-        'displayCond' => 'FIELD:' . $GLOBALS['TCA']['pages']['ctrl']['transOrigPointerField'] . ':<=:0',
+        'displayCond' => 'FIELD:' . $languageField . ':<=:0',
         'config' => [
             'type' => 'check',
             'renderType' => 'checkboxToggle',
@@ -25,7 +26,7 @@ $tempColumns = [
     'autotranslate_languages' => [
         'exclude' => 1,
         'label' => $llPath . 'autotranslate_languages',
-        'displayCond' => 'FIELD:' . $GLOBALS['TCA']['pages']['ctrl']['transOrigPointerField'] . ':<=:0',
+        'displayCond' => 'FIELD:' . $languageField . ':<=:0',
         'config' => [
             'type' => 'select',
             'renderType' => 'selectCheckBox',
@@ -35,7 +36,7 @@ $tempColumns = [
      'autotranslate_last' => [
         'exclude' => 1,
         'label' => $llPath . 'autotranslate_last',
-        'displayCond' => 'FIELD:' . $GLOBALS['TCA']['pages']['ctrl']['transOrigPointerField'] . ':>:0',
+        'displayCond' => 'FIELD:' . $languageField . ':>:0',
         'config' => [
             'type' => 'input',
             'renderType' => 'inputDateTime',
@@ -46,11 +47,21 @@ $tempColumns = [
         ],
     ],
 ];
-ExtensionManagementUtility::addTCAcolumns('pages', $tempColumns, 1);
 
-ExtensionManagementUtility::addToAllTCAtypes(
-    'pages',
-    'autotranslate_exclude,autotranslate_languages,autotranslate_last',
-    '',
-    'after:l18n_cfg',
+ExtensionManagementUtility::addTCAcolumns($table, $tempColumns, 1);
+
+ExtensionManagementUtility::addFieldsToPalette(
+    $table,
+    'language',
+    '--linebreak--,autotranslate_exclude,--linebreak--,autotranslate_languages,--linebreak--,autotranslate_last',
+    'after:' . $languageField
 );
+
+// ExtensionManagementUtility::addTCAcolumns($table, $tempColumns, 1);
+
+// ExtensionManagementUtility::addToAllTCAtypes(
+//     $table,
+//     '--linebreak--,autotranslate_exclude,--linebreak--,autotranslate_languages,--linebreak--,autotranslate_last',
+//     '',
+//     'after:l18n_cfg',
+// );
