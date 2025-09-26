@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Xclass\Deepltranslate\Core;
 
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
+use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationExtensionNotConfiguredException;
 use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationPathDoesNotExistException;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
@@ -23,10 +24,12 @@ final class Configuration implements ConfigurationInterface, SingletonInterface
      */
     public function __construct()
     {
-        $request = $GLOBALS['TYPO3_REQUEST'] ?? ServerRequestFactory::fromGlobals();
-        $processingParameters = $request->getQueryParams();
-        if ($processingParameters['uid'] ?? null) {
-            list('key' => $this->apiKey) = TranslationHelper::apiKey((int)$processingParameters['uid']) ?? '';
+        if (!Environment::isCli()) {
+            $request = $GLOBALS['TYPO3_REQUEST'] ?? ServerRequestFactory::fromGlobals();
+            $processingParameters = $request->getQueryParams();
+            if ($processingParameters['uid'] ?? null) {
+                list('key' => $this->apiKey) = TranslationHelper::apiKey((int)$processingParameters['uid']) ?? '';
+            }
         }
 
         // fallback to api key from deepltranslate core
