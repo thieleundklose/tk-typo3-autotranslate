@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.3.2] - 2025-10-05
+
+### Fixes
+- Content can be created in free mode without being automatically translated into other languages, thanks to Michael Henke and Wolfgang Wagner(([Issue #69](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/69))).
+
 ## [2.3.1] - 2025-07-23
 
 ### Stabilizations

@@ -6,11 +6,12 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 foreach (TranslationHelper::additionalTables() as $table) {
     $extKey = 'autotranslate';
     $llPath = 'LLL:EXT:' . $extKey . '/Resources/Private/Language/locallang_db.xlf:';
+    $languageField = $GLOBALS['TCA'][$table]['ctrl']['languageField'] ?? 'sys_language_uid';
     $tempColumns = [
         'autotranslate_exclude' => [
             'exclude' => 1,
             'label' => $llPath . 'autotranslate_exclude',
-            'displayCond' => 'FIELD:' . $GLOBALS['TCA']['tt_content']['ctrl']['transOrigPointerField'] . ':<=:0',
+            'displayCond' => 'FIELD:' . $languageField . ':<=:0',
             'config' => [
                 'type' => 'check',
                 'renderType' => 'checkboxToggle',
@@ -26,7 +27,7 @@ foreach (TranslationHelper::additionalTables() as $table) {
         'autotranslate_languages' => [
             'exclude' => 1,
             'label' => $llPath . 'autotranslate_languages',
-            'displayCond' => 'FIELD:' . $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] . ':<=:0',
+            'displayCond' => 'FIELD:' . $languageField . ':<=:0',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectCheckBox',
@@ -36,7 +37,7 @@ foreach (TranslationHelper::additionalTables() as $table) {
         'autotranslate_last' => [
             'exclude' => 1,
             'label' => $llPath . 'autotranslate_last',
-            'displayCond' => 'FIELD:' . $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] . ':>:0',
+            'displayCond' => 'FIELD:' . $languageField . ':>:0',
             'config' => [
                 'type' => 'input',
                 'renderType' => 'inputDateTime',
@@ -53,7 +54,7 @@ foreach (TranslationHelper::additionalTables() as $table) {
         $table,
         'autotranslate_exclude,autotranslate_languages,autotranslate_last',
         '',
-        'after:' . $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']
+        'after:' . $languageField
     );
 
 }

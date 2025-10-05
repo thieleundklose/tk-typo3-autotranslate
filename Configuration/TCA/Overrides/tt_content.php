@@ -1,15 +1,15 @@
 <?php
 
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
-
+$table = 'tt_content';
 $extKey = 'autotranslate';
 $llPath = 'LLL:EXT:' . $extKey . '/Resources/Private/Language/locallang_db.xlf:';
-
+$languageField = $GLOBALS['TCA'][$table]['ctrl']['languageField'] ?? 'sys_language_uid';
 $tempColumns = [
     'autotranslate_exclude' => [
         'exclude' => 1,
         'label' => $llPath . 'autotranslate_exclude',
-        'displayCond' => 'FIELD:' . $GLOBALS['TCA']['tt_content']['ctrl']['transOrigPointerField'] . ':<=:0',
+        'displayCond' => 'FIELD:' . $languageField . ':<=:0',
         'config' => [
             'type' => 'check',
             'renderType' => 'checkboxToggle',
@@ -25,7 +25,7 @@ $tempColumns = [
     'autotranslate_languages' => [
         'exclude' => 1,
         'label' => $llPath . 'autotranslate_languages',
-        'displayCond' => 'FIELD:' . $GLOBALS['TCA']['tt_content']['ctrl']['transOrigPointerField'] . ':<=:0',
+        'displayCond' => 'FIELD:' . $languageField . ':<=:0',
         'config' => [
             'type' => 'select',
             'renderType' => 'selectCheckBox',
@@ -35,7 +35,7 @@ $tempColumns = [
      'autotranslate_last' => [
         'exclude' => 1,
         'label' => $llPath . 'autotranslate_last',
-        'displayCond' => 'FIELD:' . $GLOBALS['TCA']['tt_content']['ctrl']['transOrigPointerField'] . ':>:0',
+        'displayCond' => 'FIELD:' . $languageField . ':>:0',
         'config' => [
             'type' => 'input',
             'renderType' => 'inputDateTime',
@@ -46,11 +46,11 @@ $tempColumns = [
         ],
     ],
 ];
-ExtensionManagementUtility::addTCAcolumns('tt_content', $tempColumns, 1);
+ExtensionManagementUtility::addTCAcolumns($table, $tempColumns, 1);
 
 ExtensionManagementUtility::addFieldsToPalette(
-    'tt_content',
+    $table,
     'language',
     '--linebreak--,autotranslate_exclude,--linebreak--,autotranslate_languages,--linebreak--,autotranslate_last',
-    'after:' . $GLOBALS['TCA']['tt_content']['ctrl']['transOrigPointerField']
- );
+    'after:' . $languageField
+);
