@@ -56,12 +56,3 @@ ExtensionManagementUtility::addFieldsToPalette(
     '--linebreak--,autotranslate_exclude,--linebreak--,autotranslate_languages,--linebreak--,autotranslate_last',
     'after:' . $languageField
 );
-
-// ExtensionManagementUtility::addTCAcolumns($table, $tempColumns, 1);
-
-// ExtensionManagementUtility::addToAllTCAtypes(
-//     $table,
-//     '--linebreak--,autotranslate_exclude,--linebreak--,autotranslate_languages,--linebreak--,autotranslate_last',
-//     '',
-//     'after:l18n_cfg',
-// );
