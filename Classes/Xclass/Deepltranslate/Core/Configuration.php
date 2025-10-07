@@ -37,7 +37,7 @@ final class Configuration implements ConfigurationInterface, SingletonInterface
                 $apiKeyData = TranslationHelper::apiKey($site->getRootPageId());
                 if (!empty($apiKeyData['key'])) {
                     $this->apiKey = $apiKeyData['key'];
-                    break; // Erste gefundene Site mit API Key verwenden
+                    break; // first found site with API key
                 }
             }
         }
