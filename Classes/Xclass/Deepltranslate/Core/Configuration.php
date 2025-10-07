@@ -8,6 +8,7 @@ use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationExtensionNotConfiguredException;
 use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationPathDoesNotExistException;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Http\ServerRequestFactory;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -23,10 +24,22 @@ final class Configuration implements ConfigurationInterface, SingletonInterface
      */
     public function __construct()
     {
-        $request = $GLOBALS['TYPO3_REQUEST'] ?? ServerRequestFactory::fromGlobals();
-        $processingParameters = $request->getQueryParams();
-        if ($processingParameters['uid'] ?? null) {
-            list('key' => $this->apiKey) = TranslationHelper::apiKey((int)$processingParameters['uid']) ?? '';
+        if (!Environment::isCli()) {
+            $request = $GLOBALS['TYPO3_REQUEST'] ?? ServerRequestFactory::fromGlobals();
+            $processingParameters = $request->getQueryParams();
+            if ($processingParameters['uid'] ?? null) {
+                list('key' => $this->apiKey) = TranslationHelper::apiKey((int)$processingParameters['uid']) ?? '';
+            }
+        } else {
+            $siteFinder = GeneralUtility::makeInstance(\TYPO3\CMS\Core\Site\SiteFinder::class);
+            $sites = $siteFinder->getAllSites();
+            foreach ($sites as $site) {
+                $apiKeyData = TranslationHelper::apiKey($site->getRootPageId());
+                if (!empty($apiKeyData['key'])) {
+                    $this->apiKey = $apiKeyData['key'];
+                    break; // Erste gefundene Site mit API Key verwenden
+                }
+            }
         }
 
         // fallback to api key from deepltranslate core
