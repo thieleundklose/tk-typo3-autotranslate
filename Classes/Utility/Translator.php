@@ -22,7 +22,9 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThieleUndKlose\Autotranslate\Service\GlossaryService;
+use ThieleUndKlose\Autotranslate\Service\TranslationCacheService;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 use WebVision\Deepltranslate\Glossary\Domain\Dto\Glossary;
 
 class Translator implements LoggerAwareInterface
@@ -413,20 +415,34 @@ class Translator implements LoggerAwareInterface
             }
         }
 
-        $translatedTextFields = !empty($toTranslateText) ? $translator->translateText(
-            $toTranslateText,
-            $deeplSourceLang,
-            $deeplTargetLang,
-            $baseOptions
-        ) : [];
+        // Translation Cache Service
+        $cacheService = GeneralUtility::makeInstance(\ThieleUndKlose\Autotranslate\Service\TranslationCacheService::class);
 
-        $translatedHtmlFields = !empty($toTranslateHtml) ? $translator->translateText(
-            $toTranslateHtml,
-            $deeplSourceLang,
-            $deeplTargetLang,
-            $htmlOptions
-        ) : [];
+        // Translate Text Fields with Cache
+        $translatedTextFields = [];
+        if (!empty($toTranslateText)) {
+            $translatedTextFields = $this->translateWithCache(
+                array_values($toTranslateText),
+                $deeplSourceLang,
+                $deeplTargetLang,
+                $baseOptions,
+                $translator,
+                $cacheService
+            );
+        }
 
+        // Translate HTML Fields with Cache
+        $translatedHtmlFields = [];
+        if (!empty($toTranslateHtml)) {
+            $translatedHtmlFields = $this->translateWithCache(
+                array_values($toTranslateHtml),
+                $deeplSourceLang,
+                $deeplTargetLang,
+                $htmlOptions,
+                $translator,
+                $cacheService
+            );
+        }
 
         // to bring back order of fields as in $toTranslate
         $mergedResults = [];
@@ -446,6 +462,84 @@ class Translator implements LoggerAwareInterface
         return $mergedResults;
     }
 
+    /**
+     * Translate texts with caching support
+     */
+    private function translateWithCache(
+        array $texts,
+        ?string $sourceLang,
+        string $targetLang,
+        array $options,
+        \DeepL\Translator $translator,
+        TranslationCacheService $cacheService
+    ): array {
+        if (empty($texts)) {
+            return [];
+        }
+
+        // Check for complete cache hit first
+        $completeCacheKey = $cacheService->generateCacheKey($texts, $sourceLang, $targetLang, $options);
+        $completeCache = $cacheService->getCachedTranslation($completeCacheKey);
+
+        if ($completeCache !== null) {
+            LogUtility::log($this->logger, 'Complete cache hit for {count} texts', ['count' => count($texts)]);
+            return $completeCache;
+        }
+
+        // Check for partial cache hits
+        $partialCache = $cacheService->getPartialCacheHits($texts, $sourceLang, $targetLang, $options);
+
+        $finalResults = array_fill(0, count($texts), null);
+
+        // Fill cached results
+        foreach ($partialCache['cached'] as $index => $result) {
+            $finalResults[$index] = $result;
+        }
+
+        // Translate uncached texts
+        if (!empty($partialCache['uncached'])) {
+            LogUtility::log($this->logger, 'Translating {uncached} texts, {cached} from cache', [
+                'uncached' => count($partialCache['uncached']),
+                'cached' => count($partialCache['cached'])
+            ]);
+
+            $freshTranslations = $translator->translateText(
+                $partialCache['uncached'],
+                $sourceLang,
+                $targetLang,
+                $options
+            );
+
+            // Fill fresh results and cache them individually
+            foreach ($freshTranslations as $resultIndex => $result) {
+                $originalIndex = $partialCache['mapping'][$resultIndex];
+                $finalResults[$originalIndex] = $result;
+            }
+
+            // Cache individual translations
+            $cacheService->cacheIndividualTranslations(
+                $partialCache['uncached'],
+                $freshTranslations,
+                $sourceLang,
+                $targetLang,
+                $options
+            );
+        }
+
+        // Cache complete result
+        $cacheService->setCachedTranslation($completeCacheKey, $finalResults);
+
+        LogUtility::log($this->logger, 'TEMP!! Translation cache stats: {stats}', [
+            'stats' => [
+                'total_texts' => count($texts),
+                'cache_hits' => count($partialCache['cached']),
+                'api_calls' => count($partialCache['uncached']),
+                'cache_hit_ratio' => round((count($partialCache['cached']) / count($texts)) * 100, 2) . '%'
+            ]
+        ]);
+
+        return $finalResults;
+    }
 
     /**
      * Gibt ein Array zurück, das für jedes Feld aus $toTranslate angibt, ob es ein Richtext-Feld ist.
