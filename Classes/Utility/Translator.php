@@ -204,7 +204,7 @@ class Translator implements LoggerAwareInterface
                             } else {
                                 $recordSysFileReference = Records::getRecord('sys_file_reference', $referenceUid);
                             }
-                            $translatedColumns = $this->translateRecordProperties($recordSysFileReference, (int)$languageId, $columnsSysFileLanguage, $table);
+                            $translatedColumns = $this->translateRecordProperties($recordSysFileReference, (int)$languageId, $columnsSysFileLanguage, $table, $translatedSysFileReferenceUid);
                             if (count($translatedColumns)) {
                                 Records::updateRecord('sys_file_reference', $translatedSysFileReferenceUid, $translatedColumns);
                             }
@@ -215,7 +215,7 @@ class Translator implements LoggerAwareInterface
 
 
             // Translate properties with given service
-            $translatedColumns = $this->translateRecordProperties($record, (int)$languageId, $columns, $table);
+            $translatedColumns = $this->translateRecordProperties($record, (int)$languageId, $columns, $table, $localizedUid);
 
             if (count($translatedColumns) > 0) {
                 Records::updateRecord($table, $localizedUid, $translatedColumns);
@@ -239,9 +239,10 @@ class Translator implements LoggerAwareInterface
      * @param int $targetLanguageUid
      * @param array $columns
      * @param string $table
+     * @param int $localizedUid
      * @return array
      */
-    public function translateRecordProperties(array $record, int $targetLanguageUid, array $columns, string $table): array
+    public function translateRecordProperties(array $record, int $targetLanguageUid, array $columns, string $table, int $localizedUid): array
     {
         // create translation array from source record by keys from fielmap
         $translatedColumns = [];
@@ -328,6 +329,10 @@ class Translator implements LoggerAwareInterface
                 }
             }
 
+            if (!empty($translatedColumns)) {
+                $translatedColumns['l10n_state'] = $this->buildL10nState($table, $targetLanguageUid, array_keys($translatedColumns), $localizedUid);
+            }
+
             // set date and time of translation
             $translatedColumns[self::AUTOTRANSLATE_LAST] = time();
 
@@ -337,6 +342,48 @@ class Translator implements LoggerAwareInterface
         }
 
         return $translatedColumns;
+    }
+
+    /**
+     * Builds l10n_state array for translated fields
+     *
+     * @param string $table
+     * @param int $targetLanguageUid
+     * @param array $translatedFields
+     * @param int $localizedUid
+     * @return string JSON encoded l10n_state
+     */
+    private function buildL10nState(string $table, int $targetLanguageUid, array $translatedFields, int $localizedUid): string
+    {
+        // check if table supports l10n_state
+        if (!isset($GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField'])) {
+            return '{}';
+        }
+
+        try {
+            // load existing translation if available
+            $existingTranslation = Records::getRecordTranslation($table, $localizedUid, $targetLanguageUid);
+
+            $l10nState = [];
+            if ($existingTranslation && !empty($existingTranslation['l10n_state'])) {
+                $l10nState = json_decode($existingTranslation['l10n_state'], true) ?: [];
+            }
+
+            // set all translated fields to "custom"
+            foreach ($translatedFields as $field) {
+                $l10nState[$field] = 'custom';
+            }
+
+            return json_encode($l10nState);
+
+        } catch (\Exception $e) {
+            LogUtility::log($this->logger, 'Error building l10n_state: {error}', [
+                'error' => $e->getMessage(),
+                'table' => $table
+            ], LogUtility::MESSAGE_ERROR);
+
+            return '{}';
+        }
     }
 
     private function translateText(array $record, string $table, array $toTranslate, ?string $deeplSourceLang, string $deeplTargetLang, ?Glossary $glossary): array
