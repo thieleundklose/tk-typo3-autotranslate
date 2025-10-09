@@ -42,6 +42,9 @@ class BatchTranslationController extends BatchTranslationBaseController
         $view = $this->initializeModuleTemplate($this->request);
         $view->assignMultiple($this->getBatchTranslationData());
 
+        $data = $this->getBatchTranslationData();
+        $view->assignMultiple($this->getCommonTemplateVariables($data));
+
         $requestUri = $this->request->getAttribute('normalizedParams')->getRequestUri();
         $languageService = $this->getLanguageService();
 

@@ -8,6 +8,7 @@ use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use DeepL\TextResult;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\Core\Environment;
 
 class TranslationCacheService
 {
@@ -185,4 +186,217 @@ class TranslationCacheService
         }
         return $results;
     }
+
+    /**
+     * Clear all cached translations
+     */
+    public function clearCache(): bool
+    {
+        if ($this->cache === null) {
+            return false; // Cache disabled - nothing to clear
+        }
+
+        try {
+            $this->cache->flush();
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+   /**
+     * Get number of cached translation entries
+     */
+    public function getCacheEntryCount(): int
+    {
+        if ($this->cache === null) {
+            return 0; // Cache disabled - no entries
+        }
+
+        try {
+            // Get cache backend to access raw cache data
+            $backend = $this->cache->getBackend();
+
+            // Check if backend supports tagging (most modern backends do)
+            if ($backend instanceof \TYPO3\CMS\Core\Cache\Backend\TaggableBackendInterface) {
+                $identifiers = $backend->findIdentifiersByTag('autotranslate');
+                return count($identifiers);
+            }
+
+            // Fallback for FileBackend: count cache files
+            if ($backend instanceof \TYPO3\CMS\Core\Cache\Backend\FileBackend) {
+                $cacheDirectory = $backend->getCacheDirectory();
+                if (is_dir($cacheDirectory)) {
+                    $iterator = new \RecursiveIteratorIterator(
+                        new \RecursiveDirectoryIterator($cacheDirectory, \RecursiveDirectoryIterator::SKIP_DOTS),
+                        \RecursiveIteratorIterator::LEAVES_ONLY
+                    );
+
+                    $count = 0;
+                    foreach ($iterator as $file) {
+                        if ($file->isFile() && $file->getExtension() === 'cache') {
+                            $count++;
+                        }
+                    }
+                    return $count;
+                }
+            }
+
+            return 0;
+        } catch (\Exception $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * Get cache statistics
+     */
+    public function getCacheStatistics(): array
+    {
+        if ($this->cache === null) {
+            return [
+                'enabled' => false,
+                'entries' => 0,
+                'backend' => null,
+                'size' => 0,
+                'size_formatted' => '0 B'
+            ];
+        }
+
+        $backend = $this->cache->getBackend();
+        $entryCount = $this->getCacheEntryCount();
+        $cacheSize = $this->calculateCacheSize($backend);
+
+        return [
+            'enabled' => true,
+            'entries' => $entryCount,
+            'backend' => get_class($backend),
+            'size' => $cacheSize,
+            'size_formatted' => $this->formatBytes($cacheSize)
+        ];
+    }
+
+    /**
+     * Calculate cache size for different backends
+     */
+    private function calculateCacheSize($backend): int
+    {
+        $cacheSize = 0;
+
+        try {
+            if ($backend instanceof \TYPO3\CMS\Core\Cache\Backend\FileBackend) {
+                // Try different approaches to get cache directory
+                $cacheSize = $this->getFileBackendSize($backend);
+            } elseif ($backend instanceof \TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend) {
+                $cacheSize = $this->getSimpleFileBackendSize($backend);
+            }
+            // For other backends (Redis, Database), size calculation is more complex
+            // and might not be easily available
+        } catch (\Exception $e) {
+            // Fallback: estimate size based on entry count
+            $cacheSize = $this->getCacheEntryCount() * 1024; // Rough estimate: 1KB per entry
+        }
+
+        return $cacheSize;
+    }
+
+    /**
+     * Get size for FileBackend
+     */
+    private function getFileBackendSize($backend): int
+    {
+        $cacheSize = 0;
+
+        try {
+            // Try to access cache directory via reflection if getCacheDirectory is not public
+            $reflection = new \ReflectionClass($backend);
+
+            if ($reflection->hasMethod('getCacheDirectory') && $reflection->getMethod('getCacheDirectory')->isPublic()) {
+                $cacheDirectory = $backend->getCacheDirectory();
+            } elseif ($reflection->hasProperty('cacheDirectory')) {
+                $property = $reflection->getProperty('cacheDirectory');
+                $property->setAccessible(true);
+                $cacheDirectory = $property->getValue($backend);
+            } else {
+                // Fallback: construct expected cache directory path
+                $cacheDirectory = Environment::getVarPath() . '/cache/data/autotranslate_cache/';
+            }
+
+            if (is_dir($cacheDirectory)) {
+                $cacheSize = $this->calculateDirectorySize($cacheDirectory);
+            }
+        } catch (\Exception $e) {
+            // If reflection fails, estimate based on entry count
+            $cacheSize = $this->getCacheEntryCount() * 1024;
+        }
+
+        return $cacheSize;
+    }
+
+    /**
+     * Get size for SimpleFileBackend
+     */
+    private function getSimpleFileBackendSize($backend): int
+    {
+        try {
+            // Similar approach for SimpleFileBackend
+            $reflection = new \ReflectionClass($backend);
+
+            if ($reflection->hasProperty('cacheDirectory')) {
+                $property = $reflection->getProperty('cacheDirectory');
+                $property->setAccessible(true);
+                $cacheDirectory = $property->getValue($backend);
+
+                if (is_dir($cacheDirectory)) {
+                    return $this->calculateDirectorySize($cacheDirectory);
+                }
+            }
+        } catch (\Exception $e) {
+            // Fallback
+        }
+
+        return $this->getCacheEntryCount() * 1024;
+    }
+
+    /**
+     * Calculate total size of directory
+     */
+    private function calculateDirectorySize(string $directory): int
+    {
+        $size = 0;
+
+        try {
+            $iterator = new \RecursiveIteratorIterator(
+                new \RecursiveDirectoryIterator($directory, \RecursiveDirectoryIterator::SKIP_DOTS),
+                \RecursiveIteratorIterator::LEAVES_ONLY
+            );
+
+            foreach ($iterator as $file) {
+                if ($file->isFile()) {
+                    $size += $file->getSize();
+                }
+            }
+        } catch (\Exception $e) {
+            // Directory not accessible or other error
+            $size = 0;
+        }
+
+        return $size;
+    }
+
+    /**
+     * Format bytes to human readable format
+     */
+    private function formatBytes(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+
+        $bytes /= pow(1024, $pow);
+
+        return round($bytes, 2) . ' ' . $units[$pow];
+    }
+
 }

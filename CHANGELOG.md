@@ -7,7 +7,6 @@
 - Drop duplicate assignment, thanks to Rico Sonntag ([Pull request #88](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/88)).
 - Determination of the API key in the hook in CLI mode corrected, tanks to Richard Krikler ([Pull request #86](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/86)).
 
-
 ## [2.3.2] - 2025-10-05
 
 ### Fixes
