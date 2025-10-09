@@ -9,3 +9,6 @@ fieldsToCopy = pi_flexform, hidden
 
 # cat=general; type=boolean; label=Enable debug mode for Autotranslate
 debug = 0
+
+# cat=general; type=boolean; label=Enable caching for translations
+caching = 1

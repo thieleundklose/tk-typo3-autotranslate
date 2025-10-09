@@ -7,14 +7,27 @@ use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use DeepL\TextResult;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 
 class TranslationCacheService
 {
-    private FrontendInterface $cache;
+    private ?FrontendInterface $cache = null;
 
     public function __construct()
     {
-        $this->cache = GeneralUtility::makeInstance(CacheManager::class)->getCache('autotranslate_cache');
+        try {
+            $caching = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('autotranslate', 'caching');
+            // echo $caching; die;
+
+        } catch (\Exception $e) {
+            $caching = false;
+        }
+
+        if ($caching) {
+            $this->cache = GeneralUtility::makeInstance(CacheManager::class)->getCache('autotranslate_cache');
+        } else {
+            $this->cache = null;
+        }
     }
 
     /**
@@ -37,7 +50,7 @@ class TranslationCacheService
      */
     public function getCachedTranslation(string $cacheKey): ?array
     {
-        if (!$this->cache->has($cacheKey)) {
+        if ($this->cache === null || !$this->cache->has($cacheKey)) {
             return null;
         }
 
@@ -50,6 +63,10 @@ class TranslationCacheService
      */
     public function setCachedTranslation(string $cacheKey, array $textResults, int $lifetime = 86400): void
     {
+        if ($this->cache === null) {
+            return; // Cache disabled - do nothing
+        }
+
         $serialized = $this->serializeTextResults($textResults);
         $this->cache->set($cacheKey, $serialized, ['autotranslate'], $lifetime);
     }
@@ -59,6 +76,15 @@ class TranslationCacheService
      */
     public function getPartialCacheHits(array $toTranslate, ?string $sourceLang, string $targetLang, array $options): array
     {
+        if ($this->cache === null) {
+            // Cache disabled - all texts must be translated
+            return [
+                'cached' => [],
+                'uncached' => $toTranslate,
+                'mapping' => array_keys($toTranslate)
+            ];
+        }
+
         $cachedResults = [];
         $uncachedTexts = [];
         $indexMapping = [];
@@ -92,6 +118,10 @@ class TranslationCacheService
      */
     public function cacheIndividualTranslations(array $texts, array $results, ?string $sourceLang, string $targetLang, array $options): void
     {
+        if ($this->cache === null) {
+            return; // Cache disabled - do nothing
+        }
+
         foreach ($texts as $index => $text) {
             if (isset($results[$index])) {
                 $singleTextKey = $this->generateCacheKey([$text], $sourceLang, $targetLang, $options);

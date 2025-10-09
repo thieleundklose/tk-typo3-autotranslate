@@ -138,7 +138,7 @@ class BatchTranslationBaseController extends ActionController
         $data = [
             'pageUid' => $this->pageUid,
             'levels' => $this->levels,
-            'pageTitle' => $rowPage['title'],
+            'pageTitle' => $rowPage['title'] ?? '',
         ];
 
         if ($this->moduleName !== null) {

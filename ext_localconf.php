@@ -38,5 +38,4 @@ $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['autotransl
 
 $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['autotranslate_cache'] = [
     'backend' => \TYPO3\CMS\Core\Cache\Backend\FileBackend::class,
-    'groups' => ['all', 'system']
 ];
