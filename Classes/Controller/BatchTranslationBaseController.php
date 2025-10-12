@@ -421,13 +421,6 @@ class BatchTranslationBaseController extends ActionController
             $this->getBackendUserAuthentication()->setAndSaveSessionData('autotranslate.levels', $this->levels);
         }
 
-        // Add cache information as flash message
-        $currentAction = $this->request->getControllerActionName();
-        if (!$this->request->hasArgument('clearCache') &&
-            !in_array($currentAction, ['showLogsLegacy', 'showLogs'], true)) {
-            $this->addCacheInfoMessage();
-        }
-
         parent::initializeAction();
     }
 
@@ -452,11 +445,6 @@ class BatchTranslationBaseController extends ActionController
 
         $description[] = sprintf('Entries: %d', $cacheStats['entries']);
         $description[] = sprintf('Size: %s', $cacheStats['size_formatted']);
-
-        if (isset($cacheStats['backend'])) {
-            $backendName = basename(str_replace('\\', '/', $cacheStats['backend']));
-            $description[] = sprintf('Backend: %s', $backendName);
-        }
 
         $this->addFlashMessage(
             $title,
@@ -633,6 +621,8 @@ class BatchTranslationBaseController extends ActionController
             $this->persistenceManager->persistAll();
             $this->reloadPage();
         }
+
+        $this->addCacheInfoMessage();
     }
 
     /**
