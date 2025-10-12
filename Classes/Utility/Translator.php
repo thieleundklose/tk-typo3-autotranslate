@@ -281,7 +281,7 @@ class Translator implements LoggerAwareInterface
                             && !is_numeric($value)
                             && $value !== ''
                         ) {
-                            $translationResult = $this->translateText(
+                            $translationResult = $this->translateItems(
                                 $record,
                                 $table,
                                 [$value],
@@ -299,7 +299,7 @@ class Translator implements LoggerAwareInterface
                     unset($toTranslate['pi_flexform']);
                 }
 
-                $result = empty($toTranslate) ? [] : $this->translateText($record, $table, $toTranslate, $deeplSourceLang, $deeplTargetLang, $glossary);
+                $result = empty($toTranslate) ? [] : $this->translateItems($record, $table, $toTranslate, $deeplSourceLang, $deeplTargetLang, $glossary);
             }
 
             $keys = array_keys($toTranslate);
@@ -388,7 +388,7 @@ class Translator implements LoggerAwareInterface
         }
     }
 
-    private function translateText(array $record, string $table, array $toTranslate, ?string $deeplSourceLang, string $deeplTargetLang, ?Glossary $glossary): array
+    private function translateItems(array $record, string $table, array $toTranslate, ?string $deeplSourceLang, string $deeplTargetLang, ?Glossary $glossary): array
     {
         $translator = new \DeepL\Translator($this->apiKey);
         $baseOptions = [
@@ -528,15 +528,6 @@ class Translator implements LoggerAwareInterface
 
         // Cache complete result
         $cacheService->setCachedTranslation($completeCacheKey, $finalResults);
-
-        LogUtility::log($this->logger, 'TEMP!! Translation cache stats: {stats}', [
-            'stats' => [
-                'total_texts' => count($texts),
-                'cache_hits' => count($partialCache['cached']),
-                'api_calls' => count($partialCache['uncached']),
-                'cache_hit_ratio' => round((count($partialCache['cached']) / count($texts)) * 100, 2) . '%'
-            ]
-        ]);
 
         return $finalResults;
     }
