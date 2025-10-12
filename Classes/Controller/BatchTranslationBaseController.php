@@ -9,6 +9,7 @@ use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
 use ThieleUndKlose\Autotranslate\Domain\Repository\BatchItemRepository;
 use ThieleUndKlose\Autotranslate\Domain\Repository\LogRepository;
 use ThieleUndKlose\Autotranslate\Service\BatchTranslationService;
+use ThieleUndKlose\Autotranslate\Service\TranslationCacheService;
 use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
 use ThieleUndKlose\Autotranslate\Utility\LogUtility;
 use ThieleUndKlose\Autotranslate\Utility\PageUtility;
@@ -31,6 +32,22 @@ use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
  */
 class BatchTranslationBaseController extends ActionController
 {
+
+    /**
+     * @var TranslationCacheService
+     */
+    protected $translationCacheService;
+
+
+    /**
+     * @param TranslationCacheService $translationCacheService
+     * @return void
+     */
+    public function injectTranslationCacheService(TranslationCacheService $translationCacheService): void
+    {
+        $this->translationCacheService = $translationCacheService;
+    }
+
     /**
      * @var PersistenceManager
      */
@@ -138,7 +155,7 @@ class BatchTranslationBaseController extends ActionController
         $data = [
             'pageUid' => $this->pageUid,
             'levels' => $this->levels,
-            'pageTitle' => $rowPage['title'],
+            'pageTitle' => $rowPage['title'] ?? '',
         ];
 
         if ($this->moduleName !== null) {
@@ -407,6 +424,35 @@ class BatchTranslationBaseController extends ActionController
         parent::initializeAction();
     }
 
+    /**
+     * Add translation cache information as flash message
+     */
+    protected function addCacheInfoMessage(): void
+    {
+        $cacheStats = $this->translationCacheService->getCacheStatistics();
+
+        if (!$cacheStats['enabled']) {
+            $this->addFlashMessage(
+                'Translation Cache: Disabled',
+                'Cache is disabled in extension configuration. All translations will use the API directly.',
+                FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_INFO)
+            );
+            return;
+        }
+
+        $title = 'Translation Cache: Active';
+        $description = [];
+
+        $description[] = sprintf('Entries: %d', $cacheStats['entries']);
+        $description[] = sprintf('Size: %s', $cacheStats['size_formatted']);
+
+        $this->addFlashMessage(
+            $title,
+            implode(' | ', $description),
+            FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_INFO)
+        );
+    }
+
     protected function addDeeplApiKeyInfoMessage(): void
     {
         $apiKeyDetails = \ThieleUndKlose\Autotranslate\Utility\TranslationHelper::apiKey($this->pageUid ?? null);
@@ -487,6 +533,25 @@ class BatchTranslationBaseController extends ActionController
     {
         $reload = false;
 
+        // Handle cache clearing
+        if ($this->request->hasArgument('clearCache')) {
+            $cleared = $this->translationCacheService->clearCache();
+            if ($cleared) {
+                $this->addFlashMessage(
+                    'Cache cleared successfully',
+                    'Translation cache has been emptied.',
+                    FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_OK)
+                );
+            } else {
+                $this->addFlashMessage(
+                    'Failed to clear cache',
+                    'Translation cache could not be cleared.',
+                    FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_ERROR)
+                );
+            }
+            $reload = true;
+        }
+
         if ($this->request->hasArgument('delete')) {
             $items = $this->getBatchItemsFromArgument('delete');
             foreach ($items as $item) {
@@ -528,6 +593,8 @@ class BatchTranslationBaseController extends ActionController
                     }
                     $this->batchItemRepository->update($item);
                 }
+
+
             }
         } catch (Exception $e) {
             $this->addFlashMessage(
@@ -554,6 +621,8 @@ class BatchTranslationBaseController extends ActionController
             $this->persistenceManager->persistAll();
             $this->reloadPage();
         }
+
+        $this->addCacheInfoMessage();
     }
 
     /**
@@ -632,6 +701,21 @@ class BatchTranslationBaseController extends ActionController
 
         header('Location: ' . $uri);
         exit;
+    }
+
+    /**
+     * Get common template variables including cache information
+     */
+    protected function getCommonTemplateVariables(array $data = []): array
+    {
+        $cacheStats = $this->translationCacheService->getCacheStatistics();
+
+        return array_merge($data, [
+            'cacheEnabled' => $cacheStats['enabled'],
+            'cacheStats' => $cacheStats,
+            'pageUid' => $this->pageUid,
+            'moduleName' => $this->moduleName,
+        ]);
     }
 
 }

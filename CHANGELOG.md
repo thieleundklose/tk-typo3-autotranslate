@@ -1,12 +1,16 @@
 # Changelog
 
+## [2.4.0] - 2025-10-12
+
+### Features
+- Use caching to save quota and speed up translations ([Issue #55](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/55)).
+
 ## [2.3.3] - 2025-10-08
 
 ### Fixes
 - Corrected translation logic for handling with l10n_state fields, thanks to Rico Sonntag ([Issue #89](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/89)).
 - Drop duplicate assignment, thanks to Rico Sonntag ([Pull request #88](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/88)).
 - Determination of the API key in the hook in CLI mode corrected, tanks to Richard Krikler ([Pull request #86](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/86)).
-
 
 ## [2.3.2] - 2025-10-05
 

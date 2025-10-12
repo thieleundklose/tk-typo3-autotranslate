@@ -7,13 +7,31 @@
 
     <f:variable name="reloadHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid})}" />
 
+
+
     <div class="t3js-group-draggable-container">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h1 class="mb-0">{pageTitle}</h1>
-            <a href="{reloadHref}" class="btn btn-default">
-                <core:icon identifier="actions-refresh" />
-                <f:translate key="LLL:EXT:core/Resources/Private/Language/locallang_common.xlf:refresh" default="Refresh" />
-            </a>
+            <div>
+                <a href="{reloadHref}" class="btn btn-default">
+                    <core:icon identifier="actions-refresh" />
+                    <f:translate key="LLL:EXT:core/Resources/Private/Language/locallang_common.xlf:refresh" default="Refresh" />
+                </a>
+                <f:if condition="{cacheEnabled}">
+                    <f:if condition="{tk:typo3Version()} > 11">
+                        <f:then>
+                            <f:variable name="actionClearCacheHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, clearCache: 1})}" />
+                        </f:then>
+                        <f:else>
+                            <f:variable name="actionClearCacheHref" value="{be:moduleLink(route:moduleName, arguments: {id:pageUid, tx_autotranslate_web_autotranslatem1: {clearCache: 1}})}" />
+                        </f:else>
+                    </f:if>
+                    <a href="{actionClearCacheHref}" class="btn btn-warning ms-2" title="Clear Translation Cache">
+                        <core:icon identifier="actions-system-cache-clear" />
+                        <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.function.clearCache" default="Clear Cache" />
+                    </a>
+                </f:if>
+            </div>
         </div>
         <f:if condition="{batchItemsRecursive -> f:count()}">
             <f:render section="table" arguments="{_all}"/>

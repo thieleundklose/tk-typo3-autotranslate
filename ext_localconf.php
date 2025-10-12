@@ -35,3 +35,7 @@ $GLOBALS['TYPO3_CONF_VARS']['SYS']['Objects'][\WebVision\Deepltranslate\Core\Con
 $GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['autotranslate'] = [
     'backend' => \TYPO3\CMS\Core\Cache\Backend\FileBackend::class,
 ];
+
+$GLOBALS['TYPO3_CONF_VARS']['SYS']['caching']['cacheConfigurations']['autotranslate_cache'] = [
+    'backend' => \TYPO3\CMS\Core\Cache\Backend\FileBackend::class,
+];
