@@ -7,8 +7,8 @@ apiKey =
 # cat=general/O; type=string; label=Fields to be copied into translated records: Comma separated list of fields
 fieldsToCopy = pi_flexform, hidden
 
-# cat=general; type=boolean; label=Enable debug mode for Autotranslate
+# cat=general; type=boolean; label=Enable debug mode for Autotranslate: You can see logs in the backend module
 debug = 0
 
-# cat=general; type=boolean; label=Enable caching for translations
+# cat=general; type=boolean; label=Enable caching for translations: Speed ​​up repeated translations and save quota
 caching = 1

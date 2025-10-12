@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.4.0] - 2025-10-12
+
+### Features
+- Use caching to save quota and speed up translations ([Issue #55](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/55)).
+
 ## [2.3.3] - 2025-10-08
 
 ### Fixes
