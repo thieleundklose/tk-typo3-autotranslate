@@ -24,7 +24,6 @@ use Psr\Log\LoggerAwareTrait;
 use ThieleUndKlose\Autotranslate\Service\GlossaryService;
 use ThieleUndKlose\Autotranslate\Service\TranslationCacheService;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
-use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 use WebVision\Deepltranslate\Glossary\Domain\Dto\Glossary;
 
 class Translator implements LoggerAwareInterface
