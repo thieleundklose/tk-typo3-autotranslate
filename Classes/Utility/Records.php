@@ -132,7 +132,15 @@ class Records
         $queryBuilder = self::getQueryBuilder($table);
         $update = $queryBuilder
             ->update($table)
-            ->where('uid=' . $uid);
+            ->where(
+                $queryBuilder->expr()->eq(
+                    'uid',
+                    $queryBuilder->createNamedParameter(
+                        $uid,
+                        \TYPO3\CMS\Core\Database\Connection::PARAM_INT
+                    )
+                )
+            );
 
         if ($properties !== null) {
             foreach ($properties as $property => $value) {
@@ -161,7 +169,12 @@ class Records
     public static function getRecords(string $table, string $fields, array $constraints = []): array
     {
         $queryBuilder = self::getQueryBuilder($table);
-        $query = $queryBuilder->select($fields)
+        $fieldList = array_map(
+            static fn(string $field): string => $queryBuilder->quoteIdentifier(trim($field)),
+            GeneralUtility::trimExplode(',', $fields, true)
+        );
+
+        $query = $queryBuilder->select(...$fieldList)
             ->from($table);
 
         foreach ($constraints as $constraint) {
