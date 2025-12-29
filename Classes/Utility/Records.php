@@ -61,7 +61,12 @@ class Records
         $queryBuilder = self::getQueryBuilder($table);
         $query = $queryBuilder->select('*')
             ->from($table)
-            ->where($queryBuilder->expr()->eq('uid', $uid));
+            ->where(
+                $queryBuilder->expr()->eq(
+                    'uid',
+                    $queryBuilder->createNamedParameter($uid, \TYPO3\CMS\Core\Database\Connection::PARAM_INT)
+                )
+            );
 
         $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
         if ($versionInformation->getMajorVersion() > 11) {
@@ -98,8 +103,18 @@ class Records
 
         $query = $queryBuilder->select('*')
             ->from($table)
-            ->where($queryBuilder->expr()->eq('sys_language_uid', $langUid))
-            ->andWhere($queryBuilder->expr()->eq($parentField, $uid));
+            ->where(
+                $queryBuilder->expr()->eq(
+                    'sys_language_uid',
+                    $queryBuilder->createNamedParameter($langUid, \TYPO3\CMS\Core\Database\Connection::PARAM_INT)
+                )
+            )
+            ->andWhere(
+                $queryBuilder->expr()->eq(
+                    $parentField,
+                    $queryBuilder->createNamedParameter($uid, \TYPO3\CMS\Core\Database\Connection::PARAM_INT)
+                )
+            );
 
         $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
         if ($versionInformation->getMajorVersion() > 11) {
@@ -132,7 +147,15 @@ class Records
         $queryBuilder = self::getQueryBuilder($table);
         $update = $queryBuilder
             ->update($table)
-            ->where('uid=' . $uid);
+            ->where(
+                $queryBuilder->expr()->eq(
+                    'uid',
+                    $queryBuilder->createNamedParameter(
+                        $uid,
+                        \TYPO3\CMS\Core\Database\Connection::PARAM_INT
+                    )
+                )
+            );
 
         if ($properties !== null) {
             foreach ($properties as $property => $value) {
@@ -161,9 +184,10 @@ class Records
     public static function getRecords(string $table, string $fields, array $constraints = []): array
     {
         $queryBuilder = self::getQueryBuilder($table);
-        $query = $queryBuilder->select($fields)
-            ->from($table);
+        $fieldList = GeneralUtility::trimExplode(',', $fields, true);
 
+        $query = $queryBuilder->select(...$fieldList)
+            ->from($table);
         foreach ($constraints as $constraint) {
             $query->andWhere($constraint);
         }

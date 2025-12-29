@@ -305,6 +305,11 @@ class Translator implements LoggerAwareInterface
             if (!empty($result)) {
                 $translatedAttributes = [];
                 foreach ($result as $k => $v) {
+                    // Skip null values to prevent str_replace errors
+                    if ($v === null) {
+                        continue;
+                    }
+
                     $field = $keys[$k];
                     if (strpos($field, '__ATTR__') === 0) {
                         $translatedAttributes[$field] = $v->text;
@@ -312,6 +317,11 @@ class Translator implements LoggerAwareInterface
                 }
 
                 foreach ($result as $k => $v) {
+                    // Skip null values to prevent str_replace errors
+                    if ($v === null) {
+                        continue;
+                    }
+
                     $field = $keys[$k];
                     if (strpos($field, '__ATTR__') === 0) {
                         continue;
@@ -525,8 +535,17 @@ class Translator implements LoggerAwareInterface
             );
         }
 
-        // Cache complete result
-        $cacheService->setCachedTranslation($completeCacheKey, $finalResults);
+        // Cache complete result (filter out null values to prevent cache corruption)
+        $validResults = array_filter($finalResults, fn($result) => $result !== null);
+        if (count($validResults) === count($finalResults)) {
+            // Only cache if all results are valid
+            $cacheService->setCachedTranslation($completeCacheKey, $finalResults);
+        } else {
+            LogUtility::log($this->logger, 'Not caching complete result due to null values: {valid}/{total}', [
+                'valid' => count($validResults),
+                'total' => count($finalResults)
+            ]);
+        }
 
         return $finalResults;
     }
@@ -583,7 +602,10 @@ class Translator implements LoggerAwareInterface
     private function restoreTranslatedHtmlAttributes(string $html, array $attrTranslations): string
     {
         foreach ($attrTranslations as $placeholder => $translatedValue) {
-            $html = str_replace($placeholder, $translatedValue, $html);
+            // Add null check to prevent str_replace errors
+            if ($translatedValue !== null) {
+                $html = str_replace($placeholder, $translatedValue, $html);
+            }
         }
         return $html;
     }
