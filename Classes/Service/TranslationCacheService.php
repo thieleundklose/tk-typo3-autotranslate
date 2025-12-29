@@ -151,13 +151,16 @@ class TranslationCacheService
     private function serializeTextResults(array $textResults): array
     {
         $serialized = [];
-        foreach ($textResults as $result) {
+        foreach ($textResults as $index => $result) {
             if ($result instanceof TextResult) {
-                $serialized[] = [
+                $serialized[$index] = [
                     'text' => $result->text,
                     'detected_source_lang' => $result->detectedSourceLang ?? null,
                     'billed_characters' => $result->billedCharacters ?? null
                 ];
+            } else {
+                // Preserve array structure - store null or invalid entries
+                $serialized[$index] = null;
             }
         }
         return $serialized;
@@ -169,7 +172,13 @@ class TranslationCacheService
     private function unserializeTextResults(array $cached): array
     {
         $results = [];
-        foreach ($cached as $data) {
+        foreach ($cached as $index => $data) {
+            if ($data === null) {
+                // Preserve null values to maintain array structure
+                $results[$index] = null;
+                continue;
+            }
+            
             // Create TextResult-like object (since TextResult constructor is protected)
             $result = new class($data['text'], $data['detected_source_lang']) {
                 public $text;
@@ -182,7 +191,7 @@ class TranslationCacheService
                 }
             };
             $result->billedCharacters = $data['billed_characters'];
-            $results[] = $result;
+            $results[$index] = $result;
         }
         return $results;
     }

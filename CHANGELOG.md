@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.1] - 2025-12-29
+
+### Fixes
+- Compatibility and security, thanks to Sebastian Mendel ([Pull request #97](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/97)).
+- Improved cache serialization to preserve array indices and prevent data corruption when mixing cached and fresh translations.
+- Added defensive null checks in translation pipeline to prevent str_replace() errors with null values, thanks to Rainer Becker ([Issue #94](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/94)).
+
 ## [2.4.0] - 2025-10-12
 
 ### Features
