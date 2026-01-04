@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.5.0] - 2026-01-04
+
+### Stabilizations
+- Remove multiple TCA customization
+
+### Features
+- Added comprehensive support for relation tables including ContentBlocks collections, `sys_file_reference`, and custom inline relations
+- Autotranslate fields now available on all page doctypes (Standard, External URL, Shortcut, etc.)
+
 ## [2.4.1] - 2025-12-29
 
 ### Fixes

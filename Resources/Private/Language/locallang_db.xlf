@@ -3,6 +3,9 @@
 	<file source-language="en" datatype="plaintext" original="messages" date="2016-12-12T11:07:00Z" product-name="autotranslate">
 		<header/>
 		<body>
+			<trans-unit id="tabs.autotranslate" xml:space="preserve">
+				<source>Autotranslate</source>
+			</trans-unit>
 			<trans-unit id="autotranslate_exclude" xml:space="preserve">
 				<source>Exclude from autotranslation</source>
 			</trans-unit>
