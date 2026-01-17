@@ -6,12 +6,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
-// prevent multiple loading
-if (defined('AUTOTRANSLATE_SITES_LOADED')) {
-    return;
-}
-define('AUTOTRANSLATE_SITES_LOADED', true);
-
 $siteConfiguration = isset($_REQUEST['site']) ? GeneralUtility::makeInstance(SiteFinder::class)->getSiteByIdentifier($_REQUEST['site'])->getConfiguration(): null;
 
 $palettes = [];

@@ -1,9 +1,6 @@
 # Changelog
 
-## [2.5.0] - 2026-01-04
-
-### Stabilizations
-- Remove multiple TCA customization
+## [2.5.0] - 2026-01-17
 
 ### Features
 - Added comprehensive support for relation tables including ContentBlocks collections, `sys_file_reference`, and custom inline relations
