@@ -106,11 +106,55 @@ foreach ($tablesToTranslate as $table) {
     ];
     $additionalFields[] = $fieldname;
 
+    // only show if there are textfields to translate
+    if (!empty(TranslationHelper::unusedTranslateableColumns($table, '', TranslationHelper::COLUMNS_TRANSLATEABLE_GROUP_TEXTFIELD))) {
+        $fieldname = TranslationHelper::configurationFieldname($table,'textfields');
+        $fieldsUnusedTextField = TranslationHelper::unusedTranslateableColumns($table, $siteConfiguration[$fieldname] ?? '', TranslationHelper::COLUMNS_TRANSLATEABLE_GROUP_TEXTFIELD);
+        $descriptionAppendix = !empty($fieldsUnusedTextField) ? PHP_EOL . ' Unused: ' . implode(', ', $fieldsUnusedTextField) : '';
+        $GLOBALS['SiteConfiguration']['site']['columns'][$fieldname] = [
+            'label' => 'Text fields',
+            'description' => 'Comma seperated list of columns.' . $descriptionAppendix,
+            'config' => [
+                'type' => 'text',
+                'cols' => 80,
+                'rows' => 5,
+                'eval' => 'trim'
+            ],
+        ];
+        $additionalFields[] = $fieldname;
+    }
+
+    // only show if there are file references to translate
+    if (!empty(TranslationHelper::unusedTranslateableColumns($table, '', TranslationHelper::COLUMNS_TRANSLATEABLE_GROUP_FILEREFERENCE))) {
+        $fieldname = TranslationHelper::configurationFieldname($table,'fileReferences');
+        $fieldsUnusedFileReference = TranslationHelper::unusedTranslateableColumns($table, $siteConfiguration[$fieldname] ?? '', TranslationHelper::COLUMNS_TRANSLATEABLE_GROUP_FILEREFERENCE);
+        $descriptionAppendix = !empty($fieldsUnusedFileReference) ? PHP_EOL . ' Unused: ' . implode(', ', $fieldsUnusedFileReference) : '';
+        $GLOBALS['SiteConfiguration']['site']['columns'][$fieldname] = [
+            'label' => 'File references',
+            'description' => 'Comma seperated list of columns.' . $descriptionAppendix,
+            'config' => [
+                'type' => 'text',
+                'cols' => 80,
+                'rows' => 5,
+                'eval' => 'trim'
+            ],
+        ];
+        $additionalFields[] = $fieldname;
+    }
+
+    if (!empty($additionalFields)) {
+        $palettes['autotranslate' . $tableUpperCamelCase] = ['showitem' => implode(', --linebreak--, ', $additionalFields)];
+    }
+}
+
+$referenceTablesToTranslate = TranslationHelper::additionalReferenceTables();
+foreach ($referenceTablesToTranslate as $table) {
+    $tableUpperCamelCase = GeneralUtility::underscoredToUpperCamelCase($table);
     $fieldname = TranslationHelper::configurationFieldname($table,'textfields');
     $fieldsUnusedTextField = TranslationHelper::unusedTranslateableColumns($table, $siteConfiguration[$fieldname] ?? '', TranslationHelper::COLUMNS_TRANSLATEABLE_GROUP_TEXTFIELD);
     $descriptionAppendix = !empty($fieldsUnusedTextField) ? PHP_EOL . ' Unused: ' . implode(', ', $fieldsUnusedTextField) : '';
     $GLOBALS['SiteConfiguration']['site']['columns'][$fieldname] = [
-        'label' => 'Text fields',
+        'label' => 'Autotranslation textfields for '.$tableUpperCamelCase,
         'description' => 'Comma seperated list of columns.' . $descriptionAppendix,
         'config' => [
             'type' => 'text',
@@ -119,45 +163,8 @@ foreach ($tablesToTranslate as $table) {
             'eval' => 'trim'
         ],
     ];
-    $additionalFields[] = $fieldname;
-
-
-    $fieldname = TranslationHelper::configurationFieldname($table,'fileReferences');
-    $fieldsUnusedFileReference = TranslationHelper::unusedTranslateableColumns($table, $siteConfiguration[$fieldname] ?? '', TranslationHelper::COLUMNS_TRANSLATEABLE_GROUP_FILEREFERENCE);
-    $descriptionAppendix = !empty($fieldsUnusedFileReference) ? PHP_EOL . ' Unused: ' . implode(', ', $fieldsUnusedFileReference) : '';
-    $GLOBALS['SiteConfiguration']['site']['columns'][$fieldname] = [
-        'label' => 'File references',
-        'description' => 'Comma seperated list of columns.' . $descriptionAppendix,
-        'config' => [
-            'type' => 'text',
-            'cols' => 80,
-            'rows' => 5,
-            'eval' => 'trim'
-        ],
-    ];
-    $additionalFields[] = $fieldname;
-
-    $palettes['autotranslate' . $tableUpperCamelCase] = ['showitem' => implode(', --linebreak--, ', $additionalFields)];
+    $palettes['autotranslate' . $tableUpperCamelCase] = ['showitem' => $fieldname];
 }
-
-// add static table sys_file_reference
-$table = 'sys_file_reference';
-$tableUpperCamelCase = GeneralUtility::underscoredToUpperCamelCase($table);
-$fieldname = TranslationHelper::configurationFieldname($table,'textfields');
-$fieldsUnusedTextField = TranslationHelper::unusedTranslateableColumns($table, $siteConfiguration[$fieldname] ?? '', TranslationHelper::COLUMNS_TRANSLATEABLE_GROUP_TEXTFIELD);
-$descriptionAppendix = !empty($fieldsUnusedTextField) ? PHP_EOL . ' Unused: ' . implode(', ', $fieldsUnusedTextField) : '';
-$GLOBALS['SiteConfiguration']['site']['columns'][$fieldname] = [
-    'label' => 'Autotranslation textfields for '.$tableUpperCamelCase,
-    'description' => 'Comma seperated list of columns.' . $descriptionAppendix,
-    'config' => [
-        'type' => 'text',
-        'cols' => 80,
-        'rows' => 5,
-        'eval' => 'trim'
-    ],
-];
-$palettes['autotranslate' . $tableUpperCamelCase] = ['showitem' => $fieldname];
-
 
 $GLOBALS['SiteConfiguration']['site']['palettes'] = array_merge($GLOBALS['SiteConfiguration']['site']['palettes'], $palettes);
 $showItem = ',--palette--;;' . implode(',--palette--;;', array_keys($palettes));
