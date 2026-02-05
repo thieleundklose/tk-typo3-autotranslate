@@ -249,6 +249,96 @@ class TranslationHelper
     }
 
     /**
+     * Receive possible columns of $table that are references to $referenceTable.
+     *
+     * @param int $pageId
+     * @param string $table
+     * @param string $referenceTable
+     * @return array|null
+     * @throws SiteNotFoundException
+     */
+    public static function translationReferenceColumns(int $pageId, string $table, string $referenceTable): ?array
+    {
+        if ($referenceTable === 'sys_file_reference') {
+            return self::translationFileReferences($pageId, $table);
+        }
+        // Check if the table exists in TCA
+        if (!isset($GLOBALS['TCA'][$table]['columns'])) {
+            return null;
+        }
+
+        $referenceColumns = [];
+
+        // Iterate through all columns of the table
+        foreach ($GLOBALS['TCA'][$table]['columns'] as $columnName => $columnConfig) {
+            $config = $columnConfig['config'] ?? [];
+
+            // Check different types of references
+
+            // 1. Inline references (IRRE - Inline Relational Record Editing)
+            if (($config['type'] ?? '') === 'inline' &&
+                ($config['foreign_table'] ?? '') === $referenceTable) {
+                $referenceColumns[] = $columnName;
+                continue;
+            }
+
+            // 2. Select references
+            if (($config['type'] ?? '') === 'select' &&
+                ($config['foreign_table'] ?? '') === $referenceTable) {
+                $referenceColumns[] = $columnName;
+                continue;
+            }
+
+            // 3. Group references (for files or records)
+            if (($config['type'] ?? '') === 'group') {
+                // Check allowed tables
+                $allowedTables = $config['allowed'] ?? '';
+                $allowedTablesArray = GeneralUtility::trimExplode(',', $allowedTables, true);
+
+                if (in_array($referenceTable, $allowedTablesArray, true)) {
+                    $referenceColumns[] = $columnName;
+                    continue;
+                }
+
+                // Check foreign_table for group type
+                if (($config['foreign_table'] ?? '') === $referenceTable) {
+                    $referenceColumns[] = $columnName;
+                    continue;
+                }
+            }
+
+            // 4. File references (TYPO3 v12+)
+            if (($config['type'] ?? '') === 'file' && $referenceTable === 'sys_file_reference') {
+                $referenceColumns[] = $columnName;
+                continue;
+            }
+
+            // 5. Category references
+            if (($config['type'] ?? '') === 'category' && $referenceTable === 'sys_category') {
+                $referenceColumns[] = $columnName;
+                continue;
+            }
+
+            // 6. MM references via MM table
+            if (isset($config['MM']) && isset($config['foreign_table']) &&
+                $config['foreign_table'] === $referenceTable) {
+                $referenceColumns[] = $columnName;
+                continue;
+            }
+
+            // 7. Flex form references (extended functionality)
+            if (($config['type'] ?? '') === 'flex') {
+                // Here we could dive deeper into the flex form structure
+                // This would be very complex and is usually not needed
+                // Skip for now to keep the function performant
+            }
+        }
+
+        // Return null if no reference columns were found, otherwise return the array
+        return empty($referenceColumns) ? null : $referenceColumns;
+    }
+
+    /**
      * Generate fieldname to store in site configuration.
      *
      * @param string $table
@@ -406,6 +496,23 @@ class TranslationHelper
         $additionalTables = GeneralUtility::makeInstance(ExtensionConfiguration::class)
             ->get('autotranslate', 'additionalTables');
         $tables = $additionalTables ? GeneralUtility::trimExplode(',', $additionalTables, true) : [];
+
+        // Filter the tables to only include those that exist in $GLOBALS['TCA']
+        return array_filter($tables, function ($table) {
+            return isset($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']);
+        });
+    }
+
+    /**
+     * Receive additional tables from extension settings
+     *
+     * @return array
+     */
+    public static function additionalReferenceTables(): array
+    {
+        $additionalReferenceTables = GeneralUtility::makeInstance(ExtensionConfiguration::class)
+            ->get('autotranslate', 'additionalReferenceTables');
+        $tables = $additionalReferenceTables ? GeneralUtility::trimExplode(',', $additionalReferenceTables, true) : [];
 
         // Filter the tables to only include those that exist in $GLOBALS['TCA']
         return array_filter($tables, function ($table) {

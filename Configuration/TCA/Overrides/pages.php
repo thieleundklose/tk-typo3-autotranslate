@@ -50,9 +50,9 @@ $tempColumns = [
 
 ExtensionManagementUtility::addTCAcolumns($table, $tempColumns, 1);
 
-ExtensionManagementUtility::addFieldsToPalette(
+ExtensionManagementUtility::addToAllTCAtypes(
     $table,
-    'language',
-    '--linebreak--,autotranslate_exclude,--linebreak--,autotranslate_languages,--linebreak--,autotranslate_last',
+    '--div--;' . $llPath . 'tabs.autotranslate,autotranslate_exclude,autotranslate_languages,autotranslate_last',
+    '',
     'after:' . $languageField
 );
