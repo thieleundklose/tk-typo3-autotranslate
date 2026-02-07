@@ -1,5 +1,7 @@
-<?php 
-// used in TYPO3 v12
+<?php
+
+declare(strict_types=1);
+
 return [
     'dependencies' => [
         'backend',

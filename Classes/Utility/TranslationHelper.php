@@ -20,13 +20,11 @@ namespace ThieleUndKlose\Autotranslate\Utility;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
-use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
-use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\Entity\Site;
+use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 
 class TranslationHelper
 {
@@ -50,61 +48,20 @@ class TranslationHelper
     }
 
     /**
-     * Collect translateable fields from TCA.
+     * Receive additional tables from extension settings
      *
-     * @param string $table
      * @return array
      */
-    public static function translateableColumns(string $table): array
+    public static function additionalTables(): array
     {
-        $textColumns = array_filter($GLOBALS['TCA'][$table]['columns'], function ($v, $k) use ($table) {
+        $additionalTables = GeneralUtility::makeInstance(ExtensionConfiguration::class)
+            ->get('autotranslate', 'additionalTables');
+        $tables = $additionalTables ? GeneralUtility::trimExplode(',', $additionalTables, true) : [];
 
-            if ($table == 'sys_file_reference' && in_array($k, ['tablenames', 'fieldname', 'table_local'])) {
-                return;
-            }
-
-            $config = $v['config'];
-            if (isset($config['renderType'])) {
-                return;
-            }
-
-            if (!in_array($config['type'], self::COLUMN_TRANSLATEABLE_TYPES)) {
-                return;
-            }
-
-            $evalList = GeneralUtility::trimExplode(',', $config['eval'] ?? '', true);
-            $evalIntersect = array_intersect($evalList, self::COLUMN_TRANSLATEABLE_EXCLUDE_EVALS);
-            if (!empty($evalIntersect)) {
-                return;
-            }
-
-            return true;
-        }, ARRAY_FILTER_USE_BOTH);
-
-        $fileReferenceColumns = array_filter($GLOBALS['TCA'][$table]['columns'], function ($v) {
-            $config = $v['config'];
-
-            if (!isset($config['type']) || !isset($config['foreign_table']) || $config['foreign_table'] != 'sys_file_reference') {
-                return false;
-            }
-
-            if (VersionNumberUtility::convertVersionStringToArray((new Typo3Version())->getVersion())['version_main'] > 11) {
-                if ($config['type'] != 'file') {
-                    return false;
-                }
-            } else {
-                if ($config['type'] != 'inline') {
-                    return false;
-                }
-            }
-
-            return true;
+        // Filter the tables to only include those that exist in $GLOBALS['TCA']
+        return array_filter($tables, function ($table) {
+            return isset($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']);
         });
-
-        return [
-            self::COLUMNS_TRANSLATEABLE_GROUP_TEXTFIELD => array_keys($textColumns),
-            self::COLUMNS_TRANSLATEABLE_GROUP_FILEREFERENCE => array_keys($fileReferenceColumns)
-        ];
     }
 
     /**
@@ -138,6 +95,58 @@ class TranslationHelper
     }
 
     /**
+     * Collect translateable fields from TCA.
+     *
+     * @param string $table
+     * @return array
+     */
+    public static function translateableColumns(string $table): array
+    {
+        $textColumns = array_filter($GLOBALS['TCA'][$table]['columns'], function ($v, $k) use ($table) {
+            if ($table === 'sys_file_reference' && in_array($k, ['tablenames', 'fieldname', 'table_local'])) {
+                return false;
+            }
+
+            $config = $v['config'];
+            if (isset($config['renderType'])) {
+                return false;
+            }
+
+            if (!in_array($config['type'], self::COLUMN_TRANSLATEABLE_TYPES)) {
+                return false;
+            }
+
+            $evalList = GeneralUtility::trimExplode(',', $config['eval'] ?? '', true);
+            $evalIntersect = array_intersect($evalList, self::COLUMN_TRANSLATEABLE_EXCLUDE_EVALS);
+            if (!empty($evalIntersect)) {
+                return false;
+            }
+
+            return true;
+        }, ARRAY_FILTER_USE_BOTH);
+
+        $fileReferenceColumns = array_filter($GLOBALS['TCA'][$table]['columns'], function ($v) {
+            $config = $v['config'];
+
+            if (!isset($config['type']) || !isset($config['foreign_table']) || $config['foreign_table'] != 'sys_file_reference') {
+                return false;
+            }
+
+            // TYPO3 13+ uses type=file for file references
+            if ($config['type'] !== 'file') {
+                return false;
+            }
+
+            return true;
+        });
+
+        return [
+            self::COLUMNS_TRANSLATEABLE_GROUP_TEXTFIELD => array_keys($textColumns),
+            self::COLUMNS_TRANSLATEABLE_GROUP_FILEREFERENCE => array_keys($fileReferenceColumns)
+        ];
+    }
+
+    /**
      * Receive possible translatable languages.
      * @param array|null $siteLanguages
      * @return array
@@ -147,16 +156,9 @@ class TranslationHelper
         if (empty($siteLanguages)) {
             return [];
         }
-        $languages = array_filter($siteLanguages, function ($k) {
-            if ($k === 0) {
-                return;
-            }
-            return true;
-        }, ARRAY_FILTER_USE_KEY);
 
-        return $languages;
+        return array_filter($siteLanguages, fn($k) => $k !== 0, ARRAY_FILTER_USE_KEY);
     }
-
 
     /**
      * Receive default language from Site.
@@ -172,6 +174,7 @@ class TranslationHelper
      * Receive default language.
      * @param array|null $siteLanguages
      * @return SiteLanguage
+     * @throws SiteNotFoundException If no site languages are found
      */
     public static function defaultLanguage(?array $siteLanguages): SiteLanguage
     {
@@ -180,6 +183,58 @@ class TranslationHelper
         }
 
         return $siteLanguages[0];
+    }
+
+    /**
+     * Receive possible fields which should  be translated.
+     *
+     * @param int $pageId
+     * @param string $table
+     * @return array|null
+     * @throws SiteNotFoundException
+     */
+    public static function translationTextfields(int $pageId, string $table): ?array
+    {
+        if ($pageId === 0) {
+            return null;
+        }
+
+        $siteConfiguration = self::siteConfigurationValue($pageId);
+        $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
+        return GeneralUtility::trimExplode(',', $translationSettings['autotranslateTextfields'] ?? '', true);
+    }
+
+    /**
+     * Receive a setting by page from site configuration.
+     *
+     * @param int $pageId
+     * @param array|null $keyPath
+     * @return array|mixed|null
+     * @throws SiteNotFoundException
+     */
+    public static function siteConfigurationValue(int $pageId, ?array $keyPath = null)
+    {
+        if (empty($pageId)) {
+            return null;
+        }
+
+        try {
+            $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
+            $site = $siteFinder->getSiteByPageId($pageId);
+            $configuration = $site->getConfiguration();
+
+            if ($keyPath === null) {
+                return $configuration;
+            }
+
+            foreach ($keyPath as $key) {
+                $configuration = $configuration[$key] ?? null;
+            }
+
+            return $configuration;
+        } catch (SiteNotFoundException $e) {
+            return null;
+        }
     }
 
     /**
@@ -210,42 +265,24 @@ class TranslationHelper
     }
 
     /**
-     * Receive possible fields which should  be translated.
+     * Generate fieldname to store in site configuration.
      *
-     * @param int $pageId
      * @param string $table
-     * @return array|null
-     * @throws SiteNotFoundException
+     * @param string $fieldname
+     * @return string
      */
-    public static function translationTextfields(int $pageId, string $table): ?array
+    public static function configurationFieldname(string $table, string $fieldname): string
     {
-        if ($pageId === 0) {
-            return null;
-        }
+        $parts = implode(
+            '_',
+            [
+                'autotranslate',
+                GeneralUtility::camelCaseToLowerCaseUnderscored($table),
+                GeneralUtility::camelCaseToLowerCaseUnderscored($fieldname)
+            ]
+        );
 
-        $siteConfiguration = self::siteConfigurationValue($pageId);
-        $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
-        return GeneralUtility::trimExplode(',', $translationSettings['autotranslateTextfields'] ?? '', true);
-    }
-
-    /**
-     * Receive possible file references which should be translated.
-     *
-     * @param int $pageId
-     * @param string $table
-     * @return array|null
-     * @throws SiteNotFoundException
-     */
-    public static function translationFileReferences(int $pageId, string $table): ?array
-    {
-
-        if ($pageId === 0) {
-            return null;
-        }
-
-        $siteConfiguration = self::siteConfigurationValue($pageId);
-        $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
-        return GeneralUtility::trimExplode(',', $translationSettings['autotranslateFileReferences'] ?? '', true);
+        return GeneralUtility::underscoredToLowerCamelCase($parts);
     }
 
     /**
@@ -326,12 +363,8 @@ class TranslationHelper
                 continue;
             }
 
-            // 7. Flex form references (extended functionality)
-            if (($config['type'] ?? '') === 'flex') {
-                // Here we could dive deeper into the flex form structure
-                // This would be very complex and is usually not needed
-                // Skip for now to keep the function performant
-            }
+            // Note: Flex form references (type=flex) are not supported
+            // as diving into the flex form structure would be very complex
         }
 
         // Return null if no reference columns were found, otherwise return the array
@@ -339,57 +372,23 @@ class TranslationHelper
     }
 
     /**
-     * Generate fieldname to store in site configuration.
-     *
-     * @param string $table
-     * @param string $fieldname
-     * @return string
-     */
-    public static function configurationFieldname(string $table, string $fieldname): string
-    {
-        $parts = implode(
-            '_',
-            [
-                'autotranslate',
-                GeneralUtility::camelCaseToLowerCaseUnderscored($table),
-                GeneralUtility::camelCaseToLowerCaseUnderscored($fieldname)
-            ]
-        );
-
-        return GeneralUtility::underscoredToLowerCamelCase($parts);
-    }
-
-    /**
-     * Receive a setting by page from site configuration.
+     * Receive possible file references which should be translated.
      *
      * @param int $pageId
-     * @param array|null $keyPath
-     * @return array|mixed|null
+     * @param string $table
+     * @return array|null
      * @throws SiteNotFoundException
      */
-    public static function siteConfigurationValue(int $pageId, ?array $keyPath = null)
+    public static function translationFileReferences(int $pageId, string $table): ?array
     {
-        if (empty($pageId)) {
+
+        if ($pageId === 0) {
             return null;
         }
 
-        try {
-            $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-            $site = $siteFinder->getSiteByPageId($pageId);
-            $configuration = $site->getConfiguration();
-
-            if ($keyPath === null) {
-                return $configuration;
-            }
-
-            foreach ($keyPath as $key) {
-                $configuration = $configuration[$key] ?? null;
-            }
-
-            return $configuration;
-        } catch (SiteNotFoundException $e) {
-            return null;
-        }
+        $siteConfiguration = self::siteConfigurationValue($pageId);
+        $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
+        return GeneralUtility::trimExplode(',', $translationSettings['autotranslateFileReferences'] ?? '', true);
     }
 
     /**
@@ -484,23 +483,6 @@ class TranslationHelper
             'key' => null,
             'source' => null
         ];
-    }
-
-    /**
-     * Receive additional tables from extension settings
-     *
-     * @return array
-     */
-    public static function additionalTables(): array
-    {
-        $additionalTables = GeneralUtility::makeInstance(ExtensionConfiguration::class)
-            ->get('autotranslate', 'additionalTables');
-        $tables = $additionalTables ? GeneralUtility::trimExplode(',', $additionalTables, true) : [];
-
-        // Filter the tables to only include those that exist in $GLOBALS['TCA']
-        return array_filter($tables, function ($table) {
-            return isset($GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField']);
-        });
     }
 
     /**

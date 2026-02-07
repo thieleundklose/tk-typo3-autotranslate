@@ -23,8 +23,8 @@ final class GlossaryService
      *
      * @return ?Glossary
      *
-     * @throws Exception
-     * @throws SiteNotFoundException
+     * @throws \Exception
+     * @throws \TYPO3\CMS\Core\Exception\SiteNotFoundException
      * @throws \Doctrine\DBAL\Exception
      */
     public function getGlossary(

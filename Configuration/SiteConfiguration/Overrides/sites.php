@@ -48,7 +48,7 @@ $palettes['deeplAuthKey'] = ['showitem' => 'deeplAuthKey'];
 
 $GLOBALS['SiteConfiguration']['site']['columns']['autotranslateUseDeeplGlossary'] = [
     'label' => 'Enable the use of the DeepL Translate glossary',
-    'description' => 'In TYPO3 >= v12 you can use DeepL Glossaries from https://extensions.typo3.org/extension/deepltranslate_glossary',
+    'description' => 'Use DeepL Glossaries from https://extensions.typo3.org/extension/deepltranslate_glossary',
     'config' => [
         'type' => 'check',
         'renderType' => 'checkboxToggle',

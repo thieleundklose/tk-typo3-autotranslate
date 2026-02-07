@@ -73,6 +73,7 @@ class DeeplApiHelper
      * @param string $apiKey
      * @param string $type 'source' or 'target'
      * @return array
+     * @throws \InvalidArgumentException If type is not 'source' or 'target'
      */
     public static function getCachedLanguages(string $apiKey, string $type = 'source'): array
     {

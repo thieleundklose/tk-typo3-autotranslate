@@ -17,13 +17,13 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Utility;
 
 use DeepL\TranslateTextOptions;
-use TYPO3\CMS\Core\DataHandling\DataHandler;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThieleUndKlose\Autotranslate\Service\GlossaryService;
 use ThieleUndKlose\Autotranslate\Service\TranslationCacheService;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
+use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use WebVision\Deepltranslate\Glossary\Domain\Dto\Glossary;
 
 class Translator implements LoggerAwareInterface
@@ -66,6 +66,7 @@ class Translator implements LoggerAwareInterface
      * @param string|null $languagesToTranslate
      * @param string $translateMode
      * @return void
+     * @throws \RuntimeException If DeepL API key is invalid or has no characters left
      * @throws \Doctrine\DBAL\Driver\Exception
      */
     public function translate(string $table, int $recordUid, ?DataHandler $parentObject = null, ?string $languagesToTranslate = null, string $translateMode = self::TRANSLATE_MODE_BOTH): void

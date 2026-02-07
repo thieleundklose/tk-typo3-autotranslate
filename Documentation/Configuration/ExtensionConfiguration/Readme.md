@@ -1,35 +1,32 @@
 # Extension Settings
 
-Here you can define DeepL API Key and which 3rd party content should be supported.
+Configure the DeepL API Key and define which 3rd party content should be supported.
 
-**After adding tables, a database compare must be performed using the install tool**
+**After adding tables, run the database compare in the Install Tool**
 
 ![DeepL](../../Images/ExtensionConfiguration.png)
 
-### Important: TYPO3 v12 and older
+## Example SQL Schema for Additional Tables
 
-In older TYPO3 versions you have to provide the required fields for the 3rd party tables in your site package via ext_tables.sql.
+Except for `tx_news_domain_model_news`, you need to provide the SQL schema in your site package.
 
-## Example sql schema for additional tables
-
-Except for tx_news_domain_model_news, here we already provide the sql schema.
-
-```
+```sql
 CREATE TABLE tx_table_name_item (
     autotranslate_exclude tinyint(4) DEFAULT '0' NOT NULL,
     autotranslate_languages varchar(255) DEFAULT NULL,
-    autotranslate_last int(11) DEFAULT '0' NOT NULL,
+    autotranslate_last int(11) DEFAULT '0' NOT NULL
 );
 ```
 
-## Example sql schema for reference tables
+## Example SQL Schema for Reference Tables
 
-Except for sys_file_reference, here we already provide the sql schema.
+Except for `sys_file_reference`, you need to provide the SQL schema in your site package.
 
-```
+```sql
 CREATE TABLE tx_table_name_item (
-    autotranslate_last int(11) DEFAULT '0' NOT NULL,
+    autotranslate_last int(11) DEFAULT '0' NOT NULL
 );
 ```
 
-> [!NOTE] If fields from third-party extensions that have allowLanguageSynchronization enabled (tt_address) are to be translated, the backend cache must be cleared once after editing the site configuration.
+> [!NOTE]
+> If fields from third-party extensions that have `allowLanguageSynchronization` enabled (e.g., tt_address) need to be translated, clear the backend cache once after editing the site configuration.
