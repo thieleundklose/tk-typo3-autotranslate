@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /*
@@ -18,11 +19,17 @@ namespace ThieleUndKlose\Autotranslate\Hooks;
 
 use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\DataHandling\DataHandler as CoreDataHandler;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
 
-class DataHandler implements SingletonInterface
+/**
+ * DataHandler hooks for automatic translation
+ */
+final class DataHandler implements SingletonInterface
 {
     /**
      * @var bool Hook suspended state.
@@ -30,33 +37,27 @@ class DataHandler implements SingletonInterface
     private bool $suspended = false;
 
     /**
-     * Generate a different preview link
-     *
-     * @param string $status status
-     * @param string $table table name
-     * @param int $recordUid id of the record
-     * @param array $fields fieldArray
-     * @param \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject parent Object
+     * Handle after database operations for automatic translation
      */
     public function processDatamap_afterDatabaseOperations(
-        $status,
-        $table,
-        $recordUid,
+        string $status,
+        string $table,
+        int|string $recordUid,
         array $fields,
-        \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject
-    )
-    {
-
-        // Skip auto translation if hook is suspended. @see processCmdmap() for detailed description.
+        CoreDataHandler $parentObject
+    ): void {
+        // Skip auto translation if hook is suspended
         if ($this->suspended) {
             return;
         }
 
         $languageField = $GLOBALS['TCA'][$table]['ctrl']['languageField'] ?? 'sys_language_uid';
-        $languageUid = isset($parentObject->datamap[$table][$recordUid][$languageField]) ? (int)$parentObject->datamap[$table][$recordUid][$languageField] : null;
+        $languageUid = isset($parentObject->datamap[$table][$recordUid][$languageField])
+            ? (int)$parentObject->datamap[$table][$recordUid][$languageField]
+            : null;
 
-        // Skip auto translation if page created on root level.
-        if ($table == 'pages' && $status == 'new' && $fields['pid'] === 0) {
+        // Skip auto translation if page created on root level
+        if ($table === 'pages' && $status === 'new' && $fields['pid'] === 0) {
             return;
         }
 
@@ -68,14 +69,16 @@ class DataHandler implements SingletonInterface
             return;
         }
         if ($languageUid && $languageUid > 0) {
-            $parentObject->updateDB($table, $recordUid, ['autotranslate_languages' => NULL]);
+            $this->updateRecord($table, (int)$recordUid, ['autotranslate_languages' => null]);
             return;
         }
 
-        $pid = $parentObject->getPID($table, $recordUid);
-        $pageId = ($pid === 0 && $table === 'pages') ? $recordUid : $pid;
+        $pageId = $this->getRecordPid($table, (int)$recordUid);
+        if ($pageId === 0 && $table === 'pages') {
+            $pageId = (int)$recordUid;
+        }
 
-        // Skip auto translation if page id is not set, because no site configuration could be exist on root page 0.
+        // Skip auto translation if page id is not set
         if (empty($pageId)) {
             return;
         }
@@ -83,7 +86,7 @@ class DataHandler implements SingletonInterface
         $translator = GeneralUtility::makeInstance(Translator::class, $pageId);
 
         try {
-            if (in_array($table, TranslationHelper::tablesToTranslate())) {
+            if (in_array($table, TranslationHelper::tablesToTranslate(), true)) {
                 $translator->translate($table, (int)$recordUid, $parentObject);
             }
         } catch (\Exception $e) {
@@ -93,25 +96,39 @@ class DataHandler implements SingletonInterface
                 FlashMessageUtility::MESSAGE_WARNING
             );
         }
+    }
 
-        return;
+    /**
+     * Update a record in the database
+     */
+    private function updateRecord(string $table, int $uid, array $data): void
+    {
+        $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getConnectionForTable($table);
+        $connection->update($table, $data, ['uid' => $uid]);
+    }
+
+    /**
+     * Get the PID of a record
+     */
+    private function getRecordPid(string $table, int $uid): int
+    {
+        $record = BackendUtility::getRecord($table, $uid, 'pid');
+        return (int)($record['pid'] ?? 0);
     }
 
     /**
      * Dynamically enable or disable auto translation depending on command type.
-     *
-     * @param string $command
-     * @param $table
-     * @param $id
-     * @param $value
-     * @param $commandIsProcessed
-     * @param \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler
-     * @param $pasteUpdate
-     * @return void
      */
-    public function processCmdmap(string $command, $table, $id, $value, $commandIsProcessed, \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler, $pasteUpdate)
-    {
-        // Disable auto translation for copy actions.
+    public function processCmdmap(
+        string $command,
+        string $table,
+        int|string $id,
+        mixed $value,
+        bool $commandIsProcessed,
+        CoreDataHandler $dataHandler,
+        mixed $pasteUpdate
+    ): void {
         if ($command === 'copy') {
             $this->suspended = true;
         }
@@ -119,22 +136,18 @@ class DataHandler implements SingletonInterface
 
     /**
      * Reenable auto translation if it has been suspended in processCmdmap() hook.
-     *
-     * @param string $command
-     * @param $table
-     * @param $id
-     * @param $value
-     * @param \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler
-     * @param $pasteUpdate
-     * @param $pasteDatamap
-     * @return void
      */
-    public function processCmdmap_postProcess(string $command, $table, $id, $value, \TYPO3\CMS\Core\DataHandling\DataHandler $dataHandler, $pasteUpdate, $pasteDatamap)
-    {
-        // Reenable auto translation after copy command has finished.
+    public function processCmdmap_postProcess(
+        string $command,
+        string $table,
+        int|string $id,
+        mixed $value,
+        CoreDataHandler $dataHandler,
+        mixed $pasteUpdate,
+        mixed $pasteDatamap
+    ): void {
         if ($command === 'copy') {
             $this->suspended = false;
         }
     }
-
 }

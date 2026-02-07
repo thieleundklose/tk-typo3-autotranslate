@@ -8,16 +8,16 @@ $EM_CONF[$_EXTKEY] = [
     'author_company' => 'Thiele & Klose GmbH',
     'author_email' => 'typo3@thieleundklose.de',
     'state' => 'stable',
-    'version' => '2.5.0',
+    'version' => '3.0.0',
     'constraints' => [
         'depends' => [
-            'typo3' => '11.5.0-13.9.99',
-            'php' => '7.4.0-8.4.99',
+            'typo3' => '13.4.0-14.99.99',
+            'php' => '8.2.0-8.4.99',
         ],
         'conflicts' => [],
         'suggests' => [
-            'news' => '10.0.0-10.99.99',
-            'deepltranslate_glossary' => '5.0.0-5.0.0',
+            'news' => '10.0.0-12.99.99',
+            'deepltranslate_glossary' => '5.0.0-6.99.99',
         ],
     ],
     'autoload' => [
@@ -26,5 +26,5 @@ $EM_CONF[$_EXTKEY] = [
             'DeepL\\' => 'Resources/Vendor/Deeplcom/DeeplPhp/src/',
             'Http\\Discovery\\' => 'Resources/Vendor/php-http/discovery/src/',
         ],
-	],
+    ],
 ];

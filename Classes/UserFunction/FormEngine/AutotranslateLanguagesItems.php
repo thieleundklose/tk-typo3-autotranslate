@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /*
@@ -23,18 +24,15 @@ use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 
-class AutotranslateLanguagesItems {
-
+final class AutotranslateLanguagesItems
+{
     /**
      * Add possible languages from site configuration respecting current tree position to backend tca form.
      *
-     * @param array $config
-     * @param $pObj
-     * @return void
      * @throws Exception
      * @throws SiteNotFoundException
      */
-    public function itemsProcFunc(array &$config, &$pObj)
+    public function itemsProcFunc(array &$config): void
     {
         $table = $config['table'];
         $row = $config['row'];
@@ -66,10 +64,13 @@ class AutotranslateLanguagesItems {
             $siteConfiguration = $siteFinder->getSiteByPageId($sitePid);
             $languages = TranslationHelper::possibleTranslationLanguages($siteConfiguration->getLanguages());
             foreach ($languages as $language) {
-                array_push($config['items'], array($language->getTitle(), $language->getLanguageId()));
+                $config['items'][] = [
+                    'label' => $language->getTitle(),
+                    'value' => $language->getLanguageId(),
+                ];
             }
-        } catch (SiteNotFoundException $e) {
-
+        } catch (SiteNotFoundException) {
+            // Site not found, no languages to add
         }
     }
 }

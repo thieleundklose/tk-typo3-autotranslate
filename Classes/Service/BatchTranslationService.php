@@ -1,6 +1,10 @@
 <?php
+
+declare(strict_types=1);
+
 namespace ThieleUndKlose\Autotranslate\Service;
 
+use Exception;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
@@ -8,186 +12,261 @@ use ThieleUndKlose\Autotranslate\Utility\LogUtility;
 use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
+use TYPO3\CMS\Core\Site\Entity\Site;
+use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-class BatchTranslationService implements LoggerAwareInterface
+/**
+ * Service for translating batch items
+ */
+final class BatchTranslationService implements LoggerAwareInterface
 {
-
     use LoggerAwareTrait;
 
     /**
-     * Translate the given item.
-     * @param BatchItem $item
-     * @return bool
+     * Translate all content for a batch item
      */
     public function translate(BatchItem $item): bool
     {
-        $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-        try {
-            $siteConfiguration = $siteFinder->getSiteByPageId($item->getPid());
-        } catch (\Exception $e) {
-            $message = sprintf('No site configuration found for pid %s.', $item->getPid());
-
-            LogUtility::log($this->logger, $message, [], LogUtility::MESSAGE_ERROR);
-            $item->setError(LogUtility::interpolate($message, []));
-
+        $site = $this->getSiteForItem($item);
+        if (!$site) {
             return false;
         }
 
-        $defaultLanguage = TranslationHelper::defaultLanguageFromSiteConfiguration($siteConfiguration);
-        $languages = TranslationHelper::possibleTranslationLanguages($siteConfiguration->getLanguages());
-
-        // check if target language is in pissible translation languages
-        if (!isset($languages[$item->getSysLanguageUid()])) {
-            $message = 'Target language ({targetLanguage}) not in site languages ({siteLanguages}).';
-            $messageData = [
-                'targetLanguage' => $item->getSysLanguageUid(),
-                'siteLanguages' => implode(',', array_keys($languages)),
-            ];
-
-            LogUtility::log($this->logger, $message, $messageData, LogUtility::MESSAGE_ERROR);
-            $item->setError(LogUtility::interpolate($message, $messageData));
-
+        if (!$this->validateTargetLanguage($item, $site)) {
             return false;
         }
 
-        // check if page exists
-        $pageRecord = Records::getRecord('pages', $item->getPid());
-        if ($pageRecord === null) {
-            LogUtility::log($this->logger, 'No page found ({pid}).', ['pid' => $item->getPid()], LogUtility::MESSAGE_WARNING);
+        if (!$this->validatePage($item)) {
             return false;
         }
 
-        // init translation service
-        $translator = GeneralUtility::makeInstance(Translator::class, $item->getPid());
-        $tablesToTranslate = TranslationHelper::tablesToTranslate();
-        foreach ($tablesToTranslate as $table) {
-
-            if ($table === 'pages') {
-                // translate page
-                $translator->translate($table, $item->getPid(), null, (string)$item->getSysLanguageUid(), $item->getMode());
-            } else {
-                $constraints = [
-                    "pid = " . $item->getPid(),
-                    "sys_language_uid = " . $defaultLanguage->getLanguageId(),
-                ];
-
-                // if record has column for exclude deleted
-                if (isset($GLOBALS['TCA'][$table]['ctrl']['delete'])) {
-                    $constraints[] = $GLOBALS['TCA'][$table]['ctrl']['delete'] . ' = 0';
-                }
-
-                if ($table === 'tt_content') {
-                    $this->translateGridElements($translator, $constraints, $item);
-                    $this->translateRegularContent($translator, $constraints, $item);
-                } else {
-                    $records = Records::getRecords($table, 'uid', $constraints);
-                    foreach ($records as $uid) {
-                        $translator->translate($table, $uid, null, (string)$item->getSysLanguageUid(), $item->getMode());
-                    }
-                }
-            }
-        }
+        $this->translateAllTables($item, $site);
         return true;
     }
 
     /**
-     * Translates Grid-Elements and their child elements
-     *
-     * @param Translator $translator
-     * @param array $constraints
-     * @param BatchItem $item
-     * @return void
+     * Get site configuration for batch item
      */
-    private function translateGridElements(Translator $translator, array $constraints, BatchItem $item): void
+    private function getSiteForItem(BatchItem $item): ?Site
+    {
+        try {
+            $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
+            return $siteFinder->getSiteByPageId($item->getPid());
+        } catch (Exception $e) {
+            $this->logError($item, 'No site configuration found for pid {pid}.', ['pid' => $item->getPid()]);
+            return null;
+        }
+    }
+
+    /**
+     * Log error and set error message on batch item
+     */
+    private function logError(BatchItem $item, string $message, array $context): void
+    {
+        LogUtility::log($this->logger, $message, $context, LogUtility::MESSAGE_ERROR);
+        $item->setError(LogUtility::interpolate($message, $context));
+    }
+
+    /**
+     * Validate that target language exists in site configuration
+     */
+    private function validateTargetLanguage(BatchItem $item, Site $site): bool
+    {
+        $languages = TranslationHelper::possibleTranslationLanguages($site->getLanguages());
+
+        if (!isset($languages[$item->getSysLanguageUid()])) {
+            $this->logError($item, 'Target language ({targetLanguage}) not in site languages ({siteLanguages}).', [
+                'targetLanguage' => $item->getSysLanguageUid(),
+                'siteLanguages' => implode(',', array_keys($languages)),
+            ]);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Validate that page exists
+     */
+    private function validatePage(BatchItem $item): bool
+    {
+        $pageRecord = Records::getRecord('pages', $item->getPid());
+
+        if ($pageRecord === null) {
+            LogUtility::log($this->logger, 'Page not found ({pid}).', ['pid' => $item->getPid()], LogUtility::MESSAGE_WARNING);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Translate all configured tables for a batch item
+     */
+    private function translateAllTables(BatchItem $item, Site $site): void
+    {
+        $translator = GeneralUtility::makeInstance(Translator::class, $item->getPid());
+        $defaultLanguage = TranslationHelper::defaultLanguageFromSiteConfiguration($site);
+        $targetLanguageUid = $item->getSysLanguageUid();
+        $mode = $item->getMode();
+
+        foreach (TranslationHelper::tablesToTranslate() as $table) {
+            $this->translateTable($translator, $table, $item, $defaultLanguage, $targetLanguageUid, $mode);
+        }
+    }
+
+    /**
+     * Translate a single table
+     */
+    private function translateTable(
+        Translator $translator,
+        string $table,
+        BatchItem $item,
+        SiteLanguage $defaultLanguage,
+        int $targetLanguageUid,
+        int $mode
+    ): void {
+        if ($table === 'pages') {
+            $translator->translate($table, $item->getPid(), null, (string)$targetLanguageUid, $mode);
+            return;
+        }
+
+        $constraints = $this->buildConstraints($table, $item->getPid(), $defaultLanguage->getLanguageId());
+
+        if ($table === 'tt_content') {
+            $this->translateContent($translator, $constraints, $targetLanguageUid, $mode);
+        } else {
+            $this->translateRecords($translator, $table, $constraints, $targetLanguageUid, $mode);
+        }
+    }
+
+    /**
+     * Build query constraints for fetching records
+     */
+    private function buildConstraints(string $table, int $pid, int $languageId): array
+    {
+        $constraints = [
+            "pid = {$pid}",
+            "sys_language_uid = {$languageId}",
+        ];
+
+        // Exclude deleted records if delete field exists
+        $deleteField = $GLOBALS['TCA'][$table]['ctrl']['delete'] ?? null;
+        if ($deleteField) {
+            $constraints[] = "{$deleteField} = 0";
+        }
+
+        return $constraints;
+    }
+
+    /**
+     * Translate tt_content records (handles Grid Elements)
+     */
+    private function translateContent(Translator $translator, array $constraints, int $targetLanguageUid, int $mode): void
+    {
+        // Translate Grid Elements first (if extension is loaded)
+        $this->translateGridElements($translator, $constraints, $targetLanguageUid, $mode);
+
+        // Translate regular content
+        $this->translateRegularContent($translator, $constraints, $targetLanguageUid, $mode);
+    }
+
+    /**
+     * Translate Grid Elements containers and their children
+     */
+    private function translateGridElements(Translator $translator, array $constraints, int $targetLanguageUid, int $mode): void
     {
         if (!ExtensionManagementUtility::isLoaded('gridelements')) {
             return;
         }
 
-        // Find only top-level containers first
-        $topLevelContainerConstraints = array_merge($constraints, [
+        // Find top-level containers only
+        $containerConstraints = array_merge($constraints, [
             "CType = 'gridelements_pi1'",
             "tx_gridelements_container = 0"
         ]);
-        $topLevelContainers = Records::getRecords('tt_content', 'uid', $topLevelContainerConstraints);
 
-        foreach ($topLevelContainers as $containerUid) {
-            // Translate container and its children recursively
-            $this->translateContainerAndChildren($translator, $constraints, $containerUid, $item);
+        $containers = Records::getRecords('tt_content', 'uid', $containerConstraints);
+
+        foreach ($containers as $containerUid) {
+            $this->translateContainerRecursively($translator, $constraints, $containerUid, $targetLanguageUid, $mode);
         }
     }
 
     /**
-     * Recursively translates a container and all its children
-     *
-     * @param Translator $translator
-     * @param array $constraints
-     * @param int $containerUid
-     * @param BatchItem $item
-     * @return void
+     * Recursively translate a container and its children
      */
-    private function translateContainerAndChildren(Translator $translator, array $constraints, int $containerUid, BatchItem $item): void
-    {
-        // First translate the container itself
-        $translator->translate('tt_content', $containerUid, null, (string)$item->getSysLanguageUid(), $item->getMode());
+    private function translateContainerRecursively(
+        Translator $translator,
+        array $constraints,
+        int $containerUid,
+        int $targetLanguageUid,
+        int $mode
+    ): void {
+        // Translate the container itself
+        $translator->translate('tt_content', $containerUid, null, (string)$targetLanguageUid, $mode);
 
-        // Get all direct children
-        $childConstraints = array_merge($constraints, [
-            "tx_gridelements_container = " . $containerUid
-        ]);
-        $childElements = Records::getRecords('tt_content', 'uid', $childConstraints);
+        // Find and translate children
+        $childConstraints = array_merge($constraints, ["tx_gridelements_container = {$containerUid}"]);
+        $children = Records::getRecords('tt_content', 'uid', $childConstraints);
 
-        foreach ($childElements as $childUid) {
+        foreach ($children as $childUid) {
             $record = Records::getRecord('tt_content', $childUid);
 
             if ($record['CType'] === 'gridelements_pi1') {
-                // If it's a container, translate it and its children recursively
-                $this->translateContainerAndChildren($translator, $constraints, $childUid, $item);
+                // Nested container - recurse
+                $this->translateContainerRecursively($translator, $constraints, $childUid, $targetLanguageUid, $mode);
             } else {
-                // If it's a regular content element, translate it
-                $translator->translate('tt_content', $childUid, null, (string)$item->getSysLanguageUid(), $item->getMode());
+                // Regular content element
+                $translator->translate('tt_content', $childUid, null, (string)$targetLanguageUid, $mode);
             }
         }
     }
 
     /**
-     * Translates regular content elements (non-Grid-Elements)
-     *
-     * @param Translator $translator
-     * @param array $constraints
-     * @param BatchItem $item
-     * @return void
+     * Translate regular (non-Grid Element) content
      */
-    private function translateRegularContent(Translator $translator, array $constraints, BatchItem $item): void
+    private function translateRegularContent(Translator $translator, array $constraints, int $targetLanguageUid, int $mode): void
     {
         $records = Records::getRecords('tt_content', 'uid', $constraints);
 
         foreach ($records as $uid) {
             $record = Records::getRecord('tt_content', $uid);
 
-            // Skip if it's a Grid-Container or child element
-            if ($this->isGridElementOrChild($record)) {
+            // Skip Grid Elements and their children
+            if ($this->isGridElement($record)) {
                 continue;
             }
 
-            $translator->translate('tt_content', $uid, null, (string)$item->getSysLanguageUid(), $item->getMode());
+            $translator->translate('tt_content', $uid, null, (string)$targetLanguageUid, $mode);
         }
     }
 
     /**
-     * Checks if a record is a Grid-Element or child element
-     *
-     * @param array $record
-     * @return bool
+     * Check if record is a Grid Element or child of one
      */
-    private function isGridElementOrChild(array $record): bool
+    private function isGridElement(array $record): bool
     {
         if (!ExtensionManagementUtility::isLoaded('gridelements')) {
             return false;
         }
-        return $record['CType'] === 'gridelements_pi1' || ($record && $record['tx_gridelements_container'] > 0);
+
+        return $record['CType'] === 'gridelements_pi1'
+            || ($record['tx_gridelements_container'] ?? 0) > 0;
+    }
+
+    /**
+     * Translate records from a generic table
+     */
+    private function translateRecords(Translator $translator, string $table, array $constraints, int $targetLanguageUid, int $mode): void
+    {
+        $records = Records::getRecords($table, 'uid', $constraints);
+
+        foreach ($records as $uid) {
+            $translator->translate($table, $uid, null, (string)$targetLanguageUid, $mode);
+        }
     }
 }

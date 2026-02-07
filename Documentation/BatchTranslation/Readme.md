@@ -1,24 +1,60 @@
-# BatchTranslation
+# Batch Translation
 
-### Backend Module
+## Backend Module
 
-BatchTranslation jobs can be created on the pages via the list view, but it is better to use the backend module.
+The batch translation module provides a visual interface for managing translation jobs. Access it via **Web > Autotranslate** in the TYPO3 backend.
 
-**Functions of the module**
-- Create new translation jobs
-- List of translation jobs (by priority)
-- Deactivate, delete jobs
-- Execute / repeat individual translation jobs
-- Reset jobs that have already been completed
+### Features
 
-![DeepL](../Images/BatchTranslationBackend.png)
+- **Create Jobs**: Add new translation tasks for pages and subpages
+- **Job List**: View all translation jobs sorted by priority
+- **Manage Jobs**: Enable, disable, or delete translation jobs
+- **Execute Jobs**: Run individual translations manually
+- **Reset Jobs**: Reset completed jobs for re-translation
+- **View Logs**: Monitor translation history and errors
 
-### Symfony Command
+![Backend Module](../Images/BatchTranslationBackend.png)
 
-You have the option of processing the Symfony command in the TYPO3 scheduler and can define how many translation jobs should be processed per run.
+### Creating a Translation Job
 
-![DeepL](../Images/BatchTranslationCommand.png)
+1. Navigate to the page you want to translate
+2. Open the Autotranslate module
+3. Select target language(s)
+4. Choose recursion level (include subpages)
+5. Set priority and frequency
+6. Click "Create"
 
-You can of course also execute the Symfony command directly via cronjob or via the command line interface of your web server. The argument here represents the number of translations per run.
+## CLI Command
 
-```autotranslate:batch:run 5```
+Run translations from the command line:
+
+```bash
+# Translate 1 item (default)
+vendor/bin/typo3 autotranslate:batch:run
+
+# Translate 10 items
+vendor/bin/typo3 autotranslate:batch:run 10
+```
+
+### Scheduler Integration
+
+You can integrate the command with the TYPO3 Scheduler:
+
+1. Go to **System > Scheduler**
+2. Add a new task
+3. Select "Execute console commands"
+4. Choose `autotranslate:batch:run`
+5. Set the number of translations per run
+6. Configure the execution frequency
+
+![Scheduler Task](../Images/BatchTranslationCommand.png)
+
+### Cron Job
+
+Alternatively, run via cron:
+
+```bash
+*/5 * * * * /path/to/vendor/bin/typo3 autotranslate:batch:run 5
+```
+
+This example processes 5 translation jobs every 5 minutes.

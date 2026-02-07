@@ -389,45 +389,142 @@ class Translator implements LoggerAwareInterface
     }
 
     /**
-     * Builds l10n_state array for translated fields
-     *
-     * @param string $table
-     * @param int $targetLanguageUid
-     * @param array $translatedFields
-     * @param int $localizedUid
-     * @return string JSON encoded l10n_state
+     * @return string|null
      */
-    private function buildL10nState(string $table, int $targetLanguageUid, array $translatedFields, int $localizedUid): string
+    private function deeplSourceLanguage(): ?string
     {
-        // check if table supports l10n_state
-        if (!isset($GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField'])) {
-            return '{}';
+        foreach ($this->siteLanguages as $language) {
+            if ($language['languageId'] === 0) {
+                if (empty($language['deeplSourceLang'])) {
+                    return null;
+                }
+                return $language['deeplSourceLang'];
+            }
         }
 
-        try {
-            // load existing translation if available
-            $existingTranslation = Records::getRecordTranslation($table, $localizedUid, $targetLanguageUid);
+        return null;
+    }
 
-            $l10nState = [];
-            if ($existingTranslation && !empty($existingTranslation['l10n_state'])) {
-                $l10nState = json_decode($existingTranslation['l10n_state'], true) ?: [];
+    /**
+     * @param int $languageId
+     * @return string|null
+     */
+    private function deeplTargetLanguage(int $languageId): ?string
+    {
+        foreach ($this->siteLanguages as $language) {
+            if ($language['languageId'] === $languageId) {
+                return $language['deeplTargetLang'] ?? null;
             }
-
-            // set all translated fields to "custom"
-            foreach ($translatedFields as $field) {
-                $l10nState[$field] = 'custom';
-            }
-
-            return json_encode($l10nState);
-
-        } catch (\Exception $e) {
-            LogUtility::log($this->logger, 'Error building l10n_state: {error}', [
-                'error' => $e->getMessage(),
-                'table' => $table
-            ], LogUtility::MESSAGE_ERROR);
-
-            return '{}';
         }
+
+        return null;
+    }
+
+    /**
+     * Replaces translatable HTML attributes with placeholders and returns the modified array
+     * and the mapping table.
+     *
+     * @param array $toTranslate
+     * @return array [array $modifiedToTranslate, array $attrMap]
+     */
+    private function extractAndReplaceTranslatableHtmlAttributes(array $toTranslate): array
+    {
+        $attributeMap = [
+            ['tag' => 'a', 'attr' => 'title'],
+            // add more attributes as needed
+        ];
+
+        $attrMap = [];
+        $attrCounter = 1;
+
+        foreach ($toTranslate as $field => &$value) {
+
+            if (!is_string($value) || trim($value) === '' || !$this->isHtml($value)) {
+                continue;
+            }
+
+            foreach ($attributeMap as $map) {
+                $found = $this->extractHtmlAttributes($value, $map['tag'], $map['attr']);
+                foreach ($found as $attrValue) {
+                    $placeholder = '__ATTR__' . $attrCounter . '__';
+                    $attrMap[$placeholder] = $attrValue;
+                    $value = $this->replaceHtmlAttributeWithPlaceholder($value, $map['tag'], $map['attr'], $attrValue, $placeholder);
+                    $attrCounter++;
+                }
+            }
+        }
+        unset($value);
+
+        // Add the attributes as separate entries to translate
+        foreach ($attrMap as $placeholder => $original) {
+            $toTranslate[$placeholder] = $original;
+        }
+
+        return $toTranslate;
+    }
+
+    private function isHtml(string $value): bool {
+        return $value !== strip_tags($value);
+    }
+
+    /**
+     * Extrahiert alle Werte eines bestimmten Attributs anhand eines Tag-Namens aus HTML.
+     *
+     * @param string $html Der HTML-String
+     * @param string $tagName Der Tag-Name (z.B. 'a')
+     * @param string $attributeName Das Attribut (z.B. 'title')
+     * @return array Array mit allen gefundenen Attributwerten
+     */
+    private function extractHtmlAttributes(string $html, string $tagName, string $attributeName): array
+    {
+        $values = [];
+        if (trim($html) === '') {
+            return $values;
+        }
+
+        $doc = new \DOMDocument();
+        // Suppress errors for invalid HTML
+        @$doc->loadHTML('<?xml encoding="utf-8" ?>' . $html);
+
+        $xpath = new \DOMXPath($doc);
+        // XPath query for all matching attributes
+        $query = sprintf('//' . $tagName . '[@' . $attributeName . ']');
+        foreach ($xpath->query($query) as $node) {
+            /** @var \DOMElement $node */
+            $values[] = $node->getAttribute($attributeName);
+        }
+        return $values;
+    }
+
+    /**
+     * Replaces a specific attribute of a tag in an HTML string with a placeholder.
+     *
+     * @param string $html The HTML string
+     * @param string $tag The tag name (e.g. 'a')
+     * @param string $attr The attribute (e.g. 'title')
+     * @param string $original The original attribute value to replace
+     * @param string $placeholder The placeholder to replace the original value with
+     * @return string The modified HTML string
+     */
+    private function replaceHtmlAttributeWithPlaceholder(string $html, string $tag, string $attr, string $original, string $placeholder): string
+    {
+        $doc = new \DOMDocument();
+        @$doc->loadHTML('<?xml encoding="utf-8" ?>' . $html);
+        $xpath = new \DOMXPath($doc);
+        $query = sprintf('//' . $tag . '[@' . $attr . ']');
+        foreach ($xpath->query($query) as $node) {
+            /** @var \DOMElement $node */
+            if ($node->getAttribute($attr) === $original) {
+                $node->setAttribute($attr, $placeholder);
+            }
+        }
+        // Extract body since loadHTML always creates a complete HTML document
+        $body = $doc->getElementsByTagName('body')->item(0);
+        $innerHTML = '';
+        foreach ($body->childNodes as $child) {
+            $innerHTML .= $doc->saveHTML($child);
+        }
+        return $innerHTML;
     }
 
     private function translateItems(array $record, string $table, array $toTranslate, ?string $deeplSourceLang, string $deeplTargetLang, ?Glossary $glossary): array
@@ -502,6 +599,49 @@ class Translator implements LoggerAwareInterface
         }
 
         return $mergedResults;
+    }
+
+    /**
+     * Returns an array indicating whether each field in $toTranslate is a richtext field.
+     *
+     * @param array $toTranslate
+     * @param string $table
+     * @param array $record
+     * @return array [ 'fieldname' => bool ]
+     */
+    public function mapRichtextFields(array $toTranslate, string $table, array $record): array
+    {
+        $result = [];
+        foreach (array_keys($toTranslate) as $columnName) {
+            $result[$columnName] = $this->isRichtextField($record, $table, $columnName);
+        }
+        return $result;
+    }
+
+    /**
+     * check if the field is a richtext field
+     *
+     * @param array $record
+     * @param string $table
+     * @param string $columnName
+     * @return boolean
+     */
+    function isRichtextField(array $record, string $table, string $columnName): bool
+    {
+        // get tca configuration for the field
+        $fieldConfig = $GLOBALS['TCA'][$table]['columns'][$columnName]['config'] ?? null;
+        if (!$fieldConfig) {
+            return false;
+        }
+
+        // check for CType specific configuration
+        $ctype = $record['CType'] ?? null;
+        if ($ctype && isset($GLOBALS['TCA'][$table]['types'][$ctype]['columnsOverrides'][$columnName]['config'])) {
+            $fieldConfig = $GLOBALS['TCA'][$table]['types'][$ctype]['columnsOverrides'][$columnName]['config'];
+        }
+
+        // check if the field is a richtext field
+        return isset($fieldConfig['enableRichtext']) && $fieldConfig['enableRichtext'] === true;
     }
 
     /**
@@ -584,48 +724,6 @@ class Translator implements LoggerAwareInterface
     }
 
     /**
-     * Gibt ein Array zurück, das für jedes Feld aus $toTranslate angibt, ob es ein Richtext-Feld ist.
-     *
-     * @param array $toTranslate
-     * @param string $table
-     * @param array $record
-     * @return array [ 'fieldname' => bool ]
-     */
-    public function mapRichtextFields(array $toTranslate, string $table, array $record): array
-    {
-        $result = [];
-        foreach (array_keys($toTranslate) as $columnName) {
-            $result[$columnName] = $this->isRichtextField($record, $table, $columnName);
-        }
-        return $result;
-    }
-
-    /**
-     * check if the field is a richtext field
-     *
-     * @param array $record
-     * @param string $table
-     * @param string $columnName
-     * @return boolean
-     */
-    function isRichtextField(array $record, string $table, string $columnName): bool
-    {
-        // get tca configuration for the field
-        $fieldConfig = $GLOBALS['TCA'][$table]['columns'][$columnName]['config'] ?? null;
-        if (!$fieldConfig) {
-            return false;
-        }
-
-        // check for CType specific configuration
-        $ctype = $record['CType'] ?? null;
-        if ($ctype && isset($GLOBALS['TCA'][$table]['types'][$ctype]['columnsOverrides'][$columnName]['config'])) {
-            $fieldConfig = $GLOBALS['TCA'][$table]['types'][$ctype]['columnsOverrides'][$columnName]['config'];
-        }
-
-        // check if the field is a richtext field
-        return isset($fieldConfig['enableRichtext']) && $fieldConfig['enableRichtext'] === true;
-    }
-    /**
      * Replaces placeholders in the HTML with the translated attribute values.
      *
      * @param string $html
@@ -644,142 +742,45 @@ class Translator implements LoggerAwareInterface
     }
 
     /**
-     * Replaces translatable HTML attributes with placeholders and returns the modified array
-     * and the mapping table.
+     * Builds l10n_state array for translated fields
      *
-     * @param array $toTranslate
-     * @return array [array $modifiedToTranslate, array $attrMap]
+     * @param string $table
+     * @param int $targetLanguageUid
+     * @param array $translatedFields
+     * @param int $localizedUid
+     * @return string JSON encoded l10n_state
      */
-    private function extractAndReplaceTranslatableHtmlAttributes(array $toTranslate): array
+    private function buildL10nState(string $table, int $targetLanguageUid, array $translatedFields, int $localizedUid): string
     {
-        $attributeMap = [
-            ['tag' => 'a', 'attr' => 'title'],
-            // add more attributes as needed
-        ];
+        // check if table supports l10n_state
+        if (!isset($GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField'])) {
+            return '{}';
+        }
 
-        $attrMap = [];
-        $attrCounter = 1;
+        try {
+            // load existing translation if available
+            $existingTranslation = Records::getRecordTranslation($table, $localizedUid, $targetLanguageUid);
 
-        foreach ($toTranslate as $field => &$value) {
-
-            if (!is_string($value) || trim($value) === '' || !$this->isHtml($value)) {
-                continue;
+            $l10nState = [];
+            if ($existingTranslation && !empty($existingTranslation['l10n_state'])) {
+                $l10nState = json_decode($existingTranslation['l10n_state'], true) ?: [];
             }
 
-            foreach ($attributeMap as $map) {
-                $found = $this->extractHtmlAttributes($value, $map['tag'], $map['attr']);
-                foreach ($found as $attrValue) {
-                    $placeholder = '__ATTR__' . $attrCounter . '__';
-                    $attrMap[$placeholder] = $attrValue;
-                    $value = $this->replaceHtmlAttributeWithPlaceholder($value, $map['tag'], $map['attr'], $attrValue, $placeholder);
-                    $attrCounter++;
-                }
+            // set all translated fields to "custom"
+            foreach ($translatedFields as $field) {
+                $l10nState[$field] = 'custom';
             }
+
+            return json_encode($l10nState);
+
+        } catch (\Exception $e) {
+            LogUtility::log($this->logger, 'Error building l10n_state: {error}', [
+                'error' => $e->getMessage(),
+                'table' => $table
+            ], LogUtility::MESSAGE_ERROR);
+
+            return '{}';
         }
-        unset($value);
-
-        // Add the attributes as separate entries to translate
-        foreach ($attrMap as $placeholder => $original) {
-            $toTranslate[$placeholder] = $original;
-        }
-
-        return $toTranslate;
-    }
-
-    private function isHtml(string $value): bool {
-        return $value !== strip_tags($value);
-    }
-
-    /**
-     * Extrahiert alle Werte eines bestimmten Attributs anhand eines Tag-Namens aus HTML.
-     *
-     * @param string $html Der HTML-String
-     * @param string $tagName Der Tag-Name (z.B. 'a')
-     * @param string $attributeName Das Attribut (z.B. 'title')
-     * @return array Array mit allen gefundenen Attributwerten
-     */
-    private function extractHtmlAttributes(string $html, string $tagName, string $attributeName): array
-    {
-        $values = [];
-        if (trim($html) === '') {
-            return $values;
-        }
-
-        $doc = new \DOMDocument();
-        // Fehler unterdrücken, falls ungültiges HTML
-        @$doc->loadHTML('<?xml encoding="utf-8" ?>' . $html);
-
-        $xpath = new \DOMXPath($doc);
-        // XPath-Query für alle gewünschten Attribute
-        $query = sprintf('//' . $tagName . '[@' . $attributeName . ']');
-        foreach ($xpath->query($query) as $node) {
-            /** @var \DOMElement $node */
-            $values[] = $node->getAttribute($attributeName);
-        }
-        return $values;
-    }
-
-    /**
-     * Ersetzt ein bestimmtes Attribut eines Tags in einem HTML-String durch einen Platzhalter.
-     *
-     * @param string $html Der HTML-String
-     * @param string $tag Der Tag-Namen (z.B. 'a')
-     * @param string $attr Das Attribut (z.B. 'title')
-     * @param string $original Der Originalwert des Attributs, der ersetzt werden soll
-     * @param string $placeholder Der Platzhalter, der den Originalwert ersetzen soll
-     * @return string Der modifizierte HTML-String
-     */
-    private function replaceHtmlAttributeWithPlaceholder(string $html, string $tag, string $attr, string $original, string $placeholder): string
-    {
-        $doc = new \DOMDocument();
-        @$doc->loadHTML('<?xml encoding="utf-8" ?>' . $html);
-        $xpath = new \DOMXPath($doc);
-        $query = sprintf('//' . $tag . '[@' . $attr . ']');
-        foreach ($xpath->query($query) as $node) {
-            /** @var \DOMElement $node */
-            if ($node->getAttribute($attr) === $original) {
-                $node->setAttribute($attr, $placeholder);
-            }
-        }
-        // body extrahieren, da loadHTML immer ein vollständiges HTML-Dokument erzeugt
-        $body = $doc->getElementsByTagName('body')->item(0);
-        $innerHTML = '';
-        foreach ($body->childNodes as $child) {
-            $innerHTML .= $doc->saveHTML($child);
-        }
-        return $innerHTML;
-    }
-
-    /**
-     * @return string|null
-     */
-    private function deeplSourceLanguage(): ?string
-    {
-        foreach ($this->siteLanguages as $language) {
-            if ($language['languageId'] === 0) {
-                if (empty($language['deeplSourceLang'])) {
-                    return null;
-                }
-                return $language['deeplSourceLang'];
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * @param int $languageId
-     * @return string|null
-     */
-    private function deeplTargetLanguage(int $languageId): ?string
-    {
-        foreach ($this->siteLanguages as $language) {
-            if ($language['languageId'] === $languageId) {
-                return $language['deeplTargetLang'] ?? null;
-            }
-        }
-
-        return null;
     }
 
     /**

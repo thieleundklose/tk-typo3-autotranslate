@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 defined('TYPO3') or die;
 
 return [
@@ -28,14 +30,14 @@ return [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
                 'items' => [
-                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.01_low', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::PRIORITY_LOW],
-                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.02_medium', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::PRIORITY_MEDIUM],
-                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.03_high', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::PRIORITY_HIGH],
+                    ['label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.01_low', 'value' => \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::PRIORITY_LOW],
+                    ['label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.02_medium', 'value' => \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::PRIORITY_MEDIUM],
+                    ['label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.03_high', 'value' => \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::PRIORITY_HIGH],
                 ],
             ],
         ],
         'sys_language_uid' => [
-            'exclude' => 0,
+            'exclude' => false,
             'label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.sys_language_uid',
             'config' => [
                 'type' => 'select',
@@ -45,13 +47,13 @@ return [
             ],
         ],
         'hidden' => [
-            'exclude' => 1,
+            'exclude' => true,
             'label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.disabled',
             'config' => [
                 'type' => 'check',
                 'items' => [
                     [
-                        ''
+                        'label' => ''
                     ]
                 ]
             ],
@@ -59,9 +61,7 @@ return [
         'translate' => [
             'label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.translate',
             'config' => [
-                'type' => 'input',
-                'renderType' => 'inputDateTime',
-                'eval' => 'datetime',
+                'type' => 'datetime',
                 'required' => true,
                 'default' => time(),
             ],
@@ -69,39 +69,37 @@ return [
         'translated' => [
             'label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.translated',
             'config' => [
-                'type' => 'input',
-                'renderType' => 'inputDateTime',
-                'eval' => 'datetime',
+                'type' => 'datetime',
                 'readOnly' => true,
             ],
         ],
         'mode' => [
-            'exclude' => 0,
+            'exclude' => false,
             'label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
                 'items' => [
-                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode.' . \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_BOTH, \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_BOTH],
-                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode.' . \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_UPDATE_ONLY, \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_UPDATE_ONLY],
+                    ['label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode.' . \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_BOTH, 'value' => \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_BOTH],
+                    ['label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode.' . \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_UPDATE_ONLY, 'value' => \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_UPDATE_ONLY],
                     // TODO implement create only mode
-                    // ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode.' . \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_CREATE_ONLY, \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_CREATE_ONLY],
+                    // ['label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode.' . \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_CREATE_ONLY, 'value' => \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_CREATE_ONLY],
                 ],
                 'default' => \ThieleUndKlose\Autotranslate\Utility\Translator::TRANSLATE_MODE_BOTH,
                 'required' => true
             ],
         ],
         'frequency' => [
-            'exclude' => 0,
+            'exclude' => false,
             'label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency',
             'config' => [
                 'type' => 'select',
                 'renderType' => 'selectSingle',
                 'items' => [
-                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.once', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::FREQUENCY_ONCE],
-                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.recurring', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::FREQUENCY_RECURRING],
-                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.weekly', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::FREQUENCY_WEEKLY],
-                    ['LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.daily', \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::FREQUENCY_DAILY],
+                    ['label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.once', 'value' => \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::FREQUENCY_ONCE],
+                    ['label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.recurring', 'value' => \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::FREQUENCY_RECURRING],
+                    ['label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.weekly', 'value' => \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::FREQUENCY_WEEKLY],
+                    ['label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.daily', 'value' => \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::FREQUENCY_DAILY],
                 ],
                 'default' => \ThieleUndKlose\Autotranslate\Domain\Model\BatchItem::FREQUENCY_ONCE,
                 'required' => true
