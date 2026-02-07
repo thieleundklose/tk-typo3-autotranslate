@@ -137,6 +137,14 @@ class Translator implements LoggerAwareInterface
                 continue;
             }
 
+            if ($translateMode === self::TRANSLATE_MODE_CREATE_ONLY && $existingTranslation) {
+                LogUtility::log($this->logger, 'Skipping {table} with uid {uid} because mode "create only" and translation already exists.', [
+                    'table' => $table,
+                    'uid' => $recordUid,
+                ]);
+                continue;
+            }
+
             if (!$existingTranslation) {
                 $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
                 $dataHandler->start([], []);
@@ -202,6 +210,16 @@ class Translator implements LoggerAwareInterface
 
                                 if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && empty($referenceTranslation)) {
                                     LogUtility::log($this->logger, 'No {referenceTable} {referenceUid} Translation of {table} with uid {uid} because mode "update only".', [
+                                        'referenceTable' => $referenceTable,
+                                        'table' => $table,
+                                        'uid' => $recordUid,
+                                        'referenceUid' => $referenceUid,
+                                    ]);
+                                    continue;
+                                }
+
+                                if ($translateMode === self::TRANSLATE_MODE_CREATE_ONLY && !empty($referenceTranslation)) {
+                                    LogUtility::log($this->logger, 'Skipping {referenceTable} {referenceUid} of {table} with uid {uid} because mode "create only" and translation already exists.', [
                                         'referenceTable' => $referenceTable,
                                         'table' => $table,
                                         'uid' => $recordUid,

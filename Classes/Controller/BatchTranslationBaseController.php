@@ -519,6 +519,7 @@ class BatchTranslationBaseController extends ActionController
         return $this->translateOptions([
             Translator::TRANSLATE_MODE_BOTH,
             Translator::TRANSLATE_MODE_UPDATE_ONLY,
+            Translator::TRANSLATE_MODE_CREATE_ONLY,
         ], 'autotranslate_batch.mode.');
     }
 
