@@ -13,7 +13,7 @@ return [
         'path' => '/module/batchtranslation',
         'labels' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf',
         'extensionName' => 'Autotranslate',
-        'icon' => 'EXT:autotranslate/Resources/Public/Icons/Backend.png',
+        'iconIdentifier' => 'autotranslate-backend',
         'controllerActions' => [
             BatchTranslationController::class => [
                 'default', 'showLogs', 'create'

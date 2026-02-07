@@ -4,23 +4,16 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Command;
 
-use DateTime;
-use TYPO3\CMS\Core\Database\Connection;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
-use ThieleUndKlose\Autotranslate\Service\BatchTranslationService;
-use ThieleUndKlose\Autotranslate\Utility\LogUtility;
+use ThieleUndKlose\Autotranslate\Service\BatchTranslationRunner;
 use TYPO3\CMS\Core\Core\Bootstrap;
 use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
-use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\ServerRequest;
-use TYPO3\CMS\Core\Registry;
-use TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper;
 
 /**
  * CLI command for batch translation of queued items
@@ -32,15 +25,9 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
     use LoggerAwareTrait;
 
     private const DEFAULT_ITEMS_PER_RUN = 50;
-    private const TABLE_NAME = 'tx_autotranslate_batch_item';
-    public const REGISTRY_NAMESPACE = 'tx_autotranslate';
-    public const REGISTRY_KEY_LAST_RUN = 'lastBatchRun';
 
     public function __construct(
-        private readonly BatchTranslationService $batchTranslationService,
-        private readonly ConnectionPool $connectionPool,
-        private readonly DataMapper $dataMapper,
-        private readonly Registry $registry,
+        private readonly BatchTranslationRunner $runner,
     ) {
         parent::__construct();
     }
@@ -63,30 +50,19 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
         $this->initializeBackendContext();
 
         $limit = (int)$input->getArgument('translationsPerRun');
-        $totalPending = $this->countAllPendingItems();
-        $items = $this->findPendingItems($limit);
+        $result = $this->runner->processBatch($limit);
 
-        if (empty($items)) {
+        if ($result['processed'] === 0) {
             $output->writeln('<info>No translations pending.</info>');
-            $this->storeRunStatistics(0, 0, 0, 0);
             return Command::SUCCESS;
         }
 
-        $successCount = $this->processItems($items, $output);
-        $processedCount = count($items);
-        $failedCount = $processedCount - $successCount;
-        $remainingPending = max(0, $totalPending - $processedCount);
-
-        $this->storeRunStatistics($processedCount, $successCount, $failedCount, $remainingPending);
-        $this->logResults($successCount, $limit);
-        $this->outputResults($output, $successCount, $processedCount);
+        $this->logResults($result['succeeded'], $limit);
+        $this->outputResults($output, $result);
 
         return Command::SUCCESS;
     }
 
-    /**
-     * Initialize backend context for CLI execution
-     */
     private function initializeBackendContext(): void
     {
         if (PHP_SAPI !== 'cli') {
@@ -98,151 +74,6 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
             ->withAttribute('applicationType', SystemEnvironmentBuilder::REQUESTTYPE_BE);
     }
 
-    /**
-     * Find items waiting to be translated
-     */
-    private function findPendingItems(int $limit): array
-    {
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE_NAME);
-        $queryBuilder->getRestrictions()->removeAll();
-
-        $now = new DateTime();
-
-        $result = $queryBuilder
-            ->select('*')
-            ->from(self::TABLE_NAME)
-            ->where(
-                $queryBuilder->expr()->or(
-                    $queryBuilder->expr()->isNull('translated'),
-                    $queryBuilder->expr()->gt('translate', 'translated')
-                ),
-                $queryBuilder->expr()->or(
-                    $queryBuilder->expr()->eq('error', $queryBuilder->createNamedParameter('')),
-                    $queryBuilder->expr()->isNull('error')
-                ),
-                $queryBuilder->expr()->lt('translate', $queryBuilder->createNamedParameter($now->getTimestamp())),
-                $queryBuilder->expr()->eq('hidden', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT))
-            )
-            ->orderBy('priority', 'DESC')
-            ->addOrderBy('translate', 'ASC')
-            ->setMaxResults($limit)
-            ->executeQuery();
-
-        return $this->dataMapper->map(BatchItem::class, $result->fetchAllAssociative());
-    }
-
-    /**
-     * Count all pending items (not limited by batch size)
-     */
-    private function countAllPendingItems(): int
-    {
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE_NAME);
-        $queryBuilder->getRestrictions()->removeAll();
-
-        $now = new DateTime();
-
-        return (int)$queryBuilder
-            ->count('uid')
-            ->from(self::TABLE_NAME)
-            ->where(
-                $queryBuilder->expr()->or(
-                    $queryBuilder->expr()->isNull('translated'),
-                    $queryBuilder->expr()->gt('translate', 'translated')
-                ),
-                $queryBuilder->expr()->or(
-                    $queryBuilder->expr()->eq('error', $queryBuilder->createNamedParameter('')),
-                    $queryBuilder->expr()->isNull('error')
-                ),
-                $queryBuilder->expr()->lt('translate', $queryBuilder->createNamedParameter($now->getTimestamp())),
-                $queryBuilder->expr()->eq('hidden', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT))
-            )
-            ->executeQuery()
-            ->fetchOne();
-    }
-
-    /**
-     * Store run statistics in the TYPO3 registry for display in the backend module
-     */
-    private function storeRunStatistics(int $processed, int $succeeded, int $failed, int $remainingPending): void
-    {
-        $this->registry->set(self::REGISTRY_NAMESPACE, self::REGISTRY_KEY_LAST_RUN, [
-            'timestamp' => time(),
-            'processed' => $processed,
-            'succeeded' => $succeeded,
-            'failed' => $failed,
-            'remainingPending' => $remainingPending,
-        ]);
-    }
-
-    /**
-     * Process batch items and return success count
-     */
-    private function processItems(array $items, OutputInterface $output): int
-    {
-        $successCount = 0;
-
-        foreach ($items as $item) {
-            try {
-                if ($this->translateItem($item)) {
-                    $successCount++;
-                    $output->writeln(sprintf('<info>✓ Translated item %d</info>', $item->getUid()));
-                } else {
-                    $output->writeln(sprintf('<error>✗ Failed to translate item %d</error>', $item->getUid()));
-                }
-            } catch (\Exception $e) {
-                LogUtility::log(
-                    $this->logger,
-                    'Translation error for item {uid}: {error}',
-                    ['uid' => $item->getUid(), 'error' => $e->getMessage()],
-                    LogUtility::MESSAGE_ERROR
-                );
-                $output->writeln(sprintf('<error>✗ Error translating item %d: %s</error>', $item->getUid(), $e->getMessage()));
-            }
-        }
-
-        return $successCount;
-    }
-
-    /**
-     * Translate a single batch item
-     */
-    private function translateItem(BatchItem $item): bool
-    {
-        $success = $this->batchTranslationService->translate($item);
-
-        if ($success) {
-            $item->markAsTranslated();
-        }
-
-        $this->persistBatchItem($item);
-        return $success;
-    }
-
-    /**
-     * Persist batch item changes to database
-     */
-    private function persistBatchItem(BatchItem $item): void
-    {
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE_NAME);
-
-        $queryBuilder
-            ->update(self::TABLE_NAME)
-            ->where(
-                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($item->getUid(), Connection::PARAM_INT))
-            )
-            ->set('error', $item->getError())
-            ->set('translate', $item->getTranslate()->getTimestamp());
-
-        if ($item->getTranslated()) {
-            $queryBuilder->set('translated', $item->getTranslated()->getTimestamp());
-        }
-
-        $queryBuilder->executeStatement();
-    }
-
-    /**
-     * Log translation statistics
-     */
     private function logResults(int $successCount, int $totalCount): void
     {
         $this->logger->info('Batch translation completed: {success} succeeded, {failed} failed', [
@@ -251,18 +82,23 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
         ]);
     }
 
-    /**
-     * Output results to console
-     */
-    private function outputResults(OutputInterface $output, int $successCount, int $totalCount): void
+    private function outputResults(OutputInterface $output, array $result): void
     {
-        $failedCount = $totalCount - $successCount;
-
         $output->writeln('');
-        $output->writeln(sprintf('<info>%d translation(s) completed successfully.</info>', $successCount));
+        $output->writeln(sprintf(
+            '<info>Batch run complete: %d processed, %d succeeded, %d failed, %d remaining in queue.</info>',
+            $result['processed'],
+            $result['succeeded'],
+            $result['failed'],
+            $result['remaining']
+        ));
 
-        if ($failedCount > 0) {
-            $output->writeln(sprintf('<error>%d translation(s) failed.</error>', $failedCount));
+        if ($result['failed'] > 0) {
+            $output->writeln(sprintf('<error>%d translation(s) failed. Check the batch items for error details.</error>', $result['failed']));
+        }
+
+        if ($result['remaining'] > 0) {
+            $output->writeln(sprintf('<comment>%d item(s) still pending — will be processed in the next run.</comment>', $result['remaining']));
         }
     }
 }

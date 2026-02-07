@@ -10,7 +10,7 @@ use DeepL\TextResult;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 
-class TranslationCacheService
+final class TranslationCacheService
 {
     private ?FrontendInterface $cache = null;
 

@@ -17,7 +17,6 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\UserFunction\FormEngine;
 
-use Doctrine\DBAL\Driver\Exception;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use ThieleUndKlose\Autotranslate\Utility\Records;
 use TYPO3\CMS\Core\Site\SiteFinder;
@@ -28,9 +27,6 @@ final class AutotranslateLanguagesItems
 {
     /**
      * Add possible languages from site configuration respecting current tree position to backend tca form.
-     *
-     * @throws Exception
-     * @throws SiteNotFoundException
      */
     public function itemsProcFunc(array &$config): void
     {

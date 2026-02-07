@@ -14,7 +14,7 @@ use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use WebVision\Deepltranslate\Glossary\Domain\Dto\Glossary;
 
-class Translator implements LoggerAwareInterface
+final class Translator implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
@@ -26,15 +26,12 @@ class Translator implements LoggerAwareInterface
     public const TRANSLATE_MODE_UPDATE_ONLY = 'update_only';
     public const TRANSLATE_MODE_CREATE_ONLY = 'create_only';
 
-    public array $languages = [];
-    public array $siteLanguages = [];
-    protected ?string $apiKey = null;
-    protected ?int $pageId = null;
-    protected ?GlossaryService $glossaryService = null;
+    private readonly ?string $apiKey;
+    private readonly array $siteLanguages;
+    private readonly GlossaryService $glossaryService;
 
-    public function __construct(int $pageId)
+    public function __construct(private readonly int $pageId)
     {
-        $this->pageId = $pageId;
         ['key' => $this->apiKey] = TranslationHelper::apiKey($this->pageId);
         $this->siteLanguages = TranslationHelper::siteConfigurationValue($this->pageId, ['languages']) ?? [];
         $this->glossaryService = GeneralUtility::makeInstance(GlossaryService::class);

@@ -156,6 +156,15 @@
 			<trans-unit id="scheduler.neverRun" xml:space="preserve">
 				<source>Scheduler has not run yet. Set up the "autotranslate:batch:run" command in the Scheduler module.</source>
 			</trans-unit>
+			<trans-unit id="scheduler.task.title" xml:space="preserve">
+				<source>Autotranslate: Batch Translation</source>
+			</trans-unit>
+			<trans-unit id="scheduler.task.description" xml:space="preserve">
+				<source>Processes queued translation tasks via DeepL API. Shows progress and statistics in the task list.</source>
+			</trans-unit>
+			<trans-unit id="scheduler.field.itemsPerRun" xml:space="preserve">
+				<source>Items per run</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>

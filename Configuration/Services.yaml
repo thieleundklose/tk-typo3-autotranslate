@@ -15,7 +15,7 @@ services:
       - name: console.command
         command: "autotranslate:batch:run"
         description: "Command for automatic translation of a number of elements."
-        schedulable: true
+        schedulable: false
 
   ThieleUndKlose\Autotranslate\TsConfig\Loader:
     public: true
@@ -24,6 +24,9 @@ services:
         identifier: 'add-page-configuration'
         event: TYPO3\CMS\Core\TypoScript\IncludeTree\Event\ModifyLoadedPageTsConfigEvent
         method: 'addPageConfiguration'
+
+  ThieleUndKlose\Autotranslate\Service\BatchTranslationRunner:
+    public: true
 
   ThieleUndKlose\Autotranslate\Hooks\DataHandler:
     public: true

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Domain\Repository;
 
 use ThieleUndKlose\Autotranslate\Utility\PageUtility;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings;
@@ -85,8 +86,8 @@ final class BatchItemRepository extends Repository
             ->count('uid')
             ->from(self::TABLE_NAME)
             ->where(
-                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, \PDO::PARAM_INT)),
-                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($sysLanguageUid, \PDO::PARAM_INT)),
+                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, Connection::PARAM_INT)),
+                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($sysLanguageUid, Connection::PARAM_INT)),
                 $queryBuilder->expr()->or(
                     $queryBuilder->expr()->eq('error', $queryBuilder->createNamedParameter('')),
                     $queryBuilder->expr()->isNull('error')
@@ -119,8 +120,8 @@ final class BatchItemRepository extends Repository
             ->select('uid', 'pid', 'error')
             ->from(self::TABLE_NAME)
             ->where(
-                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, \PDO::PARAM_INT)),
-                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($sysLanguageUid, \PDO::PARAM_INT)),
+                $queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, Connection::PARAM_INT)),
+                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($sysLanguageUid, Connection::PARAM_INT)),
                 $queryBuilder->expr()->neq('error', $queryBuilder->createNamedParameter('')),
                 $queryBuilder->expr()->isNotNull('error')
             )

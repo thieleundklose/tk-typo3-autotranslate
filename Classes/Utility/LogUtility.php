@@ -17,10 +17,14 @@ final class LogUtility
     /**
      * Write a log message if debug mode is enabled.
      */
-    public static function log(LoggerInterface $logger, string $message, array $data = [], int $type = self::MESSAGE_INFO): void
+    public static function log(?LoggerInterface $logger, string $message, array $data = [], int $type = self::MESSAGE_INFO): void
     {
+        if ($logger === null) {
+            return;
+        }
+
         $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('autotranslate');
-        if (!($extensionConfiguration['debug'] ?? null)) {
+        if (!($extensionConfiguration['debug'] ?? false)) {
             return;
         }
 

@@ -10,6 +10,7 @@ use Exception;
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
 use ThieleUndKlose\Autotranslate\Domain\Repository\BatchItemRepository;
 use ThieleUndKlose\Autotranslate\Domain\Repository\LogRepository;
+use ThieleUndKlose\Autotranslate\Service\BatchTranslationRunner;
 use ThieleUndKlose\Autotranslate\Service\BatchTranslationService;
 use ThieleUndKlose\Autotranslate\Service\TranslationCacheService;
 use ThieleUndKlose\Autotranslate\Utility\DeeplApiHelper;
@@ -26,10 +27,8 @@ use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
-use TYPO3\CMS\Core\Registry;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use ThieleUndKlose\Autotranslate\Command\BatchTranslation;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
 
@@ -581,23 +580,17 @@ class BatchTranslationBaseController extends ActionController
         ]);
     }
 
-    /**
-     * Get the last scheduler run statistics from the TYPO3 registry
-     */
     private function getSchedulerStatus(): array
     {
-        $registry = GeneralUtility::makeInstance(Registry::class);
-        $lastRun = $registry->get(BatchTranslation::REGISTRY_NAMESPACE, BatchTranslation::REGISTRY_KEY_LAST_RUN);
+        $runner = GeneralUtility::makeInstance(BatchTranslationRunner::class);
+        $lastRun = $runner->getLastRunStatistics();
 
         if ($lastRun === null) {
-            return [
-                'hasRun' => false,
-            ];
+            return ['hasRun' => false];
         }
 
         $lastRunTime = $lastRun['timestamp'] ?? 0;
-        $now = time();
-        $ago = $now - $lastRunTime;
+        $ago = time() - $lastRunTime;
 
         return [
             'hasRun' => true,

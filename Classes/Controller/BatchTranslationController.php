@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Controller;
 
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
 use TYPO3\CMS\Backend\Template\Components\MultiRecordSelection\Action;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;

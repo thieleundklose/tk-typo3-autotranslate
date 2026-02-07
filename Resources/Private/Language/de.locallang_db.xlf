@@ -207,6 +207,18 @@
                 <source>Scheduler has not run yet. Set up the "autotranslate:batch:run" command in the Scheduler module.</source>
                 <target>Scheduler wurde noch nicht ausgeführt. Richten Sie den Befehl "autotranslate:batch:run" im Scheduler-Modul ein.</target>
             </trans-unit>
+            <trans-unit id="scheduler.task.title">
+                <source>Autotranslate: Batch Translation</source>
+                <target>Autotranslate: Stapelübersetzung</target>
+            </trans-unit>
+            <trans-unit id="scheduler.task.description">
+                <source>Processes queued translation tasks via DeepL API. Shows progress and statistics in the task list.</source>
+                <target>Verarbeitet Übersetzungsaufträge über die DeepL-API. Zeigt Fortschritt und Statistiken in der Aufgabenliste.</target>
+            </trans-unit>
+            <trans-unit id="scheduler.field.itemsPerRun">
+                <source>Items per run</source>
+                <target>Einträge pro Durchlauf</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>
