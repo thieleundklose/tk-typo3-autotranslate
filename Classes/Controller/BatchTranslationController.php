@@ -69,6 +69,7 @@ class BatchTranslationController extends BatchTranslationBaseController
     private function addMainMenu(ModuleTemplate $view): void
     {
         $menuRegistry = $view->getDocHeaderComponent()->getMenuRegistry();
+        // @extensionScannerIgnoreLine
         $menu = $menuRegistry->makeMenu()->setIdentifier('BatchTranslationMenu');
 
         $menuItems = [
@@ -80,6 +81,7 @@ class BatchTranslationController extends BatchTranslationBaseController
         $lang = $this->getLanguageService();
 
         foreach ($menuItems as $action => $labelKey) {
+            // @extensionScannerIgnoreLine
             $menuItem = $menu->makeMenuItem()
                 ->setTitle($lang->sL($labelKey))
                 ->setHref($this->uriBuilder->reset()->uriFor($action, [], 'BatchTranslation'))
@@ -97,10 +99,12 @@ class BatchTranslationController extends BatchTranslationBaseController
         }
 
         $menuRegistry = $view->getDocHeaderComponent()->getMenuRegistry();
+        // @extensionScannerIgnoreLine
         $menu = $menuRegistry->makeMenu()->setIdentifier('BatchTranslationLevels');
         $lang = $this->getLanguageService();
 
         foreach (self::MENU_LEVEL_ITEMS as $level) {
+            // @extensionScannerIgnoreLine
             $menuItem = $menu->makeMenuItem()
                 ->setTitle($lang->sL("LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.{$level}"))
                 ->setHref($this->uriBuilder->reset()->uriFor('default', ['levels' => $level], 'BatchTranslation'))
@@ -121,12 +125,14 @@ class BatchTranslationController extends BatchTranslationBaseController
         $pageRecord = BackendUtility::readPageAccess($this->pageUid, $permissionClause);
 
         if ($pageRecord) {
+            // @extensionScannerIgnoreLine
             $view->getDocHeaderComponent()->setMetaInformation($pageRecord);
         }
     }
 
     private function getBatchItemActions(): array
     {
+        // @extensionScannerIgnoreLine
         $returnUrl = $this->request->getAttribute('normalizedParams')->getRequestUri();
         $lang = $this->getLanguageService();
 
@@ -190,6 +196,7 @@ class BatchTranslationController extends BatchTranslationBaseController
 
     private function getLogActions(): array
     {
+        // @extensionScannerIgnoreLine
         $returnUrl = $this->request->getAttribute('normalizedParams')->getRequestUri();
         $lang = $this->getLanguageService();
 

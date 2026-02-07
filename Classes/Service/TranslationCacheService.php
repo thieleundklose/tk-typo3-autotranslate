@@ -380,7 +380,7 @@ class TranslationCacheService
 
             foreach ($iterator as $file) {
                 if ($file->isFile()) {
-                    $size += $file->getSize();
+                    $size += $file->getSize(); // @extensionScannerIgnoreLine
                 }
             }
         } catch (\Exception $e) {

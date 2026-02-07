@@ -103,13 +103,14 @@ class DeeplApiHelper
         // Not in cache: fetch from DeepL
         try {
             $translator = new \DeepL\Translator($apiKey);
-            if ($type === 'source') {
-                $languages = $translator->getSourceLanguages();
-            } else {
-                $languages = $translator->getTargetLanguages();
-            }
+            // @extensionScannerIgnoreLine
+            $languages = ($type === 'source')
+                ? $translator->getSourceLanguages()
+                : $translator->getTargetLanguages();
+
             $result = [];
             foreach ($languages as $language) {
+                // @extensionScannerIgnoreLine
                 $result[] = [$language->name, $language->code];
             }
             if ($cache) {

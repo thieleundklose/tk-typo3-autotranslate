@@ -66,6 +66,7 @@ final class AutotranslateLanguagesItems
             foreach ($languages as $language) {
                 $config['items'][] = [
                     'label' => $language->getTitle(),
+                    // @extensionScannerIgnoreLine
                     'value' => $language->getLanguageId(),
                 ];
             }

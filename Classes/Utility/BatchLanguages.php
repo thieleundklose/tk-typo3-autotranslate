@@ -24,6 +24,7 @@ final class BatchLanguages
             foreach ($possibleTranslationLanguages as $language) {
                 $parameters['items'][] = [
                     'label' => $language->getTitle(),
+                    // @extensionScannerIgnoreLine
                     'value' => $language->getLanguageId(),
                 ];
             }

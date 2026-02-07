@@ -134,6 +134,7 @@ final class BatchTranslationService implements LoggerAwareInterface
             return;
         }
 
+        // @extensionScannerIgnoreLine
         $constraints = $this->buildConstraints($table, $item->getPid(), $defaultLanguage->getLanguageId());
 
         if ($table === 'tt_content') {

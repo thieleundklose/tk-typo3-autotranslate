@@ -268,6 +268,7 @@ class BatchItem extends AbstractEntity
         try {
             $site = $siteFinder->getSiteByPageId($this->pid);
             foreach ($site->getAllLanguages() as $siteLanguage) {
+                // @extensionScannerIgnoreLine
                 if ($siteLanguage->getLanguageId() === $this->getSysLanguageUid()) {
                     return $siteLanguage->getTitle();
                 }
