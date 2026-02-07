@@ -179,6 +179,34 @@
                 <source>Clear Cache</source>
                 <target>Cache leeren</target>
             </trans-unit>
+            <trans-unit id="scheduler.lastRun">
+                <source>Last scheduler run</source>
+                <target>Letzter Scheduler-Lauf</target>
+            </trans-unit>
+            <trans-unit id="scheduler.minutesAgo">
+                <source>min ago</source>
+                <target>Min. her</target>
+            </trans-unit>
+            <trans-unit id="scheduler.succeeded">
+                <source>succeeded</source>
+                <target>erfolgreich</target>
+            </trans-unit>
+            <trans-unit id="scheduler.failed">
+                <source>failed</source>
+                <target>fehlgeschlagen</target>
+            </trans-unit>
+            <trans-unit id="scheduler.remaining">
+                <source>remaining</source>
+                <target>ausstehend</target>
+            </trans-unit>
+            <trans-unit id="scheduler.nothingPending">
+                <source>Nothing was pending</source>
+                <target>Nichts ausstehend</target>
+            </trans-unit>
+            <trans-unit id="scheduler.neverRun">
+                <source>Scheduler has not run yet. Set up the "autotranslate:batch:run" command in the Scheduler module.</source>
+                <target>Scheduler wurde noch nicht ausgeführt. Richten Sie den Befehl "autotranslate:batch:run" im Scheduler-Modul ein.</target>
+            </trans-unit>
         </body>
     </file>
 </xliff>

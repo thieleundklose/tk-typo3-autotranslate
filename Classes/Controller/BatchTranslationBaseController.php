@@ -26,8 +26,10 @@ use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
+use TYPO3\CMS\Core\Registry;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use ThieleUndKlose\Autotranslate\Command\BatchTranslation;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
 
@@ -575,7 +577,38 @@ class BatchTranslationBaseController extends ActionController
             'cacheStats' => $cacheStats,
             'pageUid' => $this->pageUid,
             'moduleName' => $this->moduleName,
+            'schedulerStatus' => $this->getSchedulerStatus(),
         ]);
+    }
+
+    /**
+     * Get the last scheduler run statistics from the TYPO3 registry
+     */
+    private function getSchedulerStatus(): array
+    {
+        $registry = GeneralUtility::makeInstance(Registry::class);
+        $lastRun = $registry->get(BatchTranslation::REGISTRY_NAMESPACE, BatchTranslation::REGISTRY_KEY_LAST_RUN);
+
+        if ($lastRun === null) {
+            return [
+                'hasRun' => false,
+            ];
+        }
+
+        $lastRunTime = $lastRun['timestamp'] ?? 0;
+        $now = time();
+        $ago = $now - $lastRunTime;
+
+        return [
+            'hasRun' => true,
+            'timestamp' => $lastRunTime,
+            'dateFormatted' => date('d.m.Y H:i:s', $lastRunTime),
+            'agoMinutes' => (int)floor($ago / 60),
+            'processed' => $lastRun['processed'] ?? 0,
+            'succeeded' => $lastRun['succeeded'] ?? 0,
+            'failed' => $lastRun['failed'] ?? 0,
+            'remainingPending' => $lastRun['remainingPending'] ?? 0,
+        ];
     }
 
     protected function createActionAbstract(BatchItem $batchItem, int $levels): void

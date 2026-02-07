@@ -27,10 +27,54 @@
         </div>
     </div>
 
+    <f:render section="SchedulerStatus" arguments="{schedulerStatus:schedulerStatus}" />
+
     <f:if condition="{hasItems}">
         <f:render section="BatchItemTable" arguments="{_all}" />
     </f:if>
 </div>
+
+<!-- Scheduler Status -->
+<f:section name="SchedulerStatus">
+    <div class="callout callout-info mb-3">
+        <div class="d-flex align-items-center">
+            <div class="flex-grow-1">
+                <f:if condition="{schedulerStatus.hasRun}">
+                    <f:then>
+                        <div class="d-flex flex-wrap align-items-center gap-3">
+                            <span>
+                                <core:icon identifier="actions-clock" size="small" />
+                                <strong><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:scheduler.lastRun" default="Last scheduler run" />:</strong>
+                                {schedulerStatus.dateFormatted}
+                                <f:if condition="{schedulerStatus.agoMinutes} < 120">
+                                    <small class="text-body-secondary">({schedulerStatus.agoMinutes} <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:scheduler.minutesAgo" default="min ago" />)</small>
+                                </f:if>
+                            </span>
+                            <f:if condition="{schedulerStatus.processed}">
+                                <span>
+                                    <span class="badge badge-success">{schedulerStatus.succeeded} <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:scheduler.succeeded" default="succeeded" /></span>
+                                    <f:if condition="{schedulerStatus.failed}">
+                                        <span class="badge badge-danger">{schedulerStatus.failed} <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:scheduler.failed" default="failed" /></span>
+                                    </f:if>
+                                </span>
+                            </f:if>
+                            <f:if condition="{schedulerStatus.remainingPending}">
+                                <span class="badge badge-warning">{schedulerStatus.remainingPending} <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:scheduler.remaining" default="remaining" /></span>
+                            </f:if>
+                            <f:if condition="!{schedulerStatus.processed} && !{schedulerStatus.remainingPending}">
+                                <span class="text-body-secondary"><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:scheduler.nothingPending" default="Nothing was pending" /></span>
+                            </f:if>
+                        </div>
+                    </f:then>
+                    <f:else>
+                        <core:icon identifier="actions-clock" size="small" />
+                        <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:scheduler.neverRun" default="Scheduler has not run yet. Set up the 'autotranslate:batch:run' command in the Scheduler module." />
+                    </f:else>
+                </f:if>
+            </div>
+        </div>
+    </div>
+</f:section>
 
 <!-- Batch Item Table Section -->
 <f:section name="BatchItemTable">

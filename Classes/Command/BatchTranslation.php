@@ -19,6 +19,7 @@ use TYPO3\CMS\Core\Core\Bootstrap;
 use TYPO3\CMS\Core\Core\SystemEnvironmentBuilder;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Http\ServerRequest;
+use TYPO3\CMS\Core\Registry;
 use TYPO3\CMS\Extbase\Persistence\Generic\Mapper\DataMapper;
 
 /**
@@ -32,11 +33,14 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
 
     private const DEFAULT_ITEMS_PER_RUN = 50;
     private const TABLE_NAME = 'tx_autotranslate_batch_item';
+    public const REGISTRY_NAMESPACE = 'tx_autotranslate';
+    public const REGISTRY_KEY_LAST_RUN = 'lastBatchRun';
 
     public function __construct(
         private readonly BatchTranslationService $batchTranslationService,
         private readonly ConnectionPool $connectionPool,
         private readonly DataMapper $dataMapper,
+        private readonly Registry $registry,
     ) {
         parent::__construct();
     }
@@ -59,16 +63,23 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
         $this->initializeBackendContext();
 
         $limit = (int)$input->getArgument('translationsPerRun');
+        $totalPending = $this->countAllPendingItems();
         $items = $this->findPendingItems($limit);
 
         if (empty($items)) {
             $output->writeln('<info>No translations pending.</info>');
+            $this->storeRunStatistics(0, 0, 0, 0);
             return Command::SUCCESS;
         }
 
-        $results = $this->processItems($items, $output);
-        $this->logResults($results, $limit);
-        $this->outputResults($output, $results, $limit);
+        $successCount = $this->processItems($items, $output);
+        $processedCount = count($items);
+        $failedCount = $processedCount - $successCount;
+        $remainingPending = max(0, $totalPending - $processedCount);
+
+        $this->storeRunStatistics($processedCount, $successCount, $failedCount, $remainingPending);
+        $this->logResults($successCount, $limit);
+        $this->outputResults($output, $successCount, $processedCount);
 
         return Command::SUCCESS;
     }
@@ -118,6 +129,49 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
             ->executeQuery();
 
         return $this->dataMapper->map(BatchItem::class, $result->fetchAllAssociative());
+    }
+
+    /**
+     * Count all pending items (not limited by batch size)
+     */
+    private function countAllPendingItems(): int
+    {
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable(self::TABLE_NAME);
+        $queryBuilder->getRestrictions()->removeAll();
+
+        $now = new DateTime();
+
+        return (int)$queryBuilder
+            ->count('uid')
+            ->from(self::TABLE_NAME)
+            ->where(
+                $queryBuilder->expr()->or(
+                    $queryBuilder->expr()->isNull('translated'),
+                    $queryBuilder->expr()->gt('translate', 'translated')
+                ),
+                $queryBuilder->expr()->or(
+                    $queryBuilder->expr()->eq('error', $queryBuilder->createNamedParameter('')),
+                    $queryBuilder->expr()->isNull('error')
+                ),
+                $queryBuilder->expr()->lt('translate', $queryBuilder->createNamedParameter($now->getTimestamp())),
+                $queryBuilder->expr()->eq('hidden', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT))
+            )
+            ->executeQuery()
+            ->fetchOne();
+    }
+
+    /**
+     * Store run statistics in the TYPO3 registry for display in the backend module
+     */
+    private function storeRunStatistics(int $processed, int $succeeded, int $failed, int $remainingPending): void
+    {
+        $this->registry->set(self::REGISTRY_NAMESPACE, self::REGISTRY_KEY_LAST_RUN, [
+            'timestamp' => time(),
+            'processed' => $processed,
+            'succeeded' => $succeeded,
+            'failed' => $failed,
+            'remainingPending' => $remainingPending,
+        ]);
     }
 
     /**
