@@ -280,24 +280,15 @@ class BatchItem extends AbstractEntity
 
     /**
      * Get the value of frequency and return it as DateInterval
-     *
-     * @return DateInterval|null
      */
     public function getFrequencyDateInterval(): ?DateInterval
     {
-        // TODO make this extensible
-        switch ($this->getFrequency()) {
-            case self::FREQUENCY_RECURRING:
-                return DateInterval::createFromDateString('1 second');
-            break;
-            case self::FREQUENCY_DAILY:
-                return DateInterval::createFromDateString('1 days');
-            break;
-            case self::FREQUENCY_WEEKLY:
-                return DateInterval::createFromDateString('1 weeks');
-            break;
-        }
-        return null;
+        return match ($this->getFrequency()) {
+            self::FREQUENCY_RECURRING => DateInterval::createFromDateString('1 second'),
+            self::FREQUENCY_DAILY => DateInterval::createFromDateString('1 day'),
+            self::FREQUENCY_WEEKLY => DateInterval::createFromDateString('1 week'),
+            default => null,
+        };
     }
 
     /**

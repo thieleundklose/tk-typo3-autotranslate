@@ -1,18 +1,6 @@
 <?php
-declare(strict_types=1);
 
-/*
- * This file is part of the TYPO3 CMS project.
- *
- * It is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License, either version 2
- * of the License, or any later version.
- *
- * For the full copyright and license information, please read the
- * LICENSE.txt file that was distributed with this source code.
- *
- * The TYPO3 project - inspiring people to share!
- */
+declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Utility;
 
@@ -30,29 +18,24 @@ class Translator implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    const AUTOTRANSLATE_LAST = 'autotranslate_last';
-    const AUTOTRANSLATE_EXCLUDE = 'autotranslate_exclude';
-    const AUTOTRANSLATE_LANGUAGES = 'autotranslate_languages';
+    public const AUTOTRANSLATE_LAST = 'autotranslate_last';
+    public const AUTOTRANSLATE_EXCLUDE = 'autotranslate_exclude';
+    public const AUTOTRANSLATE_LANGUAGES = 'autotranslate_languages';
 
-    const TRANSLATE_MODE_BOTH = 'create_update';
-    const TRANSLATE_MODE_UPDATE_ONLY = 'update_only';
-    const TRANSLATE_MODE_CREATE_ONLY = 'create_only';
+    public const TRANSLATE_MODE_BOTH = 'create_update';
+    public const TRANSLATE_MODE_UPDATE_ONLY = 'update_only';
+    public const TRANSLATE_MODE_CREATE_ONLY = 'create_only';
 
-    public $languages = [];
-    public $siteLanguages = [];
-    protected $apiKey = null;
-    protected $pageId = null;
-    protected $glossaryService = null;
+    public array $languages = [];
+    public array $siteLanguages = [];
+    protected ?string $apiKey = null;
+    protected ?int $pageId = null;
+    protected ?GlossaryService $glossaryService = null;
 
-    /**
-     * object constructor
-     *
-     * @param int $pageId
-     * @return void
-     */
-    function __construct(int $pageId) {
+    public function __construct(int $pageId)
+    {
         $this->pageId = $pageId;
-        list('key' => $this->apiKey) = TranslationHelper::apiKey($this->pageId);
+        ['key' => $this->apiKey] = TranslationHelper::apiKey($this->pageId);
         $this->siteLanguages = TranslationHelper::siteConfigurationValue($this->pageId, ['languages']);
         $this->glossaryService = GeneralUtility::makeInstance(GlossaryService::class);
     }
@@ -60,65 +43,62 @@ class Translator implements LoggerAwareInterface
     /**
      * Translate the loaded record to target languages
      *
-     * @param string $table
-     * @param int $recordUid
-     * @param DataHandler|null $parentObject
-     * @param string|null $languagesToTranslate
-     * @param string $translateMode
-     * @return void
      * @throws \RuntimeException If DeepL API key is invalid or has no characters left
-     * @throws \Doctrine\DBAL\Driver\Exception
      */
-    public function translate(string $table, int $recordUid, ?DataHandler $parentObject = null, ?string $languagesToTranslate = null, string $translateMode = self::TRANSLATE_MODE_BOTH): void
-    {
-
+    public function translate(
+        string $table,
+        int $recordUid,
+        ?DataHandler $parentObject = null,
+        ?string $languagesToTranslate = null,
+        string $translateMode = self::TRANSLATE_MODE_BOTH
+    ): void {
         $deeplApiKeyDetails = DeeplApiHelper::checkApiKey($this->apiKey);
-        if ($deeplApiKeyDetails['error']){
+        if ($deeplApiKeyDetails['error']) {
             LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
-                'error' => $deeplApiKeyDetails['error']
+                'error' => $deeplApiKeyDetails['error'],
             ]);
             throw new \RuntimeException('DeepL API Key is not valid: ' . $deeplApiKeyDetails['error']);
         }
         if (!$deeplApiKeyDetails['isValid']) {
             LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
-                'error' => 'No API Key given.'
+                'error' => 'No API Key given.',
             ]);
             throw new \RuntimeException('DeepL API Key is not valid: No API Key given.');
         }
         if ($deeplApiKeyDetails['charactersLeft'] <= 0) {
             LogUtility::log($this->logger, 'DeepL API Key has no characters left: {charactersLeft}', [
-                'charactersLeft' => $deeplApiKeyDetails['charactersLeft']
+                'charactersLeft' => $deeplApiKeyDetails['charactersLeft'],
             ]);
             throw new \RuntimeException('DeepL API Key has no characters left: ' . $deeplApiKeyDetails['charactersLeft']);
         }
 
         $record = Records::getRecord($table, $recordUid);
 
-        // exit if record is localized one
+        // Exit if record is a localized one
         $parentField = TranslationHelper::translationOrigPointerField($table);
         if ($parentField === null || $record[$parentField] > 0) {
             return;
         }
 
-        // exit if record is marked for exclude
+        // Exit if record is marked for exclude
         if ($record[self::AUTOTRANSLATE_EXCLUDE] === 1) {
             return;
         }
 
-        // load translation columns for table
+        // Load translation columns for table
         $columns = TranslationHelper::translationTextfields($this->pageId, $table);
         if ($columns === null) {
             return;
         }
 
-        // set target languages by record if null is given
-        if (is_null($languagesToTranslate)) {
+        // Set target languages by record if null is given
+        if ($languagesToTranslate === null) {
             $languagesToTranslate = $record[self::AUTOTRANSLATE_LANGUAGES] ?? '';
         }
 
         $localizedContents = [];
-        // loop over all target languages
         $languageIds = GeneralUtility::trimExplode(',', $languagesToTranslate, true);
+
         foreach ($languageIds as $languageId) {
             $localizedContents[$languageId] = [];
 
@@ -132,7 +112,7 @@ class Translator implements LoggerAwareInterface
             if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && !$existingTranslation) {
                 LogUtility::log($this->logger, 'No Translation of {table} with uid {uid} because mode "update only".', [
                     'table' => $table,
-                    'uid' => $recordUid
+                    'uid' => $recordUid,
                 ]);
                 continue;
             }
@@ -148,13 +128,14 @@ class Translator implements LoggerAwareInterface
             if ($localizedUid === null || $localizedUid === false) {
                 LogUtility::log($this->logger, 'No Translation of {table} with uid {uid} because DataHandler localize failed.', [
                     'table' => $table,
-                    'uid' => $recordUid
+                    'uid' => $recordUid,
                 ]);
                 continue;
             }
 
             $localizedContents[$languageId][$recordUid] = $localizedUid;
             $referenceTables = TranslationHelper::additionalReferenceTables();
+
             foreach ($referenceTables as $referenceTable) {
                 $columnsReference = TranslationHelper::translationTextfields($this->pageId, $referenceTable);
                 $autotranslateReferences = TranslationHelper::translationReferenceColumns($this->pageId, $table, $referenceTable);
@@ -164,44 +145,38 @@ class Translator implements LoggerAwareInterface
                         $type = $GLOBALS['TCA'][$table]['columns'][$referenceColumn]['config']['type'] ?? null;
                         $foreignField = $GLOBALS['TCA'][$table]['columns'][$referenceColumn]['config']['foreign_field'];
 
-                        switch ($type) {
-                            // sys_file_reference
-                            case 'file':
-                                $references = Records::getRecords($referenceTable, 'uid', [
+                        $references = match ($type) {
+                            'file' => Records::getRecords($referenceTable, 'uid', [
+                                "{$foreignField} = " . $recordUid,
+                                "deleted = 0",
+                                "sys_language_uid = 0",
+                                "tablenames = '{$table}'",
+                                "fieldname = '{$referenceColumn}'",
+                            ]),
+                            'inline' => Records::getRecords($referenceTable, 'uid', array_merge(
+                                [
                                     "{$foreignField} = " . $recordUid,
                                     "deleted = 0",
                                     "sys_language_uid = 0",
-                                    "tablenames = '{$table}'",
-                                    "fieldname = '{$referenceColumn}'",
-                                ]);
-                                break;
-                            case 'inline':
+                                ],
+                                isset($GLOBALS['TCA'][$referenceTable]['columns']['fieldname'])
+                                    ? ["fieldname = '{$referenceColumn}'"]
+                                    : []
+                            )),
+                            default => null,
+                        };
 
-                                $constraints = [
-                                    "{$foreignField} = " . $recordUid,
-                                    "deleted = 0",
-                                    "sys_language_uid = 0",
-                                ];
-
-                                // Only add fieldname constraint if the inline table has this field
-                                if (isset($GLOBALS['TCA'][$referenceTable]['columns']['fieldname'])) {
-                                    $constraints[] = "fieldname = '{$referenceColumn}'";
-                                }
-
-                                $references = Records::getRecords($referenceTable, 'uid', $constraints);
-                                break;
-                            default:
-                                LogUtility::log($this->logger, 'Unsupported reference type {type} for column {referenceColumn} in table {table}.', [
-                                    'type' => $type,
-                                    'referenceColumn' => $referenceColumn,
-                                    'table' => $table,
-                                ], LogUtility::MESSAGE_WARNING);
-                                continue 2;
+                        if ($references === null) {
+                            LogUtility::log($this->logger, 'Unsupported reference type {type} for column {referenceColumn} in table {table}.', [
+                                'type' => $type,
+                                'referenceColumn' => $referenceColumn,
+                                'table' => $table,
+                            ], LogUtility::MESSAGE_WARNING);
+                            continue;
                         }
 
                         if (!empty($references)) {
                             foreach ($references as $referenceUid) {
-
                                 $referenceTranslation = Records::getRecordTranslation($referenceTable, $referenceUid, (int)$languageId);
 
                                 if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && empty($referenceTranslation)) {
@@ -226,17 +201,15 @@ class Translator implements LoggerAwareInterface
                                             $foreignField => $localizedContents[$languageId][$recordUid],
                                         ]
                                     );
-
                                 } else {
                                     $translatedReferenceUid = $referenceTranslation['uid'];
                                 }
 
                                 if (count($columnsReference)) {
-                                    if ($parentObject !== null && isset($parentObject->datamap[$referenceTable]) && isset($parentObject->datamap[$referenceTable][$referenceUid])) {
-                                        $recordReference = $parentObject->datamap[$referenceTable][$referenceUid];
-                                    } else {
-                                        $recordReference = Records::getRecord($referenceTable, $referenceUid);
-                                    }
+                                    $recordReference = ($parentObject !== null && isset($parentObject->datamap[$referenceTable][$referenceUid]))
+                                        ? $parentObject->datamap[$referenceTable][$referenceUid]
+                                        : Records::getRecord($referenceTable, $referenceUid);
+
                                     $translatedColumns = $this->translateRecordProperties($recordReference, (int)$languageId, $columnsReference, $table, $translatedReferenceUid);
                                     if (count($translatedColumns)) {
                                         Records::updateRecord($referenceTable, $translatedReferenceUid, $translatedColumns);
@@ -247,7 +220,6 @@ class Translator implements LoggerAwareInterface
                     }
                 }
             }
-
 
             // Translate properties with given service
             $translatedColumns = $this->translateRecordProperties($record, (int)$languageId, $columns, $table, $localizedUid);
@@ -262,54 +234,43 @@ class Translator implements LoggerAwareInterface
         }
 
         Records::updateRecord($table, $recordUid, [
-            self::AUTOTRANSLATE_LAST => time()
+            self::AUTOTRANSLATE_LAST => time(),
         ]);
-
     }
 
     /**
-     * This function translates the given object properties
-     *
-     * @param array $record
-     * @param int $targetLanguageUid
-     * @param array $columns
-     * @param string $table
-     * @param int $localizedUid
-     * @return array
+     * Translate the given record properties
      */
     public function translateRecordProperties(array $record, int $targetLanguageUid, array $columns, string $table, int $localizedUid): array
     {
-        // create translation array from source record by keys from fielmap
         $translatedColumns = [];
 
         try {
-            // prepare translated record with source record
-            // create translation array from source record by keys from fielmap
             $toTranslateObject = array_intersect_key($record, array_flip($columns));
-
-            $toTranslate = array_filter($toTranslateObject, fn($value) => !is_null($value) && $value !== '');
+            $toTranslate = array_filter($toTranslateObject, static fn($value) => $value !== null && $value !== '');
             $deeplSourceLang = $this->deeplSourceLanguage();
             $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
             $result = null;
             $glossary = null;
+
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
                 $toTranslate = $this->extractAndReplaceTranslatableHtmlAttributes($toTranslate);
                 $translator = new \DeepL\Translator($this->apiKey);
 
-                // get optional glossary from handled by 3rd party extension
+                // Get optional glossary handled by 3rd party extension
                 if ($deeplSourceLang && $deeplTargetLang && TranslationHelper::glossaryEnabled($this->pageId)) {
                     $glossary = $this->glossaryService->getGlossary($deeplSourceLang, $deeplTargetLang, $this->pageId, $translator);
                 }
 
-                // it is experimental to add flexform fields to translation
-                // TODO let define which fields in flexform should be translated to prevent translating settings
+                // Experimental: translate flexform fields
+                // TODO: Let user define which fields in flexform should be translated to prevent translating settings
                 if (isset($toTranslate['pi_flexform'])) {
                     $xml = simplexml_load_string($record['pi_flexform']);
 
                     foreach ($xml->xpath('//field') as $field) {
                         $value = (string)$field->value;
                         if (!empty(trim($value))
-                            && strpos($value, '<') === false
+                            && !str_contains($value, '<')
                             && is_string($value)
                             && !is_numeric($value)
                             && $value !== ''
@@ -339,25 +300,23 @@ class Translator implements LoggerAwareInterface
             if (!empty($result)) {
                 $translatedAttributes = [];
                 foreach ($result as $k => $v) {
-                    // Skip null values to prevent str_replace errors
                     if ($v === null) {
                         continue;
                     }
 
                     $field = $keys[$k];
-                    if (strpos($field, '__ATTR__') === 0) {
+                    if (str_starts_with($field, '__ATTR__')) {
                         $translatedAttributes[$field] = $v->text;
                     }
                 }
 
                 foreach ($result as $k => $v) {
-                    // Skip null values to prevent str_replace errors
                     if ($v === null) {
                         continue;
                     }
 
                     $field = $keys[$k];
-                    if (strpos($field, '__ATTR__') === 0) {
+                    if (str_starts_with($field, '__ATTR__')) {
                         continue;
                     }
                     $translatedValue = $this->restoreTranslatedHtmlAttributes($v->text, $translatedAttributes);
@@ -365,7 +324,7 @@ class Translator implements LoggerAwareInterface
                 }
             }
 
-            // add fields to copy in translation from extension configuration
+            // Add fields to copy in translation from extension configuration
             $fieldsToCopy = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('autotranslate', 'fieldsToCopy');
             $fields = $fieldsToCopy ? GeneralUtility::trimExplode(',', $fieldsToCopy, true) : [];
             foreach ($record as $field => $value) {
@@ -378,10 +337,15 @@ class Translator implements LoggerAwareInterface
                 $translatedColumns['l10n_state'] = $this->buildL10nState($table, $targetLanguageUid, array_keys($translatedColumns), $localizedUid);
             }
 
-            // set date and time of translation
+            // Set date and time of translation
             $translatedColumns[self::AUTOTRANSLATE_LAST] = time();
 
-            LogUtility::log($this->logger, 'Successful translated to target language {deeplTargetLang}.', ['deeplTargetLang' => $deeplTargetLang, 'toTranslate' => $toTranslate, 'result' => $result, 'translatedColumns' => $translatedColumns]);
+            LogUtility::log($this->logger, 'Successful translated to target language {deeplTargetLang}.', [
+                'deeplTargetLang' => $deeplTargetLang,
+                'toTranslate' => $toTranslate,
+                'result' => $result,
+                'translatedColumns' => $translatedColumns,
+            ]);
         } catch (\Exception $e) {
             LogUtility::log($this->logger, 'Translation Error: {error}.', ['error' => $e->getMessage()], LogUtility::MESSAGE_ERROR);
         }
@@ -389,27 +353,17 @@ class Translator implements LoggerAwareInterface
         return $translatedColumns;
     }
 
-    /**
-     * @return string|null
-     */
     private function deeplSourceLanguage(): ?string
     {
         foreach ($this->siteLanguages as $language) {
             if ($language['languageId'] === 0) {
-                if (empty($language['deeplSourceLang'])) {
-                    return null;
-                }
-                return $language['deeplSourceLang'];
+                return empty($language['deeplSourceLang']) ? null : $language['deeplSourceLang'];
             }
         }
 
         return null;
     }
 
-    /**
-     * @param int $languageId
-     * @return string|null
-     */
     private function deeplTargetLanguage(int $languageId): ?string
     {
         foreach ($this->siteLanguages as $language) {
@@ -422,24 +376,18 @@ class Translator implements LoggerAwareInterface
     }
 
     /**
-     * Replaces translatable HTML attributes with placeholders and returns the modified array
-     * and the mapping table.
-     *
-     * @param array $toTranslate
-     * @return array [array $modifiedToTranslate, array $attrMap]
+     * Replaces translatable HTML attributes with placeholders and returns the modified array.
      */
     private function extractAndReplaceTranslatableHtmlAttributes(array $toTranslate): array
     {
         $attributeMap = [
             ['tag' => 'a', 'attr' => 'title'],
-            // add more attributes as needed
         ];
 
         $attrMap = [];
         $attrCounter = 1;
 
         foreach ($toTranslate as $field => &$value) {
-
             if (!is_string($value) || trim($value) === '' || !$this->isHtml($value)) {
                 continue;
             }
@@ -464,17 +412,13 @@ class Translator implements LoggerAwareInterface
         return $toTranslate;
     }
 
-    private function isHtml(string $value): bool {
+    private function isHtml(string $value): bool
+    {
         return $value !== strip_tags($value);
     }
 
     /**
-     * Extrahiert alle Werte eines bestimmten Attributs anhand eines Tag-Namens aus HTML.
-     *
-     * @param string $html Der HTML-String
-     * @param string $tagName Der Tag-Name (z.B. 'a')
-     * @param string $attributeName Das Attribut (z.B. 'title')
-     * @return array Array mit allen gefundenen Attributwerten
+     * Extracts all values of a specific attribute from a specific tag in HTML.
      */
     private function extractHtmlAttributes(string $html, string $tagName, string $attributeName): array
     {
@@ -484,47 +428,41 @@ class Translator implements LoggerAwareInterface
         }
 
         $doc = new \DOMDocument();
-        // Suppress errors for invalid HTML
         @$doc->loadHTML('<?xml encoding="utf-8" ?>' . $html);
 
         $xpath = new \DOMXPath($doc);
-        // XPath query for all matching attributes
-        $query = sprintf('//' . $tagName . '[@' . $attributeName . ']');
+        $query = '//' . $tagName . '[@' . $attributeName . ']';
         foreach ($xpath->query($query) as $node) {
             /** @var \DOMElement $node */
             $values[] = $node->getAttribute($attributeName);
         }
+
         return $values;
     }
 
     /**
      * Replaces a specific attribute of a tag in an HTML string with a placeholder.
-     *
-     * @param string $html The HTML string
-     * @param string $tag The tag name (e.g. 'a')
-     * @param string $attr The attribute (e.g. 'title')
-     * @param string $original The original attribute value to replace
-     * @param string $placeholder The placeholder to replace the original value with
-     * @return string The modified HTML string
      */
     private function replaceHtmlAttributeWithPlaceholder(string $html, string $tag, string $attr, string $original, string $placeholder): string
     {
         $doc = new \DOMDocument();
         @$doc->loadHTML('<?xml encoding="utf-8" ?>' . $html);
         $xpath = new \DOMXPath($doc);
-        $query = sprintf('//' . $tag . '[@' . $attr . ']');
+        $query = '//' . $tag . '[@' . $attr . ']';
+
         foreach ($xpath->query($query) as $node) {
             /** @var \DOMElement $node */
             if ($node->getAttribute($attr) === $original) {
                 $node->setAttribute($attr, $placeholder);
             }
         }
-        // Extract body since loadHTML always creates a complete HTML document
+
         $body = $doc->getElementsByTagName('body')->item(0);
         $innerHTML = '';
         foreach ($body->childNodes as $child) {
             $innerHTML .= $doc->saveHTML($child);
         }
+
         return $innerHTML;
     }
 
@@ -538,6 +476,7 @@ class Translator implements LoggerAwareInterface
         if ($glossary) {
             $baseOptions[TranslateTextOptions::GLOSSARY] = $glossary->glossaryId;
         }
+
         $htmlOptions = array_merge($baseOptions, [
             TranslateTextOptions::TAG_HANDLING => 'html',
         ]);
@@ -555,10 +494,9 @@ class Translator implements LoggerAwareInterface
             }
         }
 
-        // Translation Cache Service
-        $cacheService = GeneralUtility::makeInstance(\ThieleUndKlose\Autotranslate\Service\TranslationCacheService::class);
+        $cacheService = GeneralUtility::makeInstance(TranslationCacheService::class);
 
-        // Translate Text Fields with Cache
+        // Translate text fields with cache
         $translatedTextFields = [];
         if (!empty($toTranslateText)) {
             $translatedTextFields = $this->translateWithCache(
@@ -571,7 +509,7 @@ class Translator implements LoggerAwareInterface
             );
         }
 
-        // Translate HTML Fields with Cache
+        // Translate HTML fields with cache
         $translatedHtmlFields = [];
         if (!empty($toTranslateHtml)) {
             $translatedHtmlFields = $this->translateWithCache(
@@ -584,7 +522,7 @@ class Translator implements LoggerAwareInterface
             );
         }
 
-        // to bring back order of fields as in $toTranslate
+        // Restore field order from $toTranslate
         $mergedResults = [];
         $textIndex = 0;
         $htmlIndex = 0;
@@ -604,11 +542,6 @@ class Translator implements LoggerAwareInterface
 
     /**
      * Returns an array indicating whether each field in $toTranslate is a richtext field.
-     *
-     * @param array $toTranslate
-     * @param string $table
-     * @param array $record
-     * @return array [ 'fieldname' => bool ]
      */
     public function mapRichtextFields(array $toTranslate, string $table, array $record): array
     {
@@ -616,32 +549,26 @@ class Translator implements LoggerAwareInterface
         foreach (array_keys($toTranslate) as $columnName) {
             $result[$columnName] = $this->isRichtextField($record, $table, $columnName);
         }
+
         return $result;
     }
 
     /**
-     * check if the field is a richtext field
-     *
-     * @param array $record
-     * @param string $table
-     * @param string $columnName
-     * @return boolean
+     * Check if the field is a richtext field
      */
-    function isRichtextField(array $record, string $table, string $columnName): bool
+    public function isRichtextField(array $record, string $table, string $columnName): bool
     {
-        // get tca configuration for the field
         $fieldConfig = $GLOBALS['TCA'][$table]['columns'][$columnName]['config'] ?? null;
         if (!$fieldConfig) {
             return false;
         }
 
-        // check for CType specific configuration
+        // Check for CType specific configuration
         $ctype = $record['CType'] ?? null;
         if ($ctype && isset($GLOBALS['TCA'][$table]['types'][$ctype]['columnsOverrides'][$columnName]['config'])) {
             $fieldConfig = $GLOBALS['TCA'][$table]['types'][$ctype]['columnsOverrides'][$columnName]['config'];
         }
 
-        // check if the field is a richtext field
         return isset($fieldConfig['enableRichtext']) && $fieldConfig['enableRichtext'] === true;
     }
 
@@ -683,7 +610,7 @@ class Translator implements LoggerAwareInterface
         if (!empty($partialCache['uncached'])) {
             LogUtility::log($this->logger, 'Translating {uncached} texts, {cached} from cache', [
                 'uncached' => count($partialCache['uncached']),
-                'cached' => count($partialCache['cached'])
+                'cached' => count($partialCache['cached']),
             ]);
 
             $freshTranslations = $translator->translateText(
@@ -693,13 +620,11 @@ class Translator implements LoggerAwareInterface
                 $options
             );
 
-            // Fill fresh results and cache them individually
             foreach ($freshTranslations as $resultIndex => $result) {
                 $originalIndex = $partialCache['mapping'][$resultIndex];
                 $finalResults[$originalIndex] = $result;
             }
 
-            // Cache individual translations
             $cacheService->cacheIndividualTranslations(
                 $partialCache['uncached'],
                 $freshTranslations,
@@ -709,15 +634,14 @@ class Translator implements LoggerAwareInterface
             );
         }
 
-        // Cache complete result (filter out null values to prevent cache corruption)
-        $validResults = array_filter($finalResults, fn($result) => $result !== null);
+        // Cache complete result (only if all results are valid)
+        $validResults = array_filter($finalResults, static fn($result) => $result !== null);
         if (count($validResults) === count($finalResults)) {
-            // Only cache if all results are valid
             $cacheService->setCachedTranslation($completeCacheKey, $finalResults);
         } else {
             LogUtility::log($this->logger, 'Not caching complete result due to null values: {valid}/{total}', [
                 'valid' => count($validResults),
-                'total' => count($finalResults)
+                'total' => count($finalResults),
             ]);
         }
 
@@ -726,40 +650,28 @@ class Translator implements LoggerAwareInterface
 
     /**
      * Replaces placeholders in the HTML with the translated attribute values.
-     *
-     * @param string $html
-     * @param array $attrTranslations [placeholder => translation]
-     * @return string
      */
     private function restoreTranslatedHtmlAttributes(string $html, array $attrTranslations): string
     {
         foreach ($attrTranslations as $placeholder => $translatedValue) {
-            // Add null check to prevent str_replace errors
             if ($translatedValue !== null) {
                 $html = str_replace($placeholder, $translatedValue, $html);
             }
         }
+
         return $html;
     }
 
     /**
      * Builds l10n_state array for translated fields
-     *
-     * @param string $table
-     * @param int $targetLanguageUid
-     * @param array $translatedFields
-     * @param int $localizedUid
-     * @return string JSON encoded l10n_state
      */
     private function buildL10nState(string $table, int $targetLanguageUid, array $translatedFields, int $localizedUid): string
     {
-        // check if table supports l10n_state
         if (!isset($GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField'])) {
             return '{}';
         }
 
         try {
-            // load existing translation if available
             $existingTranslation = Records::getRecordTranslation($table, $localizedUid, $targetLanguageUid);
 
             $l10nState = [];
@@ -767,17 +679,15 @@ class Translator implements LoggerAwareInterface
                 $l10nState = json_decode($existingTranslation['l10n_state'], true) ?: [];
             }
 
-            // set all translated fields to "custom"
             foreach ($translatedFields as $field) {
                 $l10nState[$field] = 'custom';
             }
 
             return json_encode($l10nState);
-
         } catch (\Exception $e) {
             LogUtility::log($this->logger, 'Error building l10n_state: {error}', [
                 'error' => $e->getMessage(),
-                'table' => $table
+                'table' => $table,
             ], LogUtility::MESSAGE_ERROR);
 
             return '{}';
@@ -785,30 +695,27 @@ class Translator implements LoggerAwareInterface
     }
 
     /**
-     * Generate Slugs function
-     *
-     * @param string $table
-     * @param integer $uid
-     * @return void
+     * Generate slugs for a translated record
      */
     private function generateSlugs(string $table, int $uid): void
     {
         $slugFields = SlugUtility::slugFields($table);
-        if (!empty($slugFields)) {
-            $record = Records::getRecord($table, $uid);
-            $fieldsToUpdate = [];
+        if (empty($slugFields)) {
+            return;
+        }
 
-            foreach (array_keys($slugFields) as $field) {
-                $slug = SlugUtility::generateSlug($record, $table, $field);
-                if ($slug === null) {
-                    continue;
-                }
+        $record = Records::getRecord($table, $uid);
+        $fieldsToUpdate = [];
+
+        foreach (array_keys($slugFields) as $field) {
+            $slug = SlugUtility::generateSlug($record, $table, $field);
+            if ($slug !== null) {
                 $fieldsToUpdate[$field] = $slug;
             }
+        }
 
-            if (!empty($fieldsToUpdate)) {
-                Records::updateRecord($table, $uid, $fieldsToUpdate);
-            }
+        if (!empty($fieldsToUpdate)) {
+            Records::updateRecord($table, $uid, $fieldsToUpdate);
         }
     }
 }

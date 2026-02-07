@@ -35,23 +35,14 @@ This extension automates the translation of content elements in the TYPO3 backen
 composer require thieleundklose/autotranslate
 ```
 
-### Via TYPO3 Extension Manager
-
-Search for "autotranslate" in the Extension Manager and install.
-
 ## Quick Start
 
-1. **Install the extension** via Composer or Extension Manager
-2. **Configure your DeepL API key** in your site configuration (`config/sites/*/config.yaml`):
-
-```yaml
-autotranslate:
-  deeplApiKey: 'your-api-key-here'
-  languages: '1,2,3'  # Target language UIDs
-```
-
-3. **Enable translation** on pages by setting the `autotranslate_languages` field
-4. **Use the backend module** (Web > Autotranslate) to manage batch translations
+1. **Install the extension** via Composer
+2. **Configure your DeepL API key** in your site configuration (Sites > Edit Site > Autotranslate tab)
+3. **Configure languages** per site language (set DeepL source/target language codes)
+4. **Enable translation** for tables in the site configuration (e.g. Pages, Content)
+5. **Define text fields** to translate per table in the site configuration
+6. **Use the backend module** (Web > Autotranslate) to manage batch translations
 
 ## CLI Usage
 
@@ -71,23 +62,22 @@ vendor/bin/typo3 autotranslate:batch:run 10
 - [Configuration Reference](Documentation/Configuration/Readme.md)
 - [Product Website](https://www.thieleklose.de/referenzen/typo3-autotranslate)
 
+## Upgrade from 2.x to 3.x
+
+Version 3.0.0 drops support for TYPO3 11 and 12. Key changes:
+
+- **TYPO3 13.4 LTS / 14** required
+- **PHP 8.2+** required
+- Modernized codebase using PHP 8.2+ features
+- Removed all TYPO3 11/12 compatibility code
+- Site Configuration items use modern `label`/`value` format
+- Uses `PropagateResponseException` instead of `header()` + `exit` for redirects
+- Flash messages in DataHandler hooks use TYPO3 `FlashMessageService`
+- Updated TCA configuration for TYPO3 13+ standards
+
 ## Changelog
 
-### Version 3.0.0
-
-- **Breaking**: Dropped support for TYPO3 11 and 12
-- **New**: Full TYPO3 13 and 14 compatibility
-- **New**: PHP 8.2+ required
-- **Improved**: Modernized codebase with PHP 8.2+ features
-- **Improved**: Better code structure and readability
-- **Improved**: Enhanced translation cache functionality
-- **Fixed**: Various bug fixes and performance improvements
-
-### Version 2.x
-
-- Batch translation support for non-admin users
-- Backend module improvements
-- Scheduler task support
+See [CHANGELOG.md](CHANGELOG.md) for a detailed version history.
 
 ## Contributing
 

@@ -13,7 +13,6 @@ use ThieleUndKlose\Autotranslate\Domain\Repository\LogRepository;
 use ThieleUndKlose\Autotranslate\Service\BatchTranslationService;
 use ThieleUndKlose\Autotranslate\Service\TranslationCacheService;
 use ThieleUndKlose\Autotranslate\Utility\DeeplApiHelper;
-use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
 use ThieleUndKlose\Autotranslate\Utility\LogUtility;
 use ThieleUndKlose\Autotranslate\Utility\PageUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
@@ -22,6 +21,8 @@ use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Http\PropagateResponseException;
+use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
@@ -144,16 +145,21 @@ class BatchTranslationBaseController extends ActionController
         $this->redirectToPage($this->pageUid);
     }
 
+    /**
+     * @throws PropagateResponseException
+     */
     protected function redirectToPage(int $pageUid): never
     {
         $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
-        $uri = $uriBuilder->buildUriFromRoute($this->moduleName, [
+        $uri = (string)$uriBuilder->buildUriFromRoute($this->moduleName, [
             'id' => $pageUid,
             'action' => $this->request->getControllerActionName(),
         ]);
 
-        header('Location: ' . $uri);
-        exit;
+        throw new PropagateResponseException(
+            new RedirectResponse($uri, 303),
+            1738900000
+        );
     }
 
     // =========================================================================

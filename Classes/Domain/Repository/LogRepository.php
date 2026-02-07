@@ -1,27 +1,29 @@
 <?php
+
+declare(strict_types=1);
+
 namespace ThieleUndKlose\Autotranslate\Domain\Repository;
 
 use TYPO3\CMS\Core\Database\Connection;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-class LogRepository
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
+final class LogRepository
 {
+    private const TABLE_NAME = 'tx_autotranslate_log';
+
     public function countAll(): int
     {
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable('tx_autotranslate_log');
+            ->getConnectionForTable(self::TABLE_NAME);
 
         $queryBuilder = $connection->createQueryBuilder();
         $requestIds = $queryBuilder
             ->select('request_id')
-            ->from('tx_autotranslate_log')
+            ->from(self::TABLE_NAME)
             ->groupBy('request_id')
             ->executeQuery()
             ->fetchFirstColumn();
-
-        if (empty($requestIds)) {
-            return 0;
-        }
 
         return count($requestIds);
     }
@@ -29,13 +31,12 @@ class LogRepository
     public function findAll(int $limit = 100): array
     {
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable('tx_autotranslate_log');
+            ->getConnectionForTable(self::TABLE_NAME);
 
-        // 1. the 100 latest request_id groups
         $queryBuilder = $connection->createQueryBuilder();
         $requestIds = $queryBuilder
             ->select('request_id')
-            ->from('tx_autotranslate_log')
+            ->from(self::TABLE_NAME)
             ->groupBy('request_id')
             ->orderBy('time_micro', 'DESC')
             ->setMaxResults($limit)
@@ -48,10 +49,9 @@ class LogRepository
 
         $queryBuilder = $connection->createQueryBuilder();
 
-        // 2. all items of this group
-        $rows = $queryBuilder
+        return $queryBuilder
             ->select('*')
-            ->from('tx_autotranslate_log')
+            ->from(self::TABLE_NAME)
             ->where(
                 $queryBuilder->expr()->in(
                     'request_id',
@@ -62,35 +62,28 @@ class LogRepository
             ->addOrderBy('request_id', 'DESC')
             ->executeQuery()
             ->fetchAllAssociative();
-
-        return $rows;
     }
 
-    /**
-     * Deletes all log entries from the database.
-     *
-     * @return void
-     */
     public function deleteAll(): void
     {
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable('tx_autotranslate_log');
+            ->getConnectionForTable(self::TABLE_NAME);
 
-        $queryBuilder = $connection->createQueryBuilder();
-        $queryBuilder
-            ->delete('tx_autotranslate_log')
+        $connection->createQueryBuilder()
+            ->delete(self::TABLE_NAME)
             ->executeStatement();
     }
 
     public function findByRequestId(string $requestId): array
     {
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable('tx_autotranslate_log');
+            ->getConnectionForTable(self::TABLE_NAME);
 
         $queryBuilder = $connection->createQueryBuilder();
-        $rows = $queryBuilder
+
+        return $queryBuilder
             ->select('*')
-            ->from('tx_autotranslate_log')
+            ->from(self::TABLE_NAME)
             ->where(
                 $queryBuilder->expr()->eq(
                     'request_id',
@@ -100,18 +93,16 @@ class LogRepository
             ->orderBy('time_micro', 'DESC')
             ->executeQuery()
             ->fetchAllAssociative();
-
-        return $rows;
     }
 
     public function deleteByRequestId(string $requestId): void
     {
         $connection = GeneralUtility::makeInstance(ConnectionPool::class)
-            ->getConnectionForTable('tx_autotranslate_log');
+            ->getConnectionForTable(self::TABLE_NAME);
 
         $queryBuilder = $connection->createQueryBuilder();
         $queryBuilder
-            ->delete('tx_autotranslate_log')
+            ->delete(self::TABLE_NAME)
             ->where(
                 $queryBuilder->expr()->eq(
                     'request_id',

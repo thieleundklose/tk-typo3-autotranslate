@@ -344,7 +344,7 @@ class TranslationHelper
                 }
             }
 
-            // 4. File references (TYPO3 v12+)
+            // 4. File references
             if (($config['type'] ?? '') === 'file' && $referenceTable === 'sys_file_reference') {
                 $referenceColumns[] = $columnName;
                 continue;

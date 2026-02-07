@@ -2,27 +2,16 @@
 
 declare(strict_types=1);
 
-/*
- * This file is part of the TYPO3 CMS project.
- *
- * It is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License, either version 2
- * of the License, or any later version.
- *
- * For the full copyright and license information, please read the
- * LICENSE.txt file that was distributed with this source code.
- *
- * The TYPO3 project - inspiring people to share!
- */
-
 namespace ThieleUndKlose\Autotranslate\Hooks;
 
-use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler as CoreDataHandler;
+use TYPO3\CMS\Core\Messaging\FlashMessage;
+use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\SingletonInterface;
+use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
 
@@ -31,9 +20,6 @@ use ThieleUndKlose\Autotranslate\Utility\Translator;
  */
 final class DataHandler implements SingletonInterface
 {
-    /**
-     * @var bool Hook suspended state.
-     */
     private bool $suspended = false;
 
     /**
@@ -46,7 +32,6 @@ final class DataHandler implements SingletonInterface
         array $fields,
         CoreDataHandler $parentObject
     ): void {
-        // Skip auto translation if hook is suspended
         if ($this->suspended) {
             return;
         }
@@ -61,13 +46,15 @@ final class DataHandler implements SingletonInterface
             return;
         }
 
-        // replace real record uid if is new record
+        // Replace real record uid if is new record
         if (isset($parentObject->substNEWwithIDs[$recordUid])) {
             $recordUid = $parentObject->substNEWwithIDs[$recordUid];
         }
+
         if (!isset($GLOBALS['TCA'][$table]['columns']['autotranslate_languages'])) {
             return;
         }
+
         if ($languageUid && $languageUid > 0) {
             $this->updateRecord($table, (int)$recordUid, ['autotranslate_languages' => null]);
             return;
@@ -78,7 +65,6 @@ final class DataHandler implements SingletonInterface
             $pageId = (int)$recordUid;
         }
 
-        // Skip auto translation if page id is not set
         if (empty($pageId)) {
             return;
         }
@@ -90,11 +76,16 @@ final class DataHandler implements SingletonInterface
                 $translator->translate($table, (int)$recordUid, $parentObject);
             }
         } catch (\Exception $e) {
-            FlashMessageUtility::addMessage(
+            $flashMessage = GeneralUtility::makeInstance(
+                FlashMessage::class,
                 'Error during translation: ' . $e->getMessage(),
                 'Translation Error',
-                FlashMessageUtility::MESSAGE_WARNING
+                ContextualFeedbackSeverity::WARNING,
+                true
             );
+            GeneralUtility::makeInstance(FlashMessageService::class)
+                ->getMessageQueueByIdentifier()
+                ->addMessage($flashMessage);
         }
     }
 

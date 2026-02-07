@@ -8,19 +8,22 @@ AutoTranslate
 :Package name:
    thieleundklose/autotranslate
 
+:Version:
+   |release|
+
 :Language:
-   de
+   en
 
 :Rendered:
    |today|
 
 ----
 
-Diese Dokumentation beschreibt die TYPO3-Extension "AutoTranslate".
+This documentation describes the TYPO3 extension "AutoTranslate".
 
 ----
 
-**Inhaltsverzeichnis:**
+**Table of contents:**
 
 .. toctree::
    :maxdepth: 2
@@ -32,130 +35,138 @@ Diese Dokumentation beschreibt die TYPO3-Extension "AutoTranslate".
    Usage/Index
 
 ===================
-Einführung
+Introduction
 ===================
 
-Was ist AutoTranslate?
+What is AutoTranslate?
 ---------------------
 
-AutoTranslate ist eine TYPO3-Extension, die automatische Übersetzungen von Seiten und Inhaltselementen über die DeepL API ermöglicht. Die Extension unterstützt TYPO3 v11.5 und höher.
+AutoTranslate is a TYPO3 extension that provides automatic translations of pages and content elements via the DeepL API. The extension supports TYPO3 v13.4 LTS and v14.
 
 Features
 --------
 
-* Automatische Übersetzung von Seiten und Inhaltselementen
-* Integration mit der DeepL API
-* Batch-Übersetzungsfunktion für große Mengen von Inhalten
-* Unterstützung für wiederkehrende Übersetzungen
-* Übersetzung von Dateireferenzen und deren Metadaten
-* Benutzerfreundliche Oberfläche im TYPO3 Backend
+* Automatic translation of pages and content elements
+* Integration with the DeepL API
+* Batch translation for large amounts of content
+* Support for recurring translations
+* Translation of file references and their metadata
+* User-friendly backend module
+* Translation caching to reduce API calls and costs
+* Glossary support (via deepltranslate_glossary)
+* Grid Elements support
+* Site-specific API keys
 
 ===================
 Installation
 ===================
 
-Installation über Composer
+Installation via Composer
 -------------------------
 
-Die empfohlene Installation erfolgt über Composer:
+The recommended installation method is via Composer:
 
 .. code-block:: bash
 
    composer require thieleundklose/autotranslate
 
-Installation über das TYPO3 Extension Manager
--------------------------------------------
-
-Alternativ können Sie die Extension auch über den TYPO3 Extension Manager installieren:
-
-1. Öffnen Sie das TYPO3 Backend
-2. Navigieren Sie zu "Admin Tools" > "Extension Manager"
-3. Suchen Sie nach "autotranslate"
-4. Klicken Sie auf "Import and Install"
-
 ===================
-Konfiguration
+Configuration
 ===================
 
-DeepL API-Schlüssel einrichten
+Setting up the DeepL API key
 -----------------------------
 
-1. Registrieren Sie sich für einen DeepL API-Schlüssel unter https://www.deepl.com/pro-api
-2. Öffnen Sie die TYPO3 Site-Konfiguration
-3. Fügen Sie den DeepL API-Schlüssel unter dem Schlüssel `deeplAuthKey` ein
+1. Register for a DeepL API key at https://www.deepl.com/pro-api
+2. Open the TYPO3 Site Configuration
+3. Enter the DeepL API key in the ``deeplAuthKey`` field
 
-Sprachkonfiguration
+Language configuration
 ------------------
 
-1. Öffnen Sie die TYPO3 Site-Konfiguration
-2. Konfigurieren Sie die Sprachen in der Site-Konfiguration
-3. Für jede Sprache können Sie folgende Einstellungen vornehmen:
-   * `deeplSourceLang`: Die Quellsprache für DeepL (z.B. "DE")
-   * `deeplTargetLang`: Die Zielsprache für DeepL (z.B. "EN")
+1. Open the TYPO3 Site Configuration
+2. Configure the languages in the Site Configuration
+3. For each language you can set the following:
+   * ``deeplSourceLang``: The source language for DeepL (e.g. "DE")
+   * ``deeplTargetLang``: The target language for DeepL (e.g. "EN")
 
-Übersetzbare Tabellen konfigurieren
+Configuring translatable tables
 ---------------------------------
 
-1. Öffnen Sie die TYPO3 Site-Konfiguration
-2. Für jede Tabelle können Sie folgende Einstellungen vornehmen:
-   * `autotranslate_[tabellenname]_enabled`: Aktiviert die automatische Übersetzung für die Tabelle
-   * `autotranslate_[tabellenname]_languages`: Komma-getrennte Liste der Zielsprachen
-   * `autotranslate_[tabellenname]_textfields`: Komma-getrennte Liste der zu übersetzenden Textfelder
-   * `autotranslate_[tabellenname]_fileReferences`: Komma-getrennte Liste der zu übersetzenden Dateireferenzen
+1. Open the TYPO3 Site Configuration
+2. For each table you can configure the following:
+   * ``autotranslate_[tablename]_enabled``: Enable automatic translation for the table
+   * ``autotranslate_[tablename]_languages``: Comma-separated list of target languages
+   * ``autotranslate_[tablename]_textfields``: Comma-separated list of text fields to translate
+   * ``autotranslate_[tablename]_fileReferences``: Comma-separated list of file references to translate
 
-Zusätzliche Tabellen
+Additional tables
 -------------------
 
-Sie können weitere Tabellen für die Übersetzung hinzufügen:
+You can add more tables for translation:
 
-1. Öffnen Sie die Extension-Konfiguration
-2. Fügen Sie die zusätzlichen Tabellen unter dem Schlüssel `additionalTables` hinzu (komma-getrennt)
+1. Open the Extension Configuration
+2. Add the additional tables under the ``additionalTables`` key (comma-separated)
 
 ===================
-Verwendung
+Usage
 ===================
 
-Automatische Übersetzung
+Automatic translation
 ----------------------
 
-Die Extension übersetzt automatisch neue und bearbeitete Inhalte, wenn:
+The extension automatically translates new and edited content when:
 
-1. Die Tabelle in der Site-Konfiguration aktiviert ist
-2. Die Felder für die Übersetzung konfiguriert sind
-3. Die Zielsprachen korrekt eingerichtet sind
+1. The table is enabled in the Site Configuration
+2. The fields for translation are configured
+3. The target languages are correctly set up
 
-Batch-Übersetzung
+Batch translation
 ---------------
 
-1. Öffnen Sie das Backend-Modul "AutoTranslate"
-2. Wählen Sie die zu übersetzenden Elemente aus
-3. Konfigurieren Sie die Übersetzungseinstellungen:
-   * Zielsprache
-   * Übersetzungsfrequenz (einmalig oder wiederkehrend)
-   * Übersetzungszeitpunkt
-4. Starten Sie die Übersetzung
+1. Open the backend module "AutoTranslate"
+2. Select the elements to be translated
+3. Configure the translation settings:
+   * Target language
+   * Translation frequency (once or recurring)
+   * Translation time
+4. Start the translation
 
-Übersetzungsstatus
+CLI Usage
+---------
+
+Translate queued items via command line:
+
+.. code-block:: bash
+
+   # Translate 1 item (default)
+   vendor/bin/typo3 autotranslate:batch:run
+
+   # Translate 10 items
+   vendor/bin/typo3 autotranslate:batch:run 10
+
+Translation status
 ----------------
 
-Im Backend-Modul können Sie:
+In the backend module you can:
 
-* Den Status aller Übersetzungen einsehen
-* Fehlgeschlagene Übersetzungen zurücksetzen
-* Übersetzungsprotokolle einsehen
+* View the status of all translations
+* Reset failed translations
+* View translation logs
+* Clear the translation cache
 
-Hinweise zur Übersetzungsqualität
+Notes on translation quality
 -------------------------------
 
-* Die Übersetzungsqualität hängt von der DeepL API ab
-* Überprüfen Sie die automatisch übersetzten Inhalte auf korrekte Fachbegriffe
-* Bei Bedarf können Sie die Übersetzungen manuell anpassen
+* Translation quality depends on the DeepL API
+* Review automatically translated content for correct technical terms
+* You can manually adjust translations if needed
 
 ===================
 Support
 ===================
 
-Bei Fragen oder Problemen wenden Sie sich bitte an:
+For questions or issues please contact:
 
 * E-Mail: typo3@thieleundklose.de
-* Website: https://www.thieleundklose.de 
+* Website: https://www.thieleundklose.de

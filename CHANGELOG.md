@@ -1,5 +1,30 @@
 # Changelog
 
+## [3.0.0] - 2026-02-07
+
+### Breaking Changes
+- Dropped support for TYPO3 11 and 12; now requires TYPO3 13.4 LTS or 14
+- Dropped support for PHP < 8.2; now requires PHP 8.2 - 8.4
+- Removed all TYPO3 11/12 compatibility code (version checks, old TCA formats)
+
+### Modernization
+- Replaced missing `FlashMessageUtility` with TYPO3 core `FlashMessageService` in DataHandler hook
+- Replaced `header()` + `exit` redirect pattern with `PropagateResponseException` + `RedirectResponse`
+- Updated SiteConfiguration items from old numeric array format to modern `label`/`value` associative format
+- Removed TYPO3 version check in `PageUtility` (always uses `executeQuery()`)
+- Replaced `Doctrine\DBAL\ParameterType` with `TYPO3\CMS\Core\Database\Connection` constants
+- Replaced `strpos()` / `is_null()` with `str_starts_with()` / `str_contains()` / `=== null`
+- Replaced `switch` statements with `match` expressions
+- Added proper visibility keywords to all class constants, methods, and properties
+- Added typed properties throughout the codebase
+- Added `declare(strict_types=1)` to all PHP files
+- Added `final` keyword to utility and repository classes
+- Removed debug code from `TranslationCacheService`
+- Removed empty `BackendLegacyModule.js`
+- Removed `eval` from SiteConfiguration field configs (deprecated in TYPO3 13)
+- Removed references to TYPO3 < v13 from `ext_conf_template.txt`
+- Updated documentation to reflect TYPO3 13/14 only support (English)
+
 ## [2.5.0] - 2026-01-17
 
 ### Features

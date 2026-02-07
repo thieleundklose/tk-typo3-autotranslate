@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Command;
 
 use DateTime;
-use Doctrine\DBAL\ParameterType;
+use TYPO3\CMS\Core\Database\Connection;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Console\Command\Command;
@@ -107,7 +107,7 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
                 ),
                 $queryBuilder->expr()->eq('error', $queryBuilder->createNamedParameter('')),
                 $queryBuilder->expr()->lt('translate', $queryBuilder->createNamedParameter($now->getTimestamp())),
-                $queryBuilder->expr()->eq('hidden', $queryBuilder->createNamedParameter(false))
+                $queryBuilder->expr()->eq('hidden', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT))
             )
             ->setMaxResults($limit)
             ->executeQuery();
@@ -169,7 +169,7 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
         $queryBuilder
             ->update(self::TABLE_NAME)
             ->where(
-                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($item->getUid(), ParameterType::INTEGER))
+                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($item->getUid(), Connection::PARAM_INT))
             )
             ->set('error', $item->getError())
             ->set('translate', $item->getTranslate()->getTimestamp());
