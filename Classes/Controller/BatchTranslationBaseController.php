@@ -172,6 +172,9 @@ class BatchTranslationBaseController extends ActionController
         return array_map(function (array $log): array {
             $log['time_seconds'] = (int)($log['time_micro'] ?? 0);
             $log['dataDecoded'] = $this->decodeLogData($log['data'] ?? '');
+            $log['dataDecodedJson'] = !empty($log['dataDecoded'])
+                ? json_encode($log['dataDecoded'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+                : '';
             $log['parsed_message'] = LogUtility::interpolate($log['message'] ?? '', $log['dataDecoded']);
             $log['formattedDate'] = $this->formatLogDate($log['time_micro'] ?? null);
             return $log;

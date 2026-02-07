@@ -183,11 +183,14 @@
             <td colspan="3">
                 <f:if condition="{logEntry.dataDecoded -> f:count()}">
                     <f:then>
-                        <f:debug inline="1" title="{logEntry.time_seconds -> f:format.date(format:'Y-m-d H:i:s')}: {logEntry.parsed_message}">
-                            {logEntry.dataDecoded}
-                        </f:debug>
+                        <details>
+                            <summary>{logEntry.formattedDate}: {logEntry.parsed_message}</summary>
+                            <pre class="small mb-0 mt-1 p-2">{logEntry.dataDecodedJson}</pre>
+                        </details>
                     </f:then>
-                    <f:else>&mdash;</f:else>
+                    <f:else>
+                        {logEntry.formattedDate}: {logEntry.parsed_message}
+                    </f:else>
                 </f:if>
             </td>
         </tr>
