@@ -24,13 +24,15 @@ final class Records
      */
     public static function getRecord(string $table, int $uid, ?string $column = null): mixed
     {
-        $result = self::getQueryBuilder($table)
+        $queryBuilder = self::getQueryBuilder($table);
+
+        $result = $queryBuilder
             ->select('*')
             ->from($table)
             ->where(
-                self::getQueryBuilder($table)->expr()->eq(
+                $queryBuilder->expr()->eq(
                     'uid',
-                    self::getQueryBuilder($table)->createNamedParameter($uid, Connection::PARAM_INT)
+                    $queryBuilder->createNamedParameter($uid, Connection::PARAM_INT)
                 )
             )
             ->executeQuery()

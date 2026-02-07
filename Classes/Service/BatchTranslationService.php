@@ -43,7 +43,12 @@ final class BatchTranslationService implements LoggerAwareInterface
             return false;
         }
 
-        $this->translateAllTables($item, $site);
+        try {
+            $this->translateAllTables($item, $site);
+        } catch (\Exception $e) {
+            $this->logError($item, 'Translation failed: {error}', ['error' => $e->getMessage()]);
+            return false;
+        }
         return true;
     }
 
@@ -193,7 +198,7 @@ final class BatchTranslationService implements LoggerAwareInterface
         $containers = Records::getRecords('tt_content', 'uid', $containerConstraints);
 
         foreach ($containers as $containerUid) {
-            $this->translateContainerRecursively($translator, $constraints, $containerUid, $targetLanguageUid, $mode);
+            $this->translateContainerRecursively($translator, $constraints, (int)$containerUid, $targetLanguageUid, $mode);
         }
     }
 
@@ -215,14 +220,18 @@ final class BatchTranslationService implements LoggerAwareInterface
         $children = Records::getRecords('tt_content', 'uid', $childConstraints);
 
         foreach ($children as $childUid) {
-            $record = Records::getRecord('tt_content', $childUid);
+            $record = Records::getRecord('tt_content', (int)$childUid);
+
+            if ($record === null) {
+                continue;
+            }
 
             if ($record['CType'] === 'gridelements_pi1') {
                 // Nested container - recurse
-                $this->translateContainerRecursively($translator, $constraints, $childUid, $targetLanguageUid, $mode);
+                $this->translateContainerRecursively($translator, $constraints, (int)$childUid, $targetLanguageUid, $mode);
             } else {
                 // Regular content element
-                $translator->translate('tt_content', $childUid, null, (string)$targetLanguageUid, $mode);
+                $translator->translate('tt_content', (int)$childUid, null, (string)$targetLanguageUid, $mode);
             }
         }
     }
@@ -235,14 +244,18 @@ final class BatchTranslationService implements LoggerAwareInterface
         $records = Records::getRecords('tt_content', 'uid', $constraints);
 
         foreach ($records as $uid) {
-            $record = Records::getRecord('tt_content', $uid);
+            $record = Records::getRecord('tt_content', (int)$uid);
+
+            if ($record === null) {
+                continue;
+            }
 
             // Skip Grid Elements and their children
             if ($this->isGridElement($record)) {
                 continue;
             }
 
-            $translator->translate('tt_content', $uid, null, (string)$targetLanguageUid, $mode);
+            $translator->translate('tt_content', (int)$uid, null, (string)$targetLanguageUid, $mode);
         }
     }
 
@@ -267,7 +280,7 @@ final class BatchTranslationService implements LoggerAwareInterface
         $records = Records::getRecords($table, 'uid', $constraints);
 
         foreach ($records as $uid) {
-            $translator->translate($table, $uid, null, (string)$targetLanguageUid, $mode);
+            $translator->translate($table, (int)$uid, null, (string)$targetLanguageUid, $mode);
         }
     }
 }

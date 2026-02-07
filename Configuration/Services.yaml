@@ -15,6 +15,7 @@ services:
       - name: console.command
         command: "autotranslate:batch:run"
         description: "Command for automatic translation of a number of elements."
+        schedulable: true
 
   ThieleUndKlose\Autotranslate\TsConfig\Loader:
     public: true

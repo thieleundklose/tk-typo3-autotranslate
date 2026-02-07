@@ -253,10 +253,12 @@ class BatchTranslationBaseController extends ActionController
 
         if ($this->request->hasArgument('execute')) {
             $this->handleExecute();
+            $shouldReload = true;
         }
 
         if ($this->request->hasArgument('reset')) {
             $this->handleReset();
+            $shouldReload = true;
         }
 
         if ($shouldReload) {
@@ -310,7 +312,10 @@ class BatchTranslationBaseController extends ActionController
             return [];
         }
 
-        $uids = GeneralUtility::trimExplode(',', $this->request->getArgument($argument));
+        $argumentValue = $this->request->getArgument($argument);
+        $uids = is_array($argumentValue)
+            ? $argumentValue
+            : GeneralUtility::trimExplode(',', (string)$argumentValue, true);
 
         return array_filter(
             array_map(
@@ -341,7 +346,11 @@ class BatchTranslationBaseController extends ActionController
                     $item->markAsTranslated();
                     $this->showSuccess('Successfully translated', sprintf('Item with uid %d was translated.', $item->getUid()));
                 } else {
-                    $this->showError('Error while translating', sprintf('Item with uid %d could not be translated.', $item->getUid()));
+                    $errorDetail = $item->getError() ?: 'Unknown error';
+                    $this->showError(
+                        'Error while translating',
+                        sprintf('Item with uid %d could not be translated: %s', $item->getUid(), $errorDetail)
+                    );
                 }
 
                 $this->batchItemRepository->update($item);
@@ -571,14 +580,49 @@ class BatchTranslationBaseController extends ActionController
     protected function createActionAbstract(BatchItem $batchItem, int $levels): void
     {
         $this->adjustTimezoneOffset($batchItem);
-        $this->batchItemRepository->add($batchItem);
 
-        $createdCount = 1 + $this->createSubpageItems($batchItem, $levels);
+        $createdCount = 0;
+        $skippedCount = 0;
+        $errorDetails = [];
 
-        $this->showSuccess(
-            'Queue items created',
-            sprintf('%d items created for page with uid %d.', $createdCount, $this->pageUid)
-        );
+        // Check for errored items on the root page
+        $this->collectErrorDetails($batchItem->getPid(), $batchItem->getSysLanguageUid(), $errorDetails);
+
+        if ($this->batchItemRepository->hasPendingItem($batchItem->getPid(), $batchItem->getSysLanguageUid())) {
+            $skippedCount++;
+        } else {
+            $this->batchItemRepository->add($batchItem);
+            $createdCount++;
+        }
+
+        $subResult = $this->createSubpageItems($batchItem, $levels, $errorDetails);
+        $createdCount += $subResult['created'];
+        $skippedCount += $subResult['skipped'];
+
+        if ($createdCount > 0) {
+            $this->showSuccess(
+                'Queue items created',
+                sprintf('%d item(s) created for page with uid %d.', $createdCount, $this->pageUid)
+            );
+        }
+
+        if ($skippedCount > 0) {
+            $this->showInfo(
+                'Duplicates skipped',
+                sprintf('%d item(s) skipped because pending items already exist.', $skippedCount)
+            );
+        }
+
+        if ($createdCount === 0 && $skippedCount === 0) {
+            $this->showWarning(
+                'No items created',
+                'No translatable pages found.'
+            );
+        }
+
+        if (!empty($errorDetails)) {
+            $this->showErrorSummary($errorDetails);
+        }
     }
 
     private function adjustTimezoneOffset(BatchItem $batchItem): void
@@ -594,30 +638,127 @@ class BatchTranslationBaseController extends ActionController
         }
     }
 
-    private function createSubpageItems(BatchItem $batchItem, int $levels): int
+    /**
+     * @param array<int, array{pid: int, pageTitle: string, error: string}> $errorDetails Collected by reference
+     * @return array{created: int, skipped: int}
+     */
+    private function createSubpageItems(BatchItem $batchItem, int $levels, array &$errorDetails): array
     {
         if ($levels <= 0) {
-            return 0;
+            return ['created' => 0, 'skipped' => 0];
         }
 
-        $count = 0;
+        $created = 0;
+        $skipped = 0;
         $subPages = PageUtility::getSubpageIds($this->pageUid, $levels - 1);
         $backendUser = $this->getBackendUser();
 
         foreach ($subPages as $subPageUid) {
+            $subPageUid = (int)$subPageUid;
             $pageRecord = BackendUtility::getRecordWSOL('pages', $subPageUid);
 
-            if (!$backendUser->doesUserHaveAccess($pageRecord, Permission::CONTENT_EDIT)) {
+            if (!$pageRecord || !$backendUser->doesUserHaveAccess($pageRecord, Permission::CONTENT_EDIT)) {
+                continue;
+            }
+
+            // Check for errored items on this subpage
+            $this->collectErrorDetails($subPageUid, $batchItem->getSysLanguageUid(), $errorDetails);
+
+            if ($this->batchItemRepository->hasPendingItem($subPageUid, $batchItem->getSysLanguageUid())) {
+                $skipped++;
                 continue;
             }
 
             $newItem = clone $batchItem;
             $newItem->setPid($subPageUid);
             $this->batchItemRepository->add($newItem);
-            $count++;
+            $created++;
         }
 
-        return $count;
+        return ['created' => $created, 'skipped' => $skipped];
+    }
+
+    /**
+     * Collect error details for a given page and language into the referenced array.
+     *
+     * @param array<int, array{pid: int, pageTitle: string, error: string}> $errorDetails
+     */
+    private function collectErrorDetails(int $pid, int $sysLanguageUid, array &$errorDetails): void
+    {
+        $erroredItems = $this->batchItemRepository->findErroredItems($pid, $sysLanguageUid);
+
+        if (empty($erroredItems)) {
+            return;
+        }
+
+        $pageRecord = BackendUtility::getRecordWSOL('pages', $pid);
+        $pageTitle = trim(($pageRecord['title'] ?? 'Unknown') . ' [' . $pid . ']');
+
+        foreach ($erroredItems as $item) {
+            $errorDetails[] = [
+                'pid' => $pid,
+                'pageTitle' => $pageTitle,
+                'error' => (string)($item['error'] ?? 'Unknown error'),
+            ];
+        }
+    }
+
+    /**
+     * Display a summary flash message for all pages that have errored batch items.
+     *
+     * @param array<int, array{pid: int, pageTitle: string, error: string}> $errorDetails
+     */
+    private function showErrorSummary(array $errorDetails): void
+    {
+        // Group errors by page to avoid very long messages
+        $byPage = [];
+        foreach ($errorDetails as $detail) {
+            $byPage[$detail['pid']][] = $detail;
+        }
+
+        $lines = [];
+        foreach ($byPage as $pid => $items) {
+            $pageTitle = $items[0]['pageTitle'];
+            if (count($items) === 1) {
+                $lines[] = sprintf('%s: %s', $pageTitle, $this->truncateError($items[0]['error']));
+            } else {
+                // Multiple errors on same page — show count and first error
+                $lines[] = sprintf(
+                    '%s: %d error(s), e.g. %s',
+                    $pageTitle,
+                    count($items),
+                    $this->truncateError($items[0]['error'])
+                );
+            }
+        }
+
+        $pageCount = count($byPage);
+        $totalErrors = count($errorDetails);
+        $title = sprintf(
+            'Existing errors found: %d item(s) on %d page(s)',
+            $totalErrors,
+            $pageCount
+        );
+
+        // Limit to 10 lines to keep the flash message readable
+        $displayLines = array_slice($lines, 0, 10);
+        if (count($lines) > 10) {
+            $displayLines[] = sprintf('... and %d more page(s)', count($lines) - 10);
+        }
+
+        $this->showWarning($title, implode("\n", $displayLines));
+    }
+
+    /**
+     * Truncate an error message for display in summary.
+     */
+    private function truncateError(string $error, int $maxLength = 120): string
+    {
+        if (mb_strlen($error) <= $maxLength) {
+            return $error;
+        }
+
+        return mb_substr($error, 0, $maxLength) . '...';
     }
 
     protected function addDeeplApiKeyInfoMessage(): void

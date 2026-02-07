@@ -42,7 +42,7 @@ CREATE TABLE tx_autotranslate_batch_item (
     translated int(11) unsigned DEFAULT NULL,
     mode varchar(255) DEFAULT '' NOT NULL,
     frequency varchar(255) DEFAULT '' NOT NULL,
-    error text,
+    error text DEFAULT '' NOT NULL,
 
     KEY pid (pid)
 );
@@ -52,7 +52,7 @@ CREATE TABLE tx_autotranslate_batch_item (
 #
 CREATE TABLE tx_autotranslate_log (
     request_id varchar(13) DEFAULT '' NOT NULL,
-    time_micro double(16,4) NOT NULL DEFAULT '0.0000',
+    time_micro double NOT NULL DEFAULT '0',
     component varchar(255) DEFAULT '' NOT NULL,
     level tinyint(1) unsigned DEFAULT '0' NOT NULL,
     message text,

@@ -30,7 +30,7 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    private const DEFAULT_ITEMS_PER_RUN = 1;
+    private const DEFAULT_ITEMS_PER_RUN = 50;
     private const TABLE_NAME = 'tx_autotranslate_batch_item';
 
     public function __construct(
@@ -105,10 +105,15 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
                     $queryBuilder->expr()->isNull('translated'),
                     $queryBuilder->expr()->gt('translate', 'translated')
                 ),
-                $queryBuilder->expr()->eq('error', $queryBuilder->createNamedParameter('')),
+                $queryBuilder->expr()->or(
+                    $queryBuilder->expr()->eq('error', $queryBuilder->createNamedParameter('')),
+                    $queryBuilder->expr()->isNull('error')
+                ),
                 $queryBuilder->expr()->lt('translate', $queryBuilder->createNamedParameter($now->getTimestamp())),
                 $queryBuilder->expr()->eq('hidden', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT))
             )
+            ->orderBy('priority', 'DESC')
+            ->addOrderBy('translate', 'ASC')
             ->setMaxResults($limit)
             ->executeQuery();
 

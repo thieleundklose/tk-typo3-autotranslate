@@ -11,8 +11,8 @@ use TYPO3\CMS\Backend\Template\Components\MultiRecordSelection\Action;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Localization\LanguageService;
+use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -206,12 +206,62 @@ class BatchTranslationController extends BatchTranslationBaseController
         ];
     }
 
-    public function createAction(BatchItem $batchItem): ResponseInterface
+    public function createAction(): ResponseInterface
     {
-        $levels = (int)($this->queryParams['recursive'] ?? 0);
+        $data = $this->resolveFormData('batchItem');
+
+        $batchItem = new BatchItem();
+        $batchItem->setPid((int)($data['pid'] ?? $this->pageUid));
+        $batchItem->setPriority((string)($data['priority'] ?? BatchItem::PRIORITY_MEDIUM));
+        $batchItem->setSysLanguageUid((int)($data['sysLanguageUid'] ?? 0));
+        $batchItem->setMode((string)($data['mode'] ?? ''));
+        $batchItem->setFrequency((string)($data['frequency'] ?? ''));
+
+        $translateDate = !empty($data['translate'])
+            ? new \DateTime($data['translate'])
+            : new \DateTime();
+        $batchItem->setTranslate($translateDate);
+
+        $levels = (int)($this->resolveFormValue('recursive', 0));
         $this->createActionAbstract($batchItem, $levels);
 
-        return $this->redirect($this->queryParams['redirectAction'] ?? 'default');
+        $redirectAction = (string)($this->resolveFormValue('redirectAction', 'default'));
+        return $this->redirect($redirectAction);
+    }
+
+    /**
+     * Resolve form data array from Extbase arguments, namespaced POST data, or raw query params.
+     * The <f:form> ViewHelper wraps fields under the Extbase namespace, but
+     * $this->queryParams reads from the raw PSR-7 request (top-level keys only).
+     */
+    private function resolveFormData(string $argumentName): array
+    {
+        // 1. Extbase request arguments (resolved from namespace)
+        if ($this->request->hasArgument($argumentName)) {
+            $value = $this->request->getArgument($argumentName);
+            if (is_array($value)) {
+                return $value;
+            }
+        }
+
+        // 2. Raw query params (top-level, for non-<f:form> submissions)
+        if (isset($this->queryParams[$argumentName]) && is_array($this->queryParams[$argumentName])) {
+            return $this->queryParams[$argumentName];
+        }
+
+        return [];
+    }
+
+    /**
+     * Resolve a single form value from Extbase arguments or raw query params.
+     */
+    private function resolveFormValue(string $argumentName, mixed $default = null): mixed
+    {
+        if ($this->request->hasArgument($argumentName)) {
+            return $this->request->getArgument($argumentName);
+        }
+
+        return $this->queryParams[$argumentName] ?? $default;
     }
 
     protected function initializeAction(): void

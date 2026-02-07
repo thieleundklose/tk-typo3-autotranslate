@@ -200,7 +200,15 @@ class TranslationHelper
         }
 
         $siteConfiguration = self::siteConfigurationValue($pageId);
-        $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
+        if (!is_array($siteConfiguration)) {
+            return null;
+        }
+
+        $translationSettings = self::translationSettingsDefaults($siteConfiguration, $table);
+        if ($translationSettings === null) {
+            return null;
+        }
+
         return GeneralUtility::trimExplode(',', $translationSettings['autotranslateTextfields'] ?? '', true);
     }
 
@@ -381,13 +389,20 @@ class TranslationHelper
      */
     public static function translationFileReferences(int $pageId, string $table): ?array
     {
-
         if ($pageId === 0) {
             return null;
         }
 
         $siteConfiguration = self::siteConfigurationValue($pageId);
-        $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
+        if (!is_array($siteConfiguration)) {
+            return null;
+        }
+
+        $translationSettings = self::translationSettingsDefaults($siteConfiguration, $table);
+        if ($translationSettings === null) {
+            return null;
+        }
+
         return GeneralUtility::trimExplode(',', $translationSettings['autotranslateFileReferences'] ?? '', true);
     }
 

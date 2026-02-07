@@ -32,7 +32,7 @@ final class PageUtility
 
         $rows = $result->fetchAllAssociative();
         foreach ($rows as $row) {
-            $subpageIds[] = $row['uid'];
+            $subpageIds[] = (int)$row['uid'];
         }
 
         if ($levels > 0) {
