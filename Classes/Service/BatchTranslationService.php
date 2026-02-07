@@ -127,7 +127,7 @@ final class BatchTranslationService implements LoggerAwareInterface
         BatchItem $item,
         SiteLanguage $defaultLanguage,
         int $targetLanguageUid,
-        int $mode
+        string $mode
     ): void {
         if ($table === 'pages') {
             $translator->translate($table, $item->getPid(), null, (string)$targetLanguageUid, $mode);
@@ -166,7 +166,7 @@ final class BatchTranslationService implements LoggerAwareInterface
     /**
      * Translate tt_content records (handles Grid Elements)
      */
-    private function translateContent(Translator $translator, array $constraints, int $targetLanguageUid, int $mode): void
+    private function translateContent(Translator $translator, array $constraints, int $targetLanguageUid, string $mode): void
     {
         // Translate Grid Elements first (if extension is loaded)
         $this->translateGridElements($translator, $constraints, $targetLanguageUid, $mode);
@@ -178,7 +178,7 @@ final class BatchTranslationService implements LoggerAwareInterface
     /**
      * Translate Grid Elements containers and their children
      */
-    private function translateGridElements(Translator $translator, array $constraints, int $targetLanguageUid, int $mode): void
+    private function translateGridElements(Translator $translator, array $constraints, int $targetLanguageUid, string $mode): void
     {
         if (!ExtensionManagementUtility::isLoaded('gridelements')) {
             return;
@@ -205,7 +205,7 @@ final class BatchTranslationService implements LoggerAwareInterface
         array $constraints,
         int $containerUid,
         int $targetLanguageUid,
-        int $mode
+        string $mode
     ): void {
         // Translate the container itself
         $translator->translate('tt_content', $containerUid, null, (string)$targetLanguageUid, $mode);
@@ -230,7 +230,7 @@ final class BatchTranslationService implements LoggerAwareInterface
     /**
      * Translate regular (non-Grid Element) content
      */
-    private function translateRegularContent(Translator $translator, array $constraints, int $targetLanguageUid, int $mode): void
+    private function translateRegularContent(Translator $translator, array $constraints, int $targetLanguageUid, string $mode): void
     {
         $records = Records::getRecords('tt_content', 'uid', $constraints);
 
@@ -262,7 +262,7 @@ final class BatchTranslationService implements LoggerAwareInterface
     /**
      * Translate records from a generic table
      */
-    private function translateRecords(Translator $translator, string $table, array $constraints, int $targetLanguageUid, int $mode): void
+    private function translateRecords(Translator $translator, string $table, array $constraints, int $targetLanguageUid, string $mode): void
     {
         $records = Records::getRecords($table, 'uid', $constraints);
 

@@ -212,7 +212,7 @@ class TranslationHelper
      * @return array|mixed|null
      * @throws SiteNotFoundException
      */
-    public static function siteConfigurationValue(int $pageId, ?array $keyPath = null)
+    public static function siteConfigurationValue(int $pageId, ?array $keyPath = null): mixed
     {
         if (empty($pageId)) {
             return null;

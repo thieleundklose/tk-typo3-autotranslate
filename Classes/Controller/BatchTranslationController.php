@@ -12,6 +12,7 @@ use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -163,7 +164,7 @@ class BatchTranslationController extends BatchTranslationBaseController
         );
     }
 
-    private function createDeleteAction(string $table, string $returnUrl, $lang): Action
+    private function createDeleteAction(string $table, string $returnUrl, LanguageService $lang): Action
     {
         return new Action(
             'delete',

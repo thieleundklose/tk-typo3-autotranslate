@@ -178,17 +178,13 @@ class TranslationCacheService
             }
             
             // Create TextResult-like object (since TextResult constructor is protected)
-            $result = new class($data['text'], $data['detected_source_lang']) {
-                public $text;
-                public $detectedSourceLang;
-                public $billedCharacters;
-
-                public function __construct(string $text, ?string $detectedSourceLang) {
-                    $this->text = $text;
-                    $this->detectedSourceLang = $detectedSourceLang;
-                }
+            $result = new class($data['text'], $data['detected_source_lang'], $data['billed_characters']) {
+                public function __construct(
+                    public string $text,
+                    public ?string $detectedSourceLang,
+                    public ?int $billedCharacters,
+                ) {}
             };
-            $result->billedCharacters = $data['billed_characters'];
             $results[$index] = $result;
         }
         return $results;
@@ -286,7 +282,7 @@ class TranslationCacheService
     /**
      * Calculate cache size for different backends
      */
-    private function calculateCacheSize($backend): int
+    private function calculateCacheSize(\TYPO3\CMS\Core\Cache\Backend\BackendInterface $backend): int
     {
         $cacheSize = 0;
 
@@ -310,7 +306,7 @@ class TranslationCacheService
     /**
      * Get size for FileBackend
      */
-    private function getFileBackendSize($backend): int
+    private function getFileBackendSize(\TYPO3\CMS\Core\Cache\Backend\FileBackend $backend): int
     {
         $cacheSize = 0;
 
@@ -322,7 +318,6 @@ class TranslationCacheService
                 $cacheDirectory = $backend->getCacheDirectory();
             } elseif ($reflection->hasProperty('cacheDirectory')) {
                 $property = $reflection->getProperty('cacheDirectory');
-                $property->setAccessible(true);
                 $cacheDirectory = $property->getValue($backend);
             } else {
                 // Fallback: construct expected cache directory path
@@ -343,7 +338,7 @@ class TranslationCacheService
     /**
      * Get size for SimpleFileBackend
      */
-    private function getSimpleFileBackendSize($backend): int
+    private function getSimpleFileBackendSize(\TYPO3\CMS\Core\Cache\Backend\SimpleFileBackend $backend): int
     {
         try {
             // Similar approach for SimpleFileBackend
@@ -351,7 +346,6 @@ class TranslationCacheService
 
             if ($reflection->hasProperty('cacheDirectory')) {
                 $property = $reflection->getProperty('cacheDirectory');
-                $property->setAccessible(true);
                 $cacheDirectory = $property->getValue($backend);
 
                 if (is_dir($cacheDirectory)) {

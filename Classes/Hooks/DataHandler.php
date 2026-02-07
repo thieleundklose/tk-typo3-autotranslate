@@ -22,10 +22,6 @@ final class DataHandler implements SingletonInterface
 {
     private bool $suspended = false;
 
-    public function __construct(
-        private readonly FlashMessageService $flashMessageService,
-    ) {}
-
     /**
      * Handle after database operations for automatic translation
      */
@@ -87,7 +83,8 @@ final class DataHandler implements SingletonInterface
                 ContextualFeedbackSeverity::WARNING,
                 true
             );
-            $this->flashMessageService
+            // @extensionScannerIgnoreLine
+            GeneralUtility::makeInstance(FlashMessageService::class)
                 ->getMessageQueueByIdentifier()
                 ->addMessage($flashMessage);
         }

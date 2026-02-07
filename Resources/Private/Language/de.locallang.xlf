@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" target-language="de" original="EXT:autotranslate/Resources/Private/Language/locallang.xlf" datatype="plaintext" product-name="autotranslate" date="2026-02-07T12:00:00Z">
+        <header/>
+        <body>
+            <trans-unit id="function_links_add_item" resname="function_links_add_item">
+                <source>Add new batch translation(s) for selected page</source>
+                <target>Neue Stapelübersetzung(en) für ausgewählte Seite hinzufügen</target>
+            </trans-unit>
+            <trans-unit id="confirm" resname="confirm">
+                <source>Are you sure you want to delete the batch translation item '%s'?</source>
+                <target>Möchten Sie den Stapelübersetzungs-Eintrag '%s' wirklich löschen?</target>
+            </trans-unit>
+            <trans-unit id="confirm_log" resname="confirm_log">
+                <source>Are you sure you want to delete all logs?</source>
+                <target>Möchten Sie wirklich alle Protokolleinträge löschen?</target>
+            </trans-unit>
+            <trans-unit id="confirm_log.delete.yes" resname="confirm_log.delete.yes">
+                <source>Yes</source>
+                <target>Ja</target>
+            </trans-unit>
+            <trans-unit id="function_links_add_items" resname="function_links_add_items">
+                <source>Add to translations</source>
+                <target>Zu Übersetzungen hinzufügen</target>
+            </trans-unit>
+            <trans-unit id="mlang_labels_page" resname="mlang_labels_page">
+                <source>Selected Page</source>
+                <target>Ausgewählte Seite</target>
+            </trans-unit>
+            <trans-unit id="mlang_labels_recursive" resname="mlang_labels_recursive">
+                <source>Recursive</source>
+                <target>Rekursiv</target>
+            </trans-unit>
+            <trans-unit id="site_configuration.deepl.title">
+                <source>DeepL Settings Autotranslate</source>
+                <target>DeepL-Einstellungen Autotranslate</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

@@ -4,19 +4,6 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Domain\Repository;
 
-/*
- * This file is part of the TYPO3 CMS project.
- *
- * It is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License, either version 2
- * of the License, or any later version.
- *
- * For the full copyright and license information, please read the
- * LICENSE.txt file that was distributed with this source code.
- *
- * The TYPO3 project - inspiring people to share!
- */
-
 use ThieleUndKlose\Autotranslate\Utility\PageUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Persistence\Generic\Typo3QuerySettings;
@@ -24,19 +11,13 @@ use TYPO3\CMS\Extbase\Persistence\QueryInterface;
 use TYPO3\CMS\Extbase\Persistence\QueryResultInterface;
 use TYPO3\CMS\Extbase\Persistence\Repository;
 
-final class BatchItemRepository extends Repository {
-
-    /**
-     * @var array
-     */
+final class BatchItemRepository extends Repository
+{
     protected $defaultOrderings = [
         'priority' => QueryInterface::ORDER_DESCENDING,
-        'translate' => QueryInterface::ORDER_ASCENDING
+        'translate' => QueryInterface::ORDER_ASCENDING,
     ];
 
-    /**
-     * @return void
-     */
     public function initializeObject(): void
     {
         $querySettings = GeneralUtility::makeInstance(Typo3QuerySettings::class);
@@ -46,16 +27,14 @@ final class BatchItemRepository extends Repository {
     }
 
     /**
-     * find all pages recursively for actual given site from backend module selected tree item
-     * @param int $levels
-     * @param int|null $pageId
-     * @return QueryResultInterface|array|null
+     * Find all pages recursively for the selected page tree item
      */
-    public function findAllRecursive(int $levels = 0, ?int $pageId = null)
+    public function findAllRecursive(int $levels = 0, ?int $pageId = null): ?QueryResultInterface
     {
         if (!$pageId) {
             return null;
         }
+
         $pageIds = [$pageId];
         if ($levels > 0) {
             $pageIds = array_merge(
@@ -68,11 +47,9 @@ final class BatchItemRepository extends Repository {
     }
 
     /**
-     * find all items by given page ids
-     * @param array $pids
-     * @return QueryResultInterface|array|null
+     * Find all items by given page ids
      */
-    public function findAllByPids(array $pids)
+    public function findAllByPids(array $pids): ?QueryResultInterface
     {
         if (empty($pids)) {
             return null;
@@ -85,5 +62,4 @@ final class BatchItemRepository extends Repository {
 
         return $query->execute();
     }
-
 }

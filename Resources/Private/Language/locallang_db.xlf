@@ -132,6 +132,9 @@
             <trans-unit id="autotranslate_log.clear_all_logs" xml:space="preserve">
 				<source>Clear All</source>
 			</trans-unit>
+			<trans-unit id="autotranslate_batch.function.clearCache" xml:space="preserve">
+				<source>Clear Cache</source>
+			</trans-unit>
 		</body>
 	</file>
 </xliff>
