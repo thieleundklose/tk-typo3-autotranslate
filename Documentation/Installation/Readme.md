@@ -3,7 +3,7 @@
 ## Requirements
 
 - TYPO3 13.4+ or 14.x
-- PHP 8.2 or higher
+- PHP 8.2 - 8.5
 - A DeepL API key (free or pro account)
 
 ## Getting a DeepL API Key

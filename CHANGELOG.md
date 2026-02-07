@@ -4,10 +4,21 @@
 
 ### Breaking Changes
 - Dropped support for TYPO3 11 and 12; now requires TYPO3 13.4 LTS or 14
-- Dropped support for PHP < 8.2; now requires PHP 8.2 - 8.4
+- Dropped support for PHP < 8.2; now requires PHP 8.2 - 8.5
 - Removed all TYPO3 11/12 compatibility code (version checks, old TCA formats)
 
+### Features
+- Added "Create only" translation mode — only creates missing translations, never overwrites existing ones
+- Added dedicated scheduler task (`BatchTranslationTask`) with visual progress bar via TYPO3's `ProgressProviderInterface`
+- Added scheduler task status display (items done/pending/errors, last run info) in the Scheduler module
+- Added duplicate batch item prevention — skips creation when pending items already exist for the same page/language
+- Added error reporting — displays existing errors on pages when creating new batch items, with error summaries
+- Added German backend translations (`de.locallang.xlf`, `de.locallang_db.xlf`, `de.locallang_mod.xlf`)
+- Added scheduler run statistics display in the backend module (last run time, succeeded/failed/remaining counts)
+- Added extension icon registration via `Configuration/Icons.php`
+
 ### Modernization
+- Refactored batch translation into `BatchTranslationRunner` service — shared by CLI command and scheduler task, eliminating code duplication
 - Replaced missing `FlashMessageUtility` with TYPO3 core `FlashMessageService` in DataHandler hook
 - Replaced `header()` + `exit` redirect pattern with `PropagateResponseException` + `RedirectResponse`
 - Updated SiteConfiguration items from old numeric array format to modern `label`/`value` associative format
@@ -15,15 +26,18 @@
 - Replaced `Doctrine\DBAL\ParameterType` with `TYPO3\CMS\Core\Database\Connection` constants
 - Replaced `strpos()` / `is_null()` with `str_starts_with()` / `str_contains()` / `=== null`
 - Replaced `switch` statements with `match` expressions
+- Added `final` keyword to utility, service, and repository classes
+- Added `readonly` properties and promoted constructor parameters where appropriate
 - Added proper visibility keywords to all class constants, methods, and properties
-- Added typed properties throughout the codebase
+- Added typed properties and typed closure parameters throughout the codebase
 - Added `declare(strict_types=1)` to all PHP files
-- Added `final` keyword to utility and repository classes
+- Used arrow functions and strict comparisons consistently
 - Removed debug code from `TranslationCacheService`
 - Removed empty `BackendLegacyModule.js`
 - Removed `eval` from SiteConfiguration field configs (deprecated in TYPO3 13)
 - Removed references to TYPO3 < v13 from `ext_conf_template.txt`
-- Updated documentation to reflect TYPO3 13/14 only support (English)
+- Removed unused imports across the codebase
+- Updated documentation to reflect TYPO3 13/14 only support
 
 ## [2.5.0] - 2026-01-17
 

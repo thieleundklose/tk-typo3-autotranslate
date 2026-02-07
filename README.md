@@ -13,8 +13,11 @@ This extension automates the translation of content elements in the TYPO3 backen
 - **Configurable Fields**: Define which text fields should be translated
 - **Site Configuration**: All settings including DeepL API credentials are managed via TYPO3 site configuration
 - **Backend Module**: Visual interface for managing batch translation jobs
+- **Translation Modes**: "Create & Update", "Update only", and "Create only" modes
+- **Duplicate Prevention**: Prevents creation of duplicate batch items when pending items already exist
+- **Error Reporting**: Displays existing errors on pages when creating new batch items
 - **CLI Command**: `autotranslate:batch:run` for scheduled/automated translations
-- **Scheduler Support**: Integrate with TYPO3 scheduler for periodic translations
+- **Scheduler Task**: Custom scheduler task with visual progress bar and status display
 - **Glossary Support**: Compatible with `deepltranslate_glossary` extension
 - **Grid Elements**: Support for translating nested Grid Elements containers
 - **Translation Cache**: Optional caching to reduce API calls and costs
@@ -23,7 +26,7 @@ This extension automates the translation of content elements in the TYPO3 backen
 
 | Autotranslate | TYPO3      | PHP       | DeepL PHP |
 |---------------|------------|-----------|-----------|
-| 3.x           | 13.4 - 14  | 8.2 - 8.4 | ^1.5      |
+| 3.x           | 13.4 - 14  | 8.2 - 8.5 | ^1.5      |
 | 2.x           | 11 - 13    | 7.4 - 8.4 | 1.4 - 1.x |
 | 1.x           | 10 - 13    | 7.4 - 8.3 | 1.4       |
 
@@ -49,7 +52,7 @@ composer require thieleundklose/autotranslate
 Translate queued items via command line:
 
 ```bash
-# Translate 1 item (default)
+# Translate 50 items (default)
 vendor/bin/typo3 autotranslate:batch:run
 
 # Translate 10 items
@@ -67,13 +70,18 @@ vendor/bin/typo3 autotranslate:batch:run 10
 Version 3.0.0 drops support for TYPO3 11 and 12. Key changes:
 
 - **TYPO3 13.4 LTS / 14** required
-- **PHP 8.2+** required
-- Modernized codebase using PHP 8.2+ features
+- **PHP 8.2 - 8.5** required
+- Modernized codebase using PHP 8.2+ features (`final`, `readonly`, `match`, arrow functions)
 - Removed all TYPO3 11/12 compatibility code
 - Site Configuration items use modern `label`/`value` format
 - Uses `PropagateResponseException` instead of `header()` + `exit` for redirects
 - Flash messages in DataHandler hooks use TYPO3 `FlashMessageService`
 - Updated TCA configuration for TYPO3 13+ standards
+- New "Create only" translation mode (only creates missing translations)
+- Dedicated scheduler task with visual progress bar (`ProgressProviderInterface`)
+- Duplicate batch item prevention
+- Error reporting when creating batch items
+- German backend translations
 
 ## Changelog
 

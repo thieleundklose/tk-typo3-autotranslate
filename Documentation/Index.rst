@@ -41,7 +41,7 @@ Introduction
 What is AutoTranslate?
 ---------------------
 
-AutoTranslate is a TYPO3 extension that provides automatic translations of pages and content elements via the DeepL API. The extension supports TYPO3 v13.4 LTS and v14.
+AutoTranslate is a TYPO3 extension that provides automatic translations of pages and content elements via the DeepL API. The extension supports TYPO3 v13.4 LTS and v14, with PHP 8.2 - 8.5.
 
 Features
 --------
@@ -52,10 +52,15 @@ Features
 * Support for recurring translations
 * Translation of file references and their metadata
 * User-friendly backend module
+* Translation modes: "Create & Update", "Update only", "Create only"
+* Dedicated scheduler task with visual progress bar
+* Duplicate batch item prevention
+* Error reporting for failed translation items
 * Translation caching to reduce API calls and costs
 * Glossary support (via deepltranslate_glossary)
 * Grid Elements support
 * Site-specific API keys
+* German backend translations
 
 ===================
 Installation
@@ -139,7 +144,7 @@ Translate queued items via command line:
 
 .. code-block:: bash
 
-   # Translate 1 item (default)
+   # Translate 50 items (default)
    vendor/bin/typo3 autotranslate:batch:run
 
    # Translate 10 items
