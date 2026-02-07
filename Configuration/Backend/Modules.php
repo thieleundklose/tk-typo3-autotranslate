@@ -1,5 +1,6 @@
 <?php
-// used in TYPO3 v12
+
+declare(strict_types=1);
 
 use ThieleUndKlose\Autotranslate\Controller\BatchTranslationController;
 
