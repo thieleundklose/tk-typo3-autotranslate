@@ -1,12 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 use ThieleUndKlose\Autotranslate\Utility\DeeplApiHelper;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
-$siteConfiguration = isset($_REQUEST['site']) ? GeneralUtility::makeInstance(SiteFinder::class)->getSiteByIdentifier($_REQUEST['site'])->getConfiguration(): null;
+$siteConfiguration = isset($_REQUEST['site'])
+    ? GeneralUtility::makeInstance(SiteFinder::class)->getSiteByIdentifier($_REQUEST['site'])->getConfiguration()
+    : null;
 
 $palettes = [];
 
@@ -16,7 +20,7 @@ if (!empty($siteConfiguration['deeplAuthKey'])) {
     $source = null;
     $apiKey = $siteConfiguration['deeplAuthKey'];
 } else {
-    list('key' => $apiKey, 'source' => $source) = TranslationHelper::apiKey();
+    ['key' => $apiKey, 'source' => $source] = TranslationHelper::apiKey();
 }
 
 $deeplApiKeyDetails = DeeplApiHelper::checkApiKey($apiKey);
@@ -25,30 +29,28 @@ if ($source) {
     $deeplAuthKeyDescription[] = 'Defined: ' . $source . ' (' . $maskedApiKey . ')';
 }
 if ($deeplApiKeyDetails['usage']) {
-    $usage = $deeplApiKeyDetails['usage'];
-    $usage = str_replace(PHP_EOL, ' ', $usage);
-    $usage = str_replace('Characters: ', '', $usage);
-    $deeplAuthKeyDescription[] = $usage. ' Characters';
+    $usage = (string)$deeplApiKeyDetails['usage'];
+    $usage = str_replace([PHP_EOL, 'Characters: '], [' ', ''], $usage);
+    $deeplAuthKeyDescription[] = trim($usage) . ' Characters';
 }
 if ($deeplApiKeyDetails['error']) {
     $deeplAuthKeyDescription[] = $deeplApiKeyDetails['error'];
 }
 
-// add deepl auth key
+// DeepL Auth Key
 $GLOBALS['SiteConfiguration']['site']['columns']['deeplAuthKey'] = [
     'label' => 'DeepL API key (overwrites the one from the extension settings to use a special key for this page configuration)',
     'description' => implode(PHP_EOL, $deeplAuthKeyDescription),
     'config' => [
         'type' => 'input',
         'size' => 50,
-        'eval' => 'trim'
     ],
 ];
 $palettes['deeplAuthKey'] = ['showitem' => 'deeplAuthKey'];
 
 $GLOBALS['SiteConfiguration']['site']['columns']['autotranslateUseDeeplGlossary'] = [
     'label' => 'Enable the use of the DeepL Translate glossary',
-    'description' => 'In TYPO3 >= v12 you can use DeepL Glossaries from https://extensions.typo3.org/extension/deepltranslate_glossary',
+    'description' => 'Use DeepL Glossaries from https://extensions.typo3.org/extension/deepltranslate_glossary',
     'config' => [
         'type' => 'check',
         'renderType' => 'checkboxToggle',
@@ -56,40 +58,40 @@ $GLOBALS['SiteConfiguration']['site']['columns']['autotranslateUseDeeplGlossary'
         'readOnly' => !ExtensionManagementUtility::isLoaded('deepltranslate_glossary'),
         'items' => [
             [
-                0 => '',
-                1 => ''
+                'label' => '',
             ]
-        ]
+        ],
     ],
 ];
 $palettes['deeplGlossary'] = ['showitem' => 'autotranslateUseDeeplGlossary'];
 
-// add translateable tables
+// Translatable tables configuration
 $tablesToTranslate = TranslationHelper::tablesToTranslate();
 
-$possibleTranslationLanguages = array_map(function ($v) {
-    return $v['languageId'] . ' => ' . ( isset($v['title']) ? $v['title'] : 'no title defined' );
-}, TranslationHelper::possibleTranslationLanguages($siteConfiguration['languages'] ?? []));
-$possibleTranslationLanguagesDescription = !empty($possibleTranslationLanguages) ? 'Comma seperated list of language uids. (' . implode(', ', $possibleTranslationLanguages) . ')' : 'First define Languages in Site Configuration.';
+$possibleTranslationLanguages = array_map(
+    fn($v) => $v['languageId'] . ' => ' . ($v['title'] ?? 'no title defined'),
+    TranslationHelper::possibleTranslationLanguages($siteConfiguration['languages'] ?? [])
+);
+$possibleTranslationLanguagesDescription = !empty($possibleTranslationLanguages)
+    ? 'Comma separated list of language uids. (' . implode(', ', $possibleTranslationLanguages) . ')'
+    : 'First define Languages in Site Configuration.';
 
 foreach ($tablesToTranslate as $table) {
     $tableUpperCamelCase = GeneralUtility::underscoredToUpperCamelCase($table);
-
     $additionalFields = [];
 
-    $fieldname = TranslationHelper::configurationFieldname($table,'enabled');
+    $fieldname = TranslationHelper::configurationFieldname($table, 'enabled');
     $GLOBALS['SiteConfiguration']['site']['columns'][$fieldname] = [
-        'label' => 'Enable Autotranslation for '.$tableUpperCamelCase,
+        'label' => 'Enable Autotranslation for ' . $tableUpperCamelCase,
         'config' => [
             'type' => 'check',
             'renderType' => 'checkboxToggle',
             'default' => 0,
             'items' => [
                 [
-                    0 => '',
-                    1 => ''
+                    'label' => '',
                 ]
-            ]
+            ],
         ],
     ];
     $additionalFields[] = $fieldname;
@@ -101,42 +103,39 @@ foreach ($tablesToTranslate as $table) {
         'config' => [
             'type' => 'input',
             'size' => 20,
-            'eval' => 'trim'
         ],
     ];
     $additionalFields[] = $fieldname;
 
-    // only show if there are textfields to translate
+    // Only show if there are textfields to translate
     if (!empty(TranslationHelper::unusedTranslateableColumns($table, '', TranslationHelper::COLUMNS_TRANSLATEABLE_GROUP_TEXTFIELD))) {
-        $fieldname = TranslationHelper::configurationFieldname($table,'textfields');
+        $fieldname = TranslationHelper::configurationFieldname($table, 'textfields');
         $fieldsUnusedTextField = TranslationHelper::unusedTranslateableColumns($table, $siteConfiguration[$fieldname] ?? '', TranslationHelper::COLUMNS_TRANSLATEABLE_GROUP_TEXTFIELD);
         $descriptionAppendix = !empty($fieldsUnusedTextField) ? PHP_EOL . ' Unused: ' . implode(', ', $fieldsUnusedTextField) : '';
         $GLOBALS['SiteConfiguration']['site']['columns'][$fieldname] = [
             'label' => 'Text fields',
-            'description' => 'Comma seperated list of columns.' . $descriptionAppendix,
+            'description' => 'Comma separated list of columns.' . $descriptionAppendix,
             'config' => [
                 'type' => 'text',
                 'cols' => 80,
                 'rows' => 5,
-                'eval' => 'trim'
             ],
         ];
         $additionalFields[] = $fieldname;
     }
 
-    // only show if there are file references to translate
+    // Only show if there are file references to translate
     if (!empty(TranslationHelper::unusedTranslateableColumns($table, '', TranslationHelper::COLUMNS_TRANSLATEABLE_GROUP_FILEREFERENCE))) {
-        $fieldname = TranslationHelper::configurationFieldname($table,'fileReferences');
+        $fieldname = TranslationHelper::configurationFieldname($table, 'fileReferences');
         $fieldsUnusedFileReference = TranslationHelper::unusedTranslateableColumns($table, $siteConfiguration[$fieldname] ?? '', TranslationHelper::COLUMNS_TRANSLATEABLE_GROUP_FILEREFERENCE);
         $descriptionAppendix = !empty($fieldsUnusedFileReference) ? PHP_EOL . ' Unused: ' . implode(', ', $fieldsUnusedFileReference) : '';
         $GLOBALS['SiteConfiguration']['site']['columns'][$fieldname] = [
             'label' => 'File references',
-            'description' => 'Comma seperated list of columns.' . $descriptionAppendix,
+            'description' => 'Comma separated list of columns.' . $descriptionAppendix,
             'config' => [
                 'type' => 'text',
                 'cols' => 80,
                 'rows' => 5,
-                'eval' => 'trim'
             ],
         ];
         $additionalFields[] = $fieldname;
@@ -150,17 +149,16 @@ foreach ($tablesToTranslate as $table) {
 $referenceTablesToTranslate = TranslationHelper::additionalReferenceTables();
 foreach ($referenceTablesToTranslate as $table) {
     $tableUpperCamelCase = GeneralUtility::underscoredToUpperCamelCase($table);
-    $fieldname = TranslationHelper::configurationFieldname($table,'textfields');
+    $fieldname = TranslationHelper::configurationFieldname($table, 'textfields');
     $fieldsUnusedTextField = TranslationHelper::unusedTranslateableColumns($table, $siteConfiguration[$fieldname] ?? '', TranslationHelper::COLUMNS_TRANSLATEABLE_GROUP_TEXTFIELD);
     $descriptionAppendix = !empty($fieldsUnusedTextField) ? PHP_EOL . ' Unused: ' . implode(', ', $fieldsUnusedTextField) : '';
     $GLOBALS['SiteConfiguration']['site']['columns'][$fieldname] = [
-        'label' => 'Autotranslation textfields for '.$tableUpperCamelCase,
-        'description' => 'Comma seperated list of columns.' . $descriptionAppendix,
+        'label' => 'Autotranslation textfields for ' . $tableUpperCamelCase,
+        'description' => 'Comma separated list of columns.' . $descriptionAppendix,
         'config' => [
             'type' => 'text',
             'cols' => 80,
             'rows' => 5,
-            'eval' => 'trim'
         ],
     ];
     $palettes['autotranslate' . $tableUpperCamelCase] = ['showitem' => $fieldname];
@@ -170,17 +168,15 @@ $GLOBALS['SiteConfiguration']['site']['palettes'] = array_merge($GLOBALS['SiteCo
 $showItem = ',--palette--;;' . implode(',--palette--;;', array_keys($palettes));
 $GLOBALS['SiteConfiguration']['site']['types']['0']['showitem'] .= ', --div--;Autotranslate' . $showItem;
 
-// settings for deepl translation source
+// DeepL source language selection
 $deeplSourceLangItems = [];
-
 if (!$deeplApiKeyDetails['isValid']) {
-    $deeplSourceLangItems[] = ['Please define valid DeepL api key first', ''];
+    $deeplSourceLangItems[] = ['label' => 'Please define valid DeepL api key first', 'value' => ''];
 } else {
-    $deeplSourceLangItems[] = ['Please Choose'];
-    $deeplSourceLangItems = array_merge(
-        $deeplSourceLangItems,
-        DeepLApiHelper::getCachedLanguages($apiKey, 'source')
-    );
+    $deeplSourceLangItems[] = ['label' => 'Please Choose', 'value' => ''];
+    foreach (DeeplApiHelper::getCachedLanguages($apiKey, 'source') as $langItem) {
+        $deeplSourceLangItems[] = ['label' => $langItem[0], 'value' => $langItem[1]];
+    }
 }
 
 $GLOBALS['SiteConfiguration']['site_language']['columns']['deeplSourceLang'] = [
@@ -194,20 +190,19 @@ $GLOBALS['SiteConfiguration']['site_language']['columns']['deeplSourceLang'] = [
         'minitems' => 0,
         'maxitems' => 1,
         'size' => 1,
-        'readOnly' => !$deeplApiKeyDetails['isValid'] || count($deeplSourceLangItems) === 1,
+        'readOnly' => !$deeplApiKeyDetails['isValid'] || count($deeplSourceLangItems) <= 1,
     ],
 ];
 
-// settings for deepl translation target
+// DeepL target language selection
 $deeplTargetLangItems = [];
 if (!$deeplApiKeyDetails['isValid']) {
-    $deeplTargetLangItems[] = ['Please define valid DeepL api key first', ''];
+    $deeplTargetLangItems[] = ['label' => 'Please define valid DeepL api key first', 'value' => ''];
 } else {
-    $deeplTargetLangItems[] = ['Please Choose'];
-    $deeplTargetLangItems = array_merge(
-        $deeplTargetLangItems,
-        DeepLApiHelper::getCachedLanguages($apiKey, 'target')
-    );
+    $deeplTargetLangItems[] = ['label' => 'Please Choose', 'value' => ''];
+    foreach (DeeplApiHelper::getCachedLanguages($apiKey, 'target') as $langItem) {
+        $deeplTargetLangItems[] = ['label' => $langItem[0], 'value' => $langItem[1]];
+    }
 }
 
 $GLOBALS['SiteConfiguration']['site_language']['columns']['deeplTargetLang'] = [
@@ -221,7 +216,7 @@ $GLOBALS['SiteConfiguration']['site_language']['columns']['deeplTargetLang'] = [
         'minitems' => 0,
         'maxitems' => 1,
         'size' => 1,
-        'readOnly' => !$deeplApiKeyDetails['isValid'] || count($deeplTargetLangItems) === 1,
+        'readOnly' => !$deeplApiKeyDetails['isValid'] || count($deeplTargetLangItems) <= 1,
     ],
 ];
 

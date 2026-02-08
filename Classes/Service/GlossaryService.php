@@ -16,16 +16,7 @@ final class GlossaryService
 {
 
     /**
-     * @param string $sourceLanguage
-     * @param string $targetLanguage
-     * @param integer $pageId
-     * @param Translator $translator
-     *
-     * @return ?Glossary
-     *
-     * @throws Exception
-     * @throws SiteNotFoundException
-     * @throws \Doctrine\DBAL\Exception
+     * Get matching glossary for the given source/target language pair.
      */
     public function getGlossary(
         string $sourceLanguage,
@@ -33,7 +24,7 @@ final class GlossaryService
         int $pageId,
         Translator $translator
     ): ?Glossary {
-        // get existend glossary ids
+        // Get existing glossary IDs from DeepL
         $glossaries = $translator->listGlossaries();
         $glossaryIds = array_map(fn($glossary) => $glossary->glossaryId, $glossaries);
 

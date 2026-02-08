@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" target-language="de" original="EXT:autotranslate/Resources/Private/Language/locallang_db.xlf" datatype="plaintext" product-name="autotranslate" date="2026-02-07T12:00:00Z">
+        <header/>
+        <body>
+            <trans-unit id="tabs.autotranslate">
+                <source>Autotranslate</source>
+                <target>Autotranslate</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_exclude">
+                <source>Exclude from autotranslation</source>
+                <target>Von automatischer Übersetzung ausschließen</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_languages">
+                <source>Translate automatically to selected languages</source>
+                <target>Automatisch in ausgewählte Sprachen übersetzen</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_last">
+                <source>Last execution of autotranslation</source>
+                <target>Letzte Ausführung der automatischen Übersetzung</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch">
+                <source>Batch Translation</source>
+                <target>Stapelübersetzung</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.uid">
+                <source>UID</source>
+                <target>UID</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.page">
+                <source>Page to Translate - uid</source>
+                <target>Zu übersetzende Seite – UID</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.priority">
+                <source>Priority</source>
+                <target>Priorität</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.priority.01_low">
+                <source>Low</source>
+                <target>Niedrig</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.priority.02_medium">
+                <source>Medium</source>
+                <target>Mittel</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.priority.03_high">
+                <source>High</source>
+                <target>Hoch</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.disabled">
+                <source>Disable item execution</source>
+                <target>Ausführung des Eintrags deaktivieren</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.sys_language_uid">
+                <source>Target language</source>
+                <target>Zielsprache</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.state">
+                <source>State</source>
+                <target>Status</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.translate">
+                <source>Execution date</source>
+                <target>Ausführungsdatum</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.translated">
+                <source>Translated (last)</source>
+                <target>Übersetzt (zuletzt)</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.mode">
+                <source>Translation Mode</source>
+                <target>Übersetzungsmodus</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.mode.create_update">
+                <source>Create and update translations</source>
+                <target>Übersetzungen erstellen und aktualisieren</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.mode.update_only">
+                <source>Update translation only</source>
+                <target>Nur bestehende Übersetzungen aktualisieren</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.mode.create_only">
+                <source>Create new (missing) translation only</source>
+                <target>Nur neue (fehlende) Übersetzungen erstellen</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.frequency">
+                <source>Frequency</source>
+                <target>Häufigkeit</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.frequency.once">
+                <source>Once</source>
+                <target>Einmalig</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.frequency.weekly">
+                <source>Weekly</source>
+                <target>Wöchentlich</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.frequency.recurring">
+                <source>Recurring</source>
+                <target>Wiederkehrend</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.frequency.daily">
+                <source>Daily</source>
+                <target>Täglich</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.error">
+                <source>Error</source>
+                <target>Fehler</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.noselect">
+                <source>Nothing selected</source>
+                <target>Nichts ausgewählt</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.status.error">
+                <source>error</source>
+                <target>Fehler</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.status.done">
+                <source>done</source>
+                <target>Erledigt</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.status.pending">
+                <source>pending</source>
+                <target>Ausstehend</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.status.recurring">
+                <source>recurring</source>
+                <target>Wiederkehrend</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.function.add">
+                <source>New batch translation</source>
+                <target>Neue Stapelübersetzung</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.function.delete">
+                <source>Delete</source>
+                <target>Löschen</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.function.delete.title">
+                <source>Delete selected</source>
+                <target>Ausgewählte löschen</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.function.delete.content">
+                <source>Are you sure you want to delete all selected records?</source>
+                <target>Möchten Sie wirklich alle ausgewählten Einträge löschen?</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.function.disable">
+                <source>Disable</source>
+                <target>Deaktivieren</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.function.translate">
+                <source>Translate</source>
+                <target>Übersetzen</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.function.reset">
+                <source>Reset</source>
+                <target>Zurücksetzen</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.function.reset.title">
+                <source>Reset selected</source>
+                <target>Ausgewählte zurücksetzen</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.function.reset.content">
+                <source>Are you sure you want to reset all selected records?</source>
+                <target>Möchten Sie wirklich alle ausgewählten Einträge zurücksetzen?</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_log.request_id">
+                <source>Request ID</source>
+                <target>Anfrage-ID</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_log.data">
+                <source>Log(s)</source>
+                <target>Protokoll(e)</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_log.clear_all_logs">
+                <source>Clear All</source>
+                <target>Alle löschen</target>
+            </trans-unit>
+            <trans-unit id="autotranslate_batch.function.clearCache">
+                <source>Clear Cache</source>
+                <target>Cache leeren</target>
+            </trans-unit>
+            <trans-unit id="scheduler.lastRun">
+                <source>Last scheduler run</source>
+                <target>Letzter Scheduler-Lauf</target>
+            </trans-unit>
+            <trans-unit id="scheduler.minutesAgo">
+                <source>min ago</source>
+                <target>Min. her</target>
+            </trans-unit>
+            <trans-unit id="scheduler.succeeded">
+                <source>succeeded</source>
+                <target>erfolgreich</target>
+            </trans-unit>
+            <trans-unit id="scheduler.failed">
+                <source>failed</source>
+                <target>fehlgeschlagen</target>
+            </trans-unit>
+            <trans-unit id="scheduler.remaining">
+                <source>remaining</source>
+                <target>ausstehend</target>
+            </trans-unit>
+            <trans-unit id="scheduler.nothingPending">
+                <source>Nothing was pending</source>
+                <target>Nichts ausstehend</target>
+            </trans-unit>
+            <trans-unit id="scheduler.neverRun">
+                <source>Scheduler has not run yet. Set up the "autotranslate:batch:run" command in the Scheduler module.</source>
+                <target>Scheduler wurde noch nicht ausgeführt. Richten Sie den Befehl "autotranslate:batch:run" im Scheduler-Modul ein.</target>
+            </trans-unit>
+            <trans-unit id="scheduler.task.title">
+                <source>Autotranslate: Batch Translation</source>
+                <target>Autotranslate: Stapelübersetzung</target>
+            </trans-unit>
+            <trans-unit id="scheduler.task.description">
+                <source>Processes queued translation tasks via DeepL API. Shows progress and statistics in the task list.</source>
+                <target>Verarbeitet Übersetzungsaufträge über die DeepL-API. Zeigt Fortschritt und Statistiken in der Aufgabenliste.</target>
+            </trans-unit>
+            <trans-unit id="scheduler.field.itemsPerRun">
+                <source>Items per run</source>
+                <target>Einträge pro Durchlauf</target>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

@@ -7,22 +7,34 @@ services:
   ThieleUndKlose\Autotranslate\:
     resource: '../Classes/*'
 
+  ThieleUndKlose\Autotranslate\Controller\BatchTranslationController:
+    public: true
+
   ThieleUndKlose\Autotranslate\Command\BatchTranslation:
     tags:
       - name: console.command
         command: "autotranslate:batch:run"
         description: "Command for automatic translation of a number of elements."
+        schedulable: false
+
+  ThieleUndKlose\Autotranslate\Command\SetAutotranslateLanguages:
+    tags:
+      - name: console.command
+        command: "autotranslate:set-languages"
+        description: "Set autotranslate_languages field for existing records."
+        schedulable: false
 
   ThieleUndKlose\Autotranslate\TsConfig\Loader:
     public: true
     tags:
-      # Remove when TYPO3 v10/v11 compat is dropped
-      - name: event.listener
-        identifier: 'add-page-configuration-v11'
-        event: TYPO3\CMS\Core\Configuration\Event\ModifyLoadedPageTsConfigEvent
-        method: 'addPageConfigurationCore11'
-      # TYPO3 v12 and above
       - name: event.listener
         identifier: 'add-page-configuration'
         event: TYPO3\CMS\Core\TypoScript\IncludeTree\Event\ModifyLoadedPageTsConfigEvent
         method: 'addPageConfiguration'
+
+  ThieleUndKlose\Autotranslate\Service\BatchTranslationRunner:
+    public: true
+
+  ThieleUndKlose\Autotranslate\Hooks\DataHandler:
+    public: true
+

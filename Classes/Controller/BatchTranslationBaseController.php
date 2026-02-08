@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Controller;
 
+use DateTime;
+use DateTimeZone;
 use Exception;
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
 use ThieleUndKlose\Autotranslate\Domain\Repository\BatchItemRepository;
 use ThieleUndKlose\Autotranslate\Domain\Repository\LogRepository;
+use ThieleUndKlose\Autotranslate\Service\BatchTranslationRunner;
 use ThieleUndKlose\Autotranslate\Service\BatchTranslationService;
 use ThieleUndKlose\Autotranslate\Service\TranslationCacheService;
-use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
+use ThieleUndKlose\Autotranslate\Utility\DeeplApiHelper;
 use ThieleUndKlose\Autotranslate\Utility\LogUtility;
 use ThieleUndKlose\Autotranslate\Utility\PageUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
@@ -19,312 +22,474 @@ use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Http\PropagateResponseException;
+use TYPO3\CMS\Core\Http\RedirectResponse;
 use TYPO3\CMS\Core\Localization\LanguageService;
-use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
-use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
+use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
 
 /**
- * Class BatchTranslationBaseController for backend modules
+ * Base controller for batch translation backend module
  */
 class BatchTranslationBaseController extends ActionController
 {
+    protected const MODULE_NAME = 'web_autotranslate';
+    protected const MENU_LEVEL_ITEMS = [0, 1, 2, 3, 4, 250];
 
-    /**
-     * @var TranslationCacheService
-     */
-    protected $translationCacheService;
+    protected ?TranslationCacheService $translationCacheService = null;
+    protected ?PersistenceManager $persistenceManager = null;
+    protected ?BatchTranslationService $batchTranslationService = null;
+    protected ?BatchItemRepository $batchItemRepository = null;
+    protected ?LogRepository $logRepository = null;
 
-
-    /**
-     * @param TranslationCacheService $translationCacheService
-     * @return void
-     */
-    public function injectTranslationCacheService(TranslationCacheService $translationCacheService): void
-    {
-        $this->translationCacheService = $translationCacheService;
-    }
-
-    /**
-     * @var PersistenceManager
-     */
-    protected $persistenceManager;
-
-    /**
-     * Inject the persistence manager
-     *
-     * @param PersistenceManager $persistenceManager
-     */
-    public function injectPersistenceManager(PersistenceManager $persistenceManager)
-    {
-        $this->persistenceManager = $persistenceManager;
-    }
-
-    /**
-     * @var BatchTranslationService
-     */
-    protected $batchTranslationService;
-
-    /**
-     * @param BatchTranslationService $batchTranslationService
-     * @return void
-     */
-    public function injectBatchTranslationService(BatchTranslationService $batchTranslationService): void
-    {
-        $this->batchTranslationService = $batchTranslationService;
-    }
-
-    /**
-     * @var BatchItemRepository
-     */
-    protected $batchItemRepository;
-
-    /**
-     * @param BatchItemRepository $batchItemRepository
-     * @return void
-     */
-    public function injectBatchItemRepository(BatchItemRepository $batchItemRepository): void
-    {
-        $this->batchItemRepository = $batchItemRepository;
-    }
-
-    /**
-     * @var LogRepository
-     */
-    protected $logRepository;
-
-    /**
-     * @param LogRepository $logRepository
-     * @return void
-     */
-    public function injectLogRepository(LogRepository $logRepository): void
-    {
-        $this->logRepository = $logRepository;
-    }
-
-    /**
-     * @var Typo3Version
-     */
-    protected $typo3Version;
-
-    /**
-     * @var Array
-     */
-    protected $queryParams;
-
-    /**
-     * @var integer
-     */
+    protected array $queryParams = [];
     protected int $pageUid = 0;
-
-    /**
-     * @var integer
-     */
     protected int $levels = 0;
-
-    /**
-     * default module name of backend module overwritten by legacy typo3 version module names
-     */
-    protected $moduleName = 'web_autotranslate';
-
-    /**
-     * levels for recursive menu
-     * @var array
-     */
-    protected array $menuLevelItems = [0, 1, 2, 3, 4, 250];
-
-    /**
-     * @var array
-     */
+    protected string $moduleName = self::MODULE_NAME;
     protected array $deeplApiKeyDetails = [];
 
+    // =========================================================================
+    // Dependency Injection
+    // =========================================================================
 
-    /**
-     * get log data
-     * @return array
-     */
+    public function injectTranslationCacheService(TranslationCacheService $service): void
+    {
+        $this->translationCacheService = $service;
+    }
+
+    public function injectPersistenceManager(PersistenceManager $manager): void
+    {
+        $this->persistenceManager = $manager;
+    }
+
+    public function injectBatchTranslationService(BatchTranslationService $service): void
+    {
+        $this->batchTranslationService = $service;
+    }
+
+    public function injectBatchItemRepository(BatchItemRepository $repository): void
+    {
+        $this->batchItemRepository = $repository;
+    }
+
+    public function injectLogRepository(LogRepository $repository): void
+    {
+        $this->logRepository = $repository;
+    }
+
+    // =========================================================================
+    // Initialization
+    // =========================================================================
+
     public function getLogData(): array
     {
-        $this->handleLogActionArguments();
+        $this->handleLogActions();
 
-        $rowPage = BackendUtility::getRecordWSOL('pages', $this->pageUid);
+        $pageRecord = BackendUtility::getRecordWSOL('pages', $this->pageUid);
+        $logs = $this->processLogs($this->logRepository->findAll());
 
-        $data = [
+        return [
             'pageUid' => $this->pageUid,
             'levels' => $this->levels,
-            'pageTitle' => $rowPage['title'] ?? '',
+            'pageTitle' => $pageRecord['title'] ?? '',
+            'moduleName' => $this->moduleName,
+            'logItemsCount' => $this->logRepository->countAll(),
+            'logsGroupedByRequestId' => $this->groupLogsByRequestId($logs),
         ];
+    }
 
-        if ($this->moduleName !== null) {
-            $data['moduleName'] = $this->moduleName;
+    protected function handleLogActions(): void
+    {
+        $shouldReload = false;
+
+        if ($this->request->hasArgument('delete')) {
+            $requestIds = GeneralUtility::trimExplode(',', $this->request->getArgument('delete'));
+            foreach ($requestIds as $requestId) {
+                $this->logRepository->deleteByRequestId($requestId);
+            }
+            $this->showSuccess('Successfully deleted', sprintf('%d log entries were deleted.', count($requestIds)));
+            $shouldReload = true;
         }
 
-        $logs = $this->logRepository->findAll();
-        foreach ($logs as &$log) {
-            if (isset($log['time_micro'])) {
-                $log['time_seconds'] = (int)$log['time_micro'];
-            }
-
-            // Decode log data depending on TYPO3 version
-            if (!empty($log['data'])) {
-                if ($this->typo3Version->getMajorVersion() >= 13) {
-                    // TYPO3 v13: JSON format
-                    $decoded = json_decode($log['data'], true);
-                    $log['dataDecoded'] = is_array($decoded) ? $decoded : [];
-                } else {
-
-                    // TYPO3 v11/v12: Log data is typically in var_export format with a "- " prefix.
-                    // The prefix is removed before attempting to decode the data as JSON.
-                    if (strpos($log['data'], '- ') === 0) {
-                        $log['data'] = substr($log['data'], 2); // Remove "- "
-                    }
-
-                    // Attempt to decode the log data as JSON after removing the prefix.
-                    $decoded = json_decode($log['data'], true);
-                    $log['dataDecoded'] = is_array($decoded) ? $decoded : [];
-                }
-            } else {
-                $log['dataDecoded'] = [];
-            }
-
-            // Interpolate message placeholders
-            $log['parsed_message'] = LogUtility::interpolate($log['message'], $log['dataDecoded']);
-
-            if (isset($log['time_micro'])) {
-                $dt = \DateTime::createFromFormat('U.u', sprintf('%.6f', $log['time_micro']));
-                $log['formattedDate'] = $dt ? $dt->format('Y-m-d H:i:s.u') : '';
-            }
+        if ($this->request->hasArgument('deleteAll')) {
+            $this->logRepository->deleteAll();
+            $this->showSuccess('Successfully deleted', 'All log entries were deleted.');
+            $shouldReload = true;
         }
-        unset($log);
 
-        $data['logItemsCount'] = $this->logRepository->countAll();
-
-        $logsGroupedByRequestId = [];
-        foreach ($logs as $log) {
-            $logsGroupedByRequestId[$log['request_id']][] = $log;
+        if ($shouldReload) {
+            $this->persistAndReload();
         }
-        $data['logsGroupedByRequestId'] = $logsGroupedByRequestId;
+    }
 
-        return $data;
+    private function showSuccess(string $title, string $message): void
+    {
+        $this->addFlashMessage($title, $message, ContextualFeedbackSeverity::OK);
+    }
+
+    // =========================================================================
+    // Data Retrieval
+    // =========================================================================
+
+    private function persistAndReload(): void
+    {
+        $this->persistenceManager->persistAll();
+        $this->reloadPage();
+    }
+
+    protected function reloadPage(): void
+    {
+        $this->redirectToPage($this->pageUid);
     }
 
     /**
-     * get batch translation data
-     * @return array
+     * @throws PropagateResponseException
      */
+    protected function redirectToPage(int $pageUid): never
+    {
+        $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
+        $uri = (string)$uriBuilder->buildUriFromRoute($this->moduleName, [
+            'id' => $pageUid,
+            'action' => $this->request->getControllerActionName(),
+        ]);
+
+        throw new PropagateResponseException(
+            new RedirectResponse($uri, 303),
+            1738900000
+        );
+    }
+
+    // =========================================================================
+    // Action Handlers
+    // =========================================================================
+
+    private function processLogs(array $logs): array
+    {
+        return array_map(function (array $log): array {
+            $log['time_seconds'] = (int)($log['time_micro'] ?? 0);
+            $log['dataDecoded'] = $this->decodeLogData($log['data'] ?? '');
+            $log['dataDecodedJson'] = !empty($log['dataDecoded'])
+                ? json_encode($log['dataDecoded'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+                : '';
+            $log['parsed_message'] = LogUtility::interpolate($log['message'] ?? '', $log['dataDecoded']);
+            $log['formattedDate'] = $this->formatLogDate($log['time_micro'] ?? null);
+            return $log;
+        }, $logs);
+    }
+
+    private function decodeLogData(string $data): array
+    {
+        if (empty($data)) {
+            return [];
+        }
+
+        $decoded = json_decode($data, true);
+        return is_array($decoded) ? $decoded : [];
+    }
+
+    private function formatLogDate(?float $timeMicro): string
+    {
+        if (!$timeMicro) {
+            return '';
+        }
+
+        $dateTime = DateTime::createFromFormat('U.u', sprintf('%.6f', $timeMicro));
+        return $dateTime ? $dateTime->format('Y-m-d H:i:s.u') : '';
+    }
+
+    private function groupLogsByRequestId(array $logs): array
+    {
+        $grouped = [];
+
+        foreach ($logs as $log) {
+            $requestId = $log['request_id'] ?? 'unknown';
+            $grouped[$requestId][] = $log;
+        }
+
+        return $grouped;
+    }
+
     public function getBatchTranslationData(): array
     {
-        $this->handleActionArguments();
+        $this->handleBatchActions();
 
         if ($this->pageUid === 0) {
             return [];
         }
 
-        $data = [];
-
-        if ($this->moduleName !== null) {
-            $data['moduleName'] = $this->moduleName;
+        $site = $this->getSiteConfiguration();
+        if (!$site) {
+            return ['moduleName' => $this->moduleName];
         }
 
-        if ($this->typo3Version->getMajorVersion() < 12) {
-            $pageId = (int)GeneralUtility::_GP('id');
+        $languages = $this->getAccessibleLanguages($site);
+        $batchItems = $this->getAccessibleBatchItems($languages);
+        $pageRecord = BackendUtility::getRecordWSOL('pages', $this->pageUid);
+
+        return [
+            'moduleName' => $this->moduleName,
+            'rootPageId' => $site->getRootPageId(),
+            'batchItems' => $this->batchItemRepository->findAll(),
+            'batchItemsRecursive' => $batchItems,
+            'pageUid' => $this->pageUid,
+            'levels' => $this->levels,
+            'queryParams' => $this->queryParams,
+            'pageTitle' => $pageRecord['title'] ?? '',
+            'createForm' => $this->buildCreateFormData($languages, $pageRecord),
+        ];
+    }
+
+    protected function handleBatchActions(): void
+    {
+        $shouldReload = false;
+
+        if ($this->request->hasArgument('clearCache')) {
+            $shouldReload = $this->handleClearCache();
+        }
+
+        if ($this->request->hasArgument('delete')) {
+            $shouldReload = $this->handleDelete() || $shouldReload;
+        }
+
+        if ($this->request->hasArgument('execute')) {
+            $this->handleExecute();
+            $shouldReload = true;
+        }
+
+        if ($this->request->hasArgument('reset')) {
+            $this->handleReset();
+            $shouldReload = true;
+        }
+
+        if ($shouldReload) {
+            $this->persistAndReload();
+        }
+
+        $this->showCacheInfo();
+    }
+
+    // =========================================================================
+    // Batch Item Creation
+    // =========================================================================
+
+    private function handleClearCache(): bool
+    {
+        $cleared = $this->translationCacheService->clearCache();
+
+        if ($cleared) {
+            $this->showSuccess('Cache cleared successfully', 'Translation cache has been emptied.');
         } else {
-            $pageId = $this->request->hasArgument('id') ? (int)$this->request->getArgument('id') : 0;
+            $this->showError('Failed to clear cache', 'Translation cache could not be cleared.');
         }
 
-        $batchItems = $this->batchItemRepository->findAll();
-        $batchItemsRecursive = $this->batchItemRepository->findAllRecursive(
-            $this->levels,
-            $pageId
+        return true;
+    }
+
+    private function showError(string $title, string $message): void
+    {
+        $this->addFlashMessage($title, $message, ContextualFeedbackSeverity::ERROR);
+    }
+
+    private function handleDelete(): bool
+    {
+        $items = $this->getBatchItemsFromArgument('delete');
+
+        foreach ($items as $item) {
+            $this->batchItemRepository->remove($item);
+            $this->showSuccess('Successfully deleted', sprintf('Item with uid %d was deleted.', $item->getUid()));
+        }
+
+        return count($items) > 0;
+    }
+
+    // =========================================================================
+    // Flash Messages
+    // =========================================================================
+
+    private function getBatchItemsFromArgument(string $argument): array
+    {
+        if (!$this->request->hasArgument($argument)) {
+            return [];
+        }
+
+        $argumentValue = $this->request->getArgument($argument);
+        $uids = is_array($argumentValue)
+            ? $argumentValue
+            : GeneralUtility::trimExplode(',', (string)$argumentValue, true);
+
+        return array_filter(
+            array_map(
+                fn($uid) => $this->batchItemRepository->findByUid((int)$uid),
+                $uids
+            ),
+            fn($item) => $item instanceof BatchItem
+        );
+    }
+
+    private function handleExecute(): void
+    {
+        try {
+            $items = $this->getBatchItemsFromArgument('execute');
+
+            foreach ($items as $item) {
+                if (!$item->isExecutable()) {
+                    $this->showError(
+                        'Item cannot be translated',
+                        sprintf('Item with uid %d could not be translated. Check the error and reset it.', $item->getUid())
+                    );
+                    continue;
+                }
+
+                $success = $this->batchTranslationService->translate($item);
+
+                if ($success) {
+                    $item->markAsTranslated();
+                    $this->showSuccess('Successfully translated', sprintf('Item with uid %d was translated.', $item->getUid()));
+                } else {
+                    $errorDetail = $item->getError() ?: 'Unknown error';
+                    $this->showError(
+                        'Error while translating',
+                        sprintf('Item with uid %d could not be translated: %s', $item->getUid(), $errorDetail)
+                    );
+                }
+
+                $this->batchItemRepository->update($item);
+            }
+        } catch (Exception $e) {
+            $this->showError('Error during translation', 'An error occurred: ' . $e->getMessage());
+        }
+    }
+
+    private function handleReset(): void
+    {
+        $items = $this->getBatchItemsFromArgument('reset');
+
+        foreach ($items as $item) {
+            $item->setTranslated(null);
+            $item->setError('');
+            $this->batchItemRepository->update($item);
+            $this->showSuccess('Reset successful', sprintf('Item with uid %d was reset.', $item->getUid()));
+        }
+    }
+
+    protected function showCacheInfo(): void
+    {
+        $stats = $this->translationCacheService->getCacheStatistics();
+
+        if (!$stats['enabled']) {
+            $this->showInfo('Translation Cache: Disabled', 'All translations will use the API directly.');
+            return;
+        }
+
+        $info = sprintf('Entries: %d | Size: %s', $stats['entries'], $stats['size_formatted']);
+        $this->showInfo('Translation Cache: Active', $info);
+    }
+
+    private function showInfo(string $title, string $message): void
+    {
+        $this->addFlashMessage($title, $message, ContextualFeedbackSeverity::INFO);
+    }
+
+    private function getSiteConfiguration(): ?\TYPO3\CMS\Core\Site\Entity\Site
+    {
+        try {
+            $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
+            return $siteFinder->getSiteByPageId($this->pageUid);
+        } catch (Exception) {
+            $this->showWarning(
+                'No site configuration found',
+                'Please select a configured page or create a new site configuration.'
+            );
+            return null;
+        }
+    }
+
+    private function showWarning(string $title, string $message): void
+    {
+        $this->addFlashMessage($title, $message, ContextualFeedbackSeverity::WARNING);
+    }
+
+    // =========================================================================
+    // Navigation
+    // =========================================================================
+
+    private function getAccessibleLanguages(\TYPO3\CMS\Core\Site\Entity\Site $site): array
+    {
+        $languages = TranslationHelper::possibleTranslationLanguages($site->getLanguages());
+        $backendUser = $this->getBackendUser();
+
+        $filtered = array_filter(
+            $languages,
+            // @extensionScannerIgnoreLine
+            fn($lang) => $backendUser->checkLanguageAccess($lang->getLanguageId())
         );
 
-        $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
-        try {
-            $siteConfiguration = $siteFinder->getSiteByPageId($this->pageUid);
-            $data['rootPageId'] = $siteConfiguration->getRootPageId();
-        } catch(Exception $e) {
-            $this->addFlashMessage(
-                'No site configuration found',
-                'Please select a configured page first or create a new configuration for this page.',
-                FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_WARNING)
-            );
-
+        if (empty($filtered)) {
+            $this->showWarning('No target language available', 'Please choose another page or contact the administrator.');
         }
 
-        $backendUser = $this->getBackendUserAuthentication();
+        return $filtered;
+    }
 
-        // Filter languages by users access rights
-        $languages = isset($data['rootPageId']) ? TranslationHelper::possibleTranslationLanguages($siteConfiguration->getLanguages()) : [];
-        $languages = array_filter($languages, fn($language) => $backendUser->checkLanguageAccess($language->getLanguageId()));
+    private function getAccessibleBatchItems(array $languages): array
+    {
+        $pageId = (int)($this->request->hasArgument('id') ? $this->request->getArgument('id') : 0);
+        $items = $this->batchItemRepository->findAllRecursive($this->levels, $pageId);
+        $backendUser = $this->getBackendUser();
 
-        if (empty($languages)) {
-            $this->addFlashMessage(
-                'No target language available',
-                'Please choose another page or contact the administrator.',
-                FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_WARNING)
-            );
-        }
+        return array_filter(
+            $items->toArray(),
+            function (BatchItem $item) use ($backendUser, $languages) {
+                $pageRecord = BackendUtility::getRecordWSOL('pages', $item->getPid());
+                return isset($languages[$item->getSysLanguageUid()])
+                    && $backendUser->doesUserHaveAccess($pageRecord, Permission::CONTENT_EDIT);
+            }
+        );
+    }
 
-        // Filter items by users access rights
-        $batchItemsRecursive = array_filter($batchItemsRecursive->toArray(), function ($batchItem) use ($backendUser, $languages) {
-            $rowBatchItem = BackendUtility::getRecordWSOL('pages', $batchItem->getPid());
-            return isset($languages[$batchItem->getSysLanguageUid()]) && $backendUser->doesUserHaveAccess($rowBatchItem, Permission::CONTENT_EDIT);
-        });
+    private function buildCreateFormData(array $languages, ?array $pageRecord): array
+    {
+        $backendUser = $this->getBackendUser();
+        $batchItem = null;
 
-        $rowPage = BackendUtility::getRecordWSOL('pages', $this->pageUid);
-        if ($backendUser->doesUserHaveAccess($rowPage, Permission::CONTENT_EDIT)) {
+        if ($pageRecord && $backendUser->doesUserHaveAccess($pageRecord, Permission::CONTENT_EDIT)) {
             $batchItem = new BatchItem();
             $batchItem->setPid($this->pageUid);
-            $batchItem->setTranslate(new \DateTime());
+            $batchItem->setTranslate(new DateTime());
         } else {
-            $this->addFlashMessage(
-                'No translations available on selected page',
-                'Please choose another page or contact the administrator.',
-                FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_WARNING)
-            );
+            $this->showWarning('No translations available', 'Please choose another page or contact the administrator.');
         }
 
-        // merge modified params
-        $data = array_merge(
-            $data,
-            [
-                'batchItems' => $batchItems,
-                'batchItemsRecursive' => $batchItemsRecursive,
-                'pageUid' => $this->pageUid,
-                'levels' => $this->levels,
-                'queryParams' =>  $this->queryParams,
-                'pageTitle' => $rowPage['title'],
-                'createForm' => [
-                    'pages' => isset($batchItem) ? [
-                        $batchItem->getPid() => $batchItem->getPageTitle()
-                    ] : null,
-                    'recursive' => array_map(fn($item) => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $item), $this->menuLevelItems),
-                    'priority' => [
-                        BatchItem::PRIORITY_LOW => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.' . BatchItem::PRIORITY_LOW),
-                        BatchItem::PRIORITY_MEDIUM => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.' . BatchItem::PRIORITY_MEDIUM),
-                        BatchItem::PRIORITY_HIGH => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.' . BatchItem::PRIORITY_HIGH),
-                    ],
-                    'targetLanguage' => array_map(fn($item) => $item->getTitle(), $languages),
-                    'mode' => [
-                        Translator::TRANSLATE_MODE_BOTH => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode.' . Translator::TRANSLATE_MODE_BOTH),
-                        Translator::TRANSLATE_MODE_UPDATE_ONLY => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode.' . Translator::TRANSLATE_MODE_UPDATE_ONLY)
-                    ],
-                    'frequency' => [
-                        BatchItem::FREQUENCY_ONCE => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.' . BatchItem::FREQUENCY_ONCE),
-                        BatchItem::FREQUENCY_WEEKLY => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.' . BatchItem::FREQUENCY_WEEKLY),
-                        BatchItem::FREQUENCY_DAILY => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.' . BatchItem::FREQUENCY_DAILY),
-                        BatchItem::FREQUENCY_RECURRING => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.' . BatchItem::FREQUENCY_RECURRING),
-                    ],
-                    'redirectAction' => $this->request->getControllerActionName(),
-                    'batchItem' =>  $batchItem ?? null,
-                ],
-            ]
-        );
+        return [
+            'pages' => $batchItem ? [$batchItem->getPid() => $batchItem->getPageTitle()] : null,
+            'recursive' => $this->translateMenuLevelItems(),
+            'priority' => $this->translatePriorityOptions(),
+            'targetLanguage' => array_map(fn($lang) => $lang->getTitle(), $languages),
+            'mode' => $this->translateModeOptions(),
+            'frequency' => $this->translateFrequencyOptions(),
+            'redirectAction' => $this->request->getControllerActionName(),
+            'batchItem' => $batchItem,
+        ];
+    }
 
-        return $data;
+    // =========================================================================
+    // Helper Methods
+    // =========================================================================
+
+    private function translateMenuLevelItems(): array
+    {
+        $lang = $this->getLanguageService();
+        $result = [];
+
+        foreach (self::MENU_LEVEL_ITEMS as $level) {
+            $result[$level] = $lang->sL("LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.{$level}");
+        }
+
+        return $result;
     }
 
     protected function getLanguageService(): LanguageService
@@ -332,380 +497,79 @@ class BatchTranslationBaseController extends ActionController
         return $GLOBALS['LANG'];
     }
 
-    protected function getBackendUserAuthentication(): BackendUserAuthentication
+    private function translatePriorityOptions(): array
     {
-        return $GLOBALS['BE_USER'];
+        return $this->translateOptions([
+            BatchItem::PRIORITY_LOW,
+            BatchItem::PRIORITY_MEDIUM,
+            BatchItem::PRIORITY_HIGH,
+        ], 'autotranslate_batch.priority.');
     }
 
-    /**
-     * Add batch translation items by form data to queue
-     * @param BatchItem $batchItem
-     * @param int $levels
-     * @return void
-     */
-    protected function createActionAbstract(BatchItem $batchItem, int $levels): void
+    private function translateOptions(array $keys, string $prefix): array
     {
+        $lang = $this->getLanguageService();
+        $result = [];
 
-        $context = GeneralUtility::makeInstance(Context::class);
-
-        // calc offset
-        $timezone = new \DateTimeZone($context->getPropertyFromAspect('date', 'timezone'));
-        $datetime = new \DateTime('now');
-        $offset = $timezone->getOffset($datetime);
-
-        // modify time with offset
-        if ($offset){
-            $translateTime = $batchItem->getTranslate();
-            $translateTime->modify("-{$offset} seconds");
-            $batchItem->setTranslate($translateTime);
+        foreach ($keys as $key) {
+            $result[$key] = $lang->sL("LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:{$prefix}{$key}");
         }
 
-        $this->batchItemRepository->add($batchItem);
-        $counter = 1;
-
-        if ($levels > 0)  {
-            $subPages = PageUtility::getSubpageIds($this->pageUid, $levels - 1);
-            $backendUser = $this->getBackendUserAuthentication();
-            foreach ($subPages as $subPageUid) {
-                $rowSubPage = BackendUtility::getRecordWSOL('pages', $subPageUid);
-                if (!$backendUser->doesUserHaveAccess($rowSubPage, Permission::CONTENT_EDIT)) {
-                    continue;
-                }
-                $counter++;
-                $batchItem = clone $batchItem;
-                $batchItem->setPid($subPageUid);
-                $this->batchItemRepository->add($batchItem);
-            }
-        }
-
-        $this->addFlashMessage(
-            'Queue items created',
-            $counter . ' items created with given parameters for page with uid ' . $this->pageUid . '.',
-        );
+        return $result;
     }
 
-    /**
-     * Function will be called before every other action
-     */
+    private function translateModeOptions(): array
+    {
+        return $this->translateOptions([
+            Translator::TRANSLATE_MODE_BOTH,
+            Translator::TRANSLATE_MODE_UPDATE_ONLY,
+            Translator::TRANSLATE_MODE_CREATE_ONLY,
+        ], 'autotranslate_batch.mode.');
+    }
+
+    private function translateFrequencyOptions(): array
+    {
+        return $this->translateOptions([
+            BatchItem::FREQUENCY_ONCE,
+            BatchItem::FREQUENCY_WEEKLY,
+            BatchItem::FREQUENCY_DAILY,
+            BatchItem::FREQUENCY_RECURRING,
+        ], 'autotranslate_batch.frequency.');
+    }
+
     protected function initializeAction(): void
     {
-        $this->typo3Version = GeneralUtility::makeInstance(Typo3Version::class);
+        $this->queryParams = array_merge_recursive(
+            $this->request->getQueryParams(),
+            $this->request->getParsedBody() ?? []
+        );
 
-        $this->queryParams = array_merge_recursive($this->request->getQueryParams(), $this->request->getParsedBody() ?? []);
+        $this->pageUid = (int)($this->queryParams['id'] ?? 0);
+        $this->levels = $this->loadLevelsFromSession();
 
-        if (isset($this->queryParams['id'])){
-            $this->pageUid = (int)$this->queryParams['id'];
-        }
-
-        if ($this->typo3Version->getMajorVersion() < 12) {
-            // define moduleName for legacy version
-            $this->moduleName = str_replace(['/module/', '/'], ['', '_'], $this->queryParams['route']);
-
-            // merge query params for legacy modules
-            $moduleQueryKey = strtolower('tx_autotranslate_' . $this->moduleName);
-            if (isset($this->queryParams[$moduleQueryKey])) {
-                $this->queryParams = array_merge($this->queryParams, $this->queryParams[$moduleQueryKey]);
-                unset($this->queryParams[$moduleQueryKey]);
-            }
-        }
-
-        // get levels from session
-        $levelsFromSession = $this->getBackendUserAuthentication()->getSessionData('autotranslate.levels');
-        if ($levelsFromSession !== null) {
-            $this->levels = $levelsFromSession;
-        }
-
-        // check query params for given levels and store it in session
         if (isset($this->queryParams['levels'])) {
             $this->levels = (int)$this->queryParams['levels'];
-            $this->getBackendUserAuthentication()->setAndSaveSessionData('autotranslate.levels', $this->levels);
+            $this->saveLevelsToSession($this->levels);
         }
 
         parent::initializeAction();
     }
 
-    /**
-     * Add translation cache information as flash message
-     */
-    protected function addCacheInfoMessage(): void
+    private function loadLevelsFromSession(): int
     {
-        $cacheStats = $this->translationCacheService->getCacheStatistics();
-
-        if (!$cacheStats['enabled']) {
-            $this->addFlashMessage(
-                'Translation Cache: Disabled',
-                'Cache is disabled in extension configuration. All translations will use the API directly.',
-                FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_INFO)
-            );
-            return;
-        }
-
-        $title = 'Translation Cache: Active';
-        $description = [];
-
-        $description[] = sprintf('Entries: %d', $cacheStats['entries']);
-        $description[] = sprintf('Size: %s', $cacheStats['size_formatted']);
-
-        $this->addFlashMessage(
-            $title,
-            implode(' | ', $description),
-            FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_INFO)
-        );
+        return $this->getBackendUser()->getSessionData('autotranslate.levels') ?? 0;
     }
 
-    protected function addDeeplApiKeyInfoMessage(): void
+    protected function getBackendUser(): BackendUserAuthentication
     {
-        $apiKeyDetails = \ThieleUndKlose\Autotranslate\Utility\TranslationHelper::apiKey($this->pageUid ?? null);
-        $apiKey = $apiKeyDetails['key'] ?? null;
-
-        $this->deeplApiKeyDetails = \ThieleUndKlose\Autotranslate\Utility\DeeplApiHelper::checkApiKey($apiKey);
-
-        if ($apiKey) {
-            $maskedApiKey = '';
-            $count = 0;
-            for ($i = 0; $i < strlen($apiKey); $i++) {
-                $char = $apiKey[$i];
-                if ($char === '-') {
-                    $maskedApiKey .= '-';
-                } elseif ($count < 20) {
-                    $maskedApiKey .= '*';
-                    $count++;
-                } else {
-                    $maskedApiKey .= $char;
-                }
-            }
-        } else {
-            $maskedApiKey = '(not set)';
-        }
-
-        $description = [];
-        $messageType = FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_INFO);
-
-        if ($this->deeplApiKeyDetails['usage']) {
-            $usage = $this->deeplApiKeyDetails['usage'];
-            if (is_object($usage) && method_exists($usage, '__toString')) {
-                $usage = (string)$usage;
-            }
-            $usage = str_replace(PHP_EOL, ' ', $usage);
-            $usage = str_replace('Characters: ', '', $usage);
-            $description[] = trim($usage) . ' Characters';
-        }
-        if ($this->deeplApiKeyDetails['error']) {
-            $description[] = $this->deeplApiKeyDetails['error'];
-            $messageType = FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_ERROR);
-        }
-
-        if (!empty($description)) {
-            $this->addFlashMessage(
-                'DeepL API Key: ' . $maskedApiKey,
-                implode(PHP_EOL, $description),
-                $messageType
-            );
-        }
+        return $GLOBALS['BE_USER'];
     }
 
-    /**
-     * Collect batch items from given argument
-     *
-     * @param string $argument
-     * @return array
-     */
-    private function getBatchItemsFromArgument(string $argument): array
+    private function saveLevelsToSession(int $levels): void
     {
-        $items = [];
-        if ($this->request->hasArgument($argument)) {
-            $uids = GeneralUtility::trimExplode(',', $this->request->getArgument($argument));
-            foreach ($uids as $uid) {
-                $item = $this->batchItemRepository->findByUid((int)$uid);
-                if ($item instanceof BatchItem) {
-                    $items[] = $item;
-                }
-            }
-        }
-        return $items;
-
+        $this->getBackendUser()->setAndSaveSessionData('autotranslate.levels', $levels);
     }
 
-    /**
-     * Function to handle actions like delete, execute or other
-     */
-    protected function handleActionArguments()
-    {
-        $reload = false;
-
-        // Handle cache clearing
-        if ($this->request->hasArgument('clearCache')) {
-            $cleared = $this->translationCacheService->clearCache();
-            if ($cleared) {
-                $this->addFlashMessage(
-                    'Cache cleared successfully',
-                    'Translation cache has been emptied.',
-                    FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_OK)
-                );
-            } else {
-                $this->addFlashMessage(
-                    'Failed to clear cache',
-                    'Translation cache could not be cleared.',
-                    FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_ERROR)
-                );
-            }
-            $reload = true;
-        }
-
-        if ($this->request->hasArgument('delete')) {
-            $items = $this->getBatchItemsFromArgument('delete');
-            foreach ($items as $item) {
-                $this->batchItemRepository->remove($item);
-                $this->addFlashMessage(
-                    'Successfully deleted',
-                    sprintf('Item with uid %s was deleted.', $item->getUid())
-                );
-                $reload = true;
-            }
-        }
-
-        try {
-            if ($this->request->hasArgument('execute')) {
-                $items = $this->getBatchItemsFromArgument('execute');
-                foreach ($items as $item) {
-                    if (!$item->isExecutable()) {
-                        $this->addFlashMessage(
-                            'Item can not be translated',
-                            sprintf('Item with uid %s could not be translated. Check the error and reset it.', $item->getUid()),
-                            FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_ERROR)
-                        );
-                        continue;
-                    }
-
-                    $res = $this->batchTranslationService->translate($item);
-                    if ($res === true) {
-                        $item->markAsTranslated();
-                        $this->addFlashMessage(
-                            'Successfully translated',
-                            sprintf('Item with uid %s was translated.', $item->getUid()),
-                        );
-                    } else {
-                        $this->addFlashMessage(
-                            'Error while translating',
-                            sprintf('Item with uid %s could not be translated.', $item->getUid()),
-                            FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_ERROR)
-                        );
-                    }
-                    $this->batchItemRepository->update($item);
-                }
-
-
-            }
-        } catch (Exception $e) {
-            $this->addFlashMessage(
-                'Error during translation',
-                'An error occurred while translating the items: ' . $e->getMessage(),
-                FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_ERROR)
-            );
-        }
-
-        if ($this->request->hasArgument('reset')) {
-            $items = $this->getBatchItemsFromArgument('reset');
-            foreach ($items as $item) {
-                $item->setTranslated();
-                $item->setError('');
-                $this->addFlashMessage(
-                    'Reset successful',
-                    sprintf('Translated date for item with uid %s was removed.', $item->getUid())
-                );
-                $this->batchItemRepository->update($item);
-            }
-        }
-
-        if ($reload) {
-            $this->persistenceManager->persistAll();
-            $this->reloadPage();
-        }
-
-        $this->addCacheInfoMessage();
-    }
-
-    /**
-     * Function to handle actions like delete, execute or other
-     */
-    protected function handleLogActionArguments()
-    {
-        $reload = false;
-
-        if ($this->request->hasArgument('delete')) {
-            $uids = GeneralUtility::trimExplode(',', $this->request->getArgument('delete'));
-            foreach ($uids as $uid) {
-                $this->logRepository->deleteByRequestId($uid);
-                $reload = true;
-            }
-            if ($reload) {
-                $this->addFlashMessage(
-                    'Successfully deleted',
-                    sprintf('%s log entries were deleted.', count($uids))
-                );
-            }
-
-        }
-
-        if ($this->request->hasArgument('deleteAll')) {
-            $this->logRepository->deleteAll();
-            $reload = true;
-            $this->addFlashMessage(
-                'Successfully deleted',
-                'Log entries were deleted.'
-            );
-        }
-
-        if ($reload) {
-            $this->persistenceManager->persistAll();
-            $this->reloadPage();
-        }
-    }
-
-    /**
-     * Reload the current page.
-     *
-     * @param int $pageUid
-     */
-    protected function reloadPage()
-    {
-        $this->redirectToPage($this->pageUid);
-    }
-
-    /**
-     * Redirects to the specified page UID.
-     *
-     * @param int $pageUid
-     */
-    protected function redirectToPage(int $pageUid)
-    {
-
-        $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
-        if ($this->typo3Version->getMajorVersion() < 12) {
-            // TYPO3 v11: legacy module argument structure
-            $arguments = [
-                'id' => $pageUid,
-                strtolower('tx_autotranslate_' . $this->moduleName) => [
-                    'action' => $this->request->getControllerActionName()
-                ]
-            ];
-        } else {
-            // TYPO3 v12+: modern argument structure
-            $arguments = [
-                'id' => $pageUid,
-                'action' => $this->request->getControllerActionName()
-            ];
-        }
-
-        $uri = $uriBuilder->buildUriFromRoute($this->moduleName, $arguments);
-
-        header('Location: ' . $uri);
-        exit;
-    }
-
-    /**
-     * Get common template variables including cache information
-     */
     protected function getCommonTemplateVariables(array $data = []): array
     {
         $cacheStats = $this->translationCacheService->getCacheStatistics();
@@ -715,7 +579,264 @@ class BatchTranslationBaseController extends ActionController
             'cacheStats' => $cacheStats,
             'pageUid' => $this->pageUid,
             'moduleName' => $this->moduleName,
+            'schedulerStatus' => $this->getSchedulerStatus(),
         ]);
     }
 
+    private function getSchedulerStatus(): array
+    {
+        $runner = GeneralUtility::makeInstance(BatchTranslationRunner::class);
+        $lastRun = $runner->getLastRunStatistics();
+
+        if ($lastRun === null) {
+            return ['hasRun' => false];
+        }
+
+        $lastRunTime = $lastRun['timestamp'] ?? 0;
+        $ago = time() - $lastRunTime;
+
+        return [
+            'hasRun' => true,
+            'timestamp' => $lastRunTime,
+            'dateFormatted' => date('d.m.Y H:i:s', $lastRunTime),
+            'agoMinutes' => (int)floor($ago / 60),
+            'processed' => $lastRun['processed'] ?? 0,
+            'succeeded' => $lastRun['succeeded'] ?? 0,
+            'failed' => $lastRun['failed'] ?? 0,
+            'remainingPending' => $lastRun['remainingPending'] ?? 0,
+        ];
+    }
+
+    protected function createActionAbstract(BatchItem $batchItem, int $levels): void
+    {
+        $this->adjustTimezoneOffset($batchItem);
+
+        $createdCount = 0;
+        $skippedCount = 0;
+        $errorDetails = [];
+
+        // Check for errored items on the root page
+        $this->collectErrorDetails($batchItem->getPid(), $batchItem->getSysLanguageUid(), $errorDetails);
+
+        if ($this->batchItemRepository->hasPendingItem($batchItem->getPid(), $batchItem->getSysLanguageUid())) {
+            $skippedCount++;
+        } else {
+            $this->batchItemRepository->add($batchItem);
+            $createdCount++;
+        }
+
+        $subResult = $this->createSubpageItems($batchItem, $levels, $errorDetails);
+        $createdCount += $subResult['created'];
+        $skippedCount += $subResult['skipped'];
+
+        if ($createdCount > 0) {
+            $this->showSuccess(
+                'Queue items created',
+                sprintf('%d item(s) created for page with uid %d.', $createdCount, $this->pageUid)
+            );
+        }
+
+        if ($skippedCount > 0) {
+            $this->showInfo(
+                'Duplicates skipped',
+                sprintf('%d item(s) skipped because pending items already exist.', $skippedCount)
+            );
+        }
+
+        if ($createdCount === 0 && $skippedCount === 0) {
+            $this->showWarning(
+                'No items created',
+                'No translatable pages found.'
+            );
+        }
+
+        if (!empty($errorDetails)) {
+            $this->showErrorSummary($errorDetails);
+        }
+    }
+
+    private function adjustTimezoneOffset(BatchItem $batchItem): void
+    {
+        $context = GeneralUtility::makeInstance(Context::class);
+        $timezone = new DateTimeZone($context->getPropertyFromAspect('date', 'timezone'));
+        $offset = $timezone->getOffset(new DateTime('now'));
+
+        if ($offset !== 0) {
+            $translateTime = $batchItem->getTranslate();
+            $translateTime->modify("-{$offset} seconds");
+            $batchItem->setTranslate($translateTime);
+        }
+    }
+
+    /**
+     * @param array<int, array{pid: int, pageTitle: string, error: string}> $errorDetails Collected by reference
+     * @return array{created: int, skipped: int}
+     */
+    private function createSubpageItems(BatchItem $batchItem, int $levels, array &$errorDetails): array
+    {
+        if ($levels <= 0) {
+            return ['created' => 0, 'skipped' => 0];
+        }
+
+        $created = 0;
+        $skipped = 0;
+        $subPages = PageUtility::getSubpageIds($this->pageUid, $levels - 1);
+        $backendUser = $this->getBackendUser();
+
+        foreach ($subPages as $subPageUid) {
+            $subPageUid = (int)$subPageUid;
+            $pageRecord = BackendUtility::getRecordWSOL('pages', $subPageUid);
+
+            if (!$pageRecord || !$backendUser->doesUserHaveAccess($pageRecord, Permission::CONTENT_EDIT)) {
+                continue;
+            }
+
+            // Check for errored items on this subpage
+            $this->collectErrorDetails($subPageUid, $batchItem->getSysLanguageUid(), $errorDetails);
+
+            if ($this->batchItemRepository->hasPendingItem($subPageUid, $batchItem->getSysLanguageUid())) {
+                $skipped++;
+                continue;
+            }
+
+            $newItem = clone $batchItem;
+            $newItem->setPid($subPageUid);
+            $this->batchItemRepository->add($newItem);
+            $created++;
+        }
+
+        return ['created' => $created, 'skipped' => $skipped];
+    }
+
+    /**
+     * Collect error details for a given page and language into the referenced array.
+     *
+     * @param array<int, array{pid: int, pageTitle: string, error: string}> $errorDetails
+     */
+    private function collectErrorDetails(int $pid, int $sysLanguageUid, array &$errorDetails): void
+    {
+        $erroredItems = $this->batchItemRepository->findErroredItems($pid, $sysLanguageUid);
+
+        if (empty($erroredItems)) {
+            return;
+        }
+
+        $pageRecord = BackendUtility::getRecordWSOL('pages', $pid);
+        $pageTitle = trim(($pageRecord['title'] ?? 'Unknown') . ' [' . $pid . ']');
+
+        foreach ($erroredItems as $item) {
+            $errorDetails[] = [
+                'pid' => $pid,
+                'pageTitle' => $pageTitle,
+                'error' => (string)($item['error'] ?? 'Unknown error'),
+            ];
+        }
+    }
+
+    /**
+     * Display a summary flash message for all pages that have errored batch items.
+     *
+     * @param array<int, array{pid: int, pageTitle: string, error: string}> $errorDetails
+     */
+    private function showErrorSummary(array $errorDetails): void
+    {
+        // Group errors by page to avoid very long messages
+        $byPage = [];
+        foreach ($errorDetails as $detail) {
+            $byPage[$detail['pid']][] = $detail;
+        }
+
+        $lines = [];
+        foreach ($byPage as $pid => $items) {
+            $pageTitle = $items[0]['pageTitle'];
+            if (count($items) === 1) {
+                $lines[] = sprintf('%s: %s', $pageTitle, $this->truncateError($items[0]['error']));
+            } else {
+                // Multiple errors on same page — show count and first error
+                $lines[] = sprintf(
+                    '%s: %d error(s), e.g. %s',
+                    $pageTitle,
+                    count($items),
+                    $this->truncateError($items[0]['error'])
+                );
+            }
+        }
+
+        $pageCount = count($byPage);
+        $totalErrors = count($errorDetails);
+        $title = sprintf(
+            'Existing errors found: %d item(s) on %d page(s)',
+            $totalErrors,
+            $pageCount
+        );
+
+        // Limit to 10 lines to keep the flash message readable
+        $displayLines = array_slice($lines, 0, 10);
+        if (count($lines) > 10) {
+            $displayLines[] = sprintf('... and %d more page(s)', count($lines) - 10);
+        }
+
+        $this->showWarning($title, implode("\n", $displayLines));
+    }
+
+    /**
+     * Truncate an error message for display in summary.
+     */
+    private function truncateError(string $error, int $maxLength = 120): string
+    {
+        if (mb_strlen($error) <= $maxLength) {
+            return $error;
+        }
+
+        return mb_substr($error, 0, $maxLength) . '...';
+    }
+
+    protected function addDeeplApiKeyInfoMessage(): void
+    {
+        $apiKeyDetails = TranslationHelper::apiKey($this->pageUid);
+        $apiKey = $apiKeyDetails['key'] ?? null;
+        $this->deeplApiKeyDetails = DeeplApiHelper::checkApiKey($apiKey);
+
+        $maskedKey = $this->maskApiKey($apiKey);
+        $messages = [];
+        $severity = ContextualFeedbackSeverity::INFO;
+
+        if ($this->deeplApiKeyDetails['usage']) {
+            $usage = (string)$this->deeplApiKeyDetails['usage'];
+            $usage = str_replace([PHP_EOL, 'Characters: '], [' ', ''], $usage);
+            $messages[] = trim($usage) . ' Characters';
+        }
+
+        if ($this->deeplApiKeyDetails['error']) {
+            $messages[] = $this->deeplApiKeyDetails['error'];
+            $severity = ContextualFeedbackSeverity::ERROR;
+        }
+
+        if (!empty($messages)) {
+            $this->addFlashMessage('DeepL API Key: ' . $maskedKey, implode(PHP_EOL, $messages), $severity);
+        }
+    }
+
+    private function maskApiKey(?string $apiKey): string
+    {
+        if (!$apiKey) {
+            return '(not set)';
+        }
+
+        $masked = '';
+        $hiddenCount = 0;
+
+        foreach (str_split($apiKey) as $char) {
+            if ($char === '-') {
+                $masked .= '-';
+            } elseif ($hiddenCount < 20) {
+                $masked .= '*';
+                $hiddenCount++;
+            } else {
+                $masked .= $char;
+            }
+        }
+
+        return $masked;
+    }
 }

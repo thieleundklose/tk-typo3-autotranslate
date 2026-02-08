@@ -1,18 +1,6 @@
 <?php
-declare(strict_types=1);
 
-/*
- * This file is part of the TYPO3 CMS project.
- *
- * It is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License, either version 2
- * of the License, or any later version.
- *
- * For the full copyright and license information, please read the
- * LICENSE.txt file that was distributed with this source code.
- *
- * The TYPO3 project - inspiring people to share!
- */
+declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Utility;
 
@@ -20,62 +8,63 @@ use TYPO3\CMS\Core\DataHandling\Model\RecordStateFactory;
 use TYPO3\CMS\Core\DataHandling\SlugHelper;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-class SlugUtility
+/**
+ * Utility class for slug generation
+ */
+final class SlugUtility
 {
-
     /**
-     * Receive possible slug fields which should  be generated for new items.
+     * Get slug fields that should be generated for new items
      *
-     * @param string $table
-     * @return array|null
+     * @return array<string, array> Array of slug field configurations keyed by field name
      */
-    public static function slugFields(string $table): ?array 
+    public static function slugFields(string $table): array
     {
+        $slugFields = [];
+        $columns = $GLOBALS['TCA'][$table]['columns'] ?? [];
 
-        $slugFields = array_filter($GLOBALS['TCA'][$table]['columns'], function($v) {
-            return isset($v['config']['type']) && $v['config']['type'] == 'slug' ? true : false;
-        });
+        foreach ($columns as $fieldName => $fieldConfig) {
+            if (($fieldConfig['config']['type'] ?? '') === 'slug') {
+                $slugFields[$fieldName] = $fieldConfig['config'];
+            }
+        }
 
         return $slugFields;
     }
 
     /**
-     * @param array $record
-     * @param string $tableName
-     * @param string $field
-     * @return string|null
+     * Generate slug value for a specific field
+     *
+     * @param array $record The record data
+     * @param string $table The table name
+     * @param string $field The slug field name
+     * @return string|null The generated slug or null on failure
      */
-    public static function generateSlug(array $record, string $tableName, string $field): ?string
+    public static function generateSlug(array $record, string $table, string $field): ?string
     {
-        $slugFields = self::slugFields($tableName);
+        $fieldConfig = $GLOBALS['TCA'][$table]['columns'][$field]['config'] ?? null;
 
-        if (empty($slugFields) || !isset($slugFields[$field]))
+        if ($fieldConfig === null) {
             return null;
-
-        $fieldConfig = $slugFields[$field]['config'];
-
-        $slugHelper = GeneralUtility::makeInstance(
-            SlugHelper::class,
-            $tableName,
-            $field,
-            $fieldConfig
-        );
-
-        $evalInfo = GeneralUtility::trimExplode(',', $fieldConfig['eval'], true);
-        $state = RecordStateFactory::forName($tableName)->fromArray($record, $record['pid'], $record['uid']);
-
-        // Generate slug
-        $slug = $slugHelper->generate($record, (int)$record['pid']);
-
-        // build slug depending on eval configuration
-        if (in_array('uniqueInSite', $evalInfo)) {
-            $slug = $slugHelper->buildSlugForUniqueInSite($slug, $state);
-        } else if (in_array('uniqueInPid', $evalInfo)) {
-            $slug = $slugHelper->buildSlugForUniqueInPid($slug, $state);
-        } else if (in_array('unique', $evalInfo)) {
-            $slug = $slugHelper->buildSlugForUniqueInTable($slug, $state);
         }
 
-        return $slug;
+        try {
+            $slugHelper = GeneralUtility::makeInstance(
+                SlugHelper::class,
+                $table,
+                $field,
+                $fieldConfig
+            );
+
+            $recordState = RecordStateFactory::forName($table)
+                ->fromArray($record, $record['pid'] ?? 0, $record['uid'] ?? 0);
+
+            $slug = $slugHelper->generate($record, $record['pid'] ?? 0);
+
+            return $slugHelper->buildSlugForUniqueInSite($slug, $recordState);
+        } catch (\Exception) {
+            return null;
+        }
     }
 }
+

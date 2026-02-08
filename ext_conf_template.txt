@@ -1,7 +1,7 @@
-# cat=general; type=string; label=Additional supported Tables: Comma seperated list of supported tca elements e.g.: tx_news_domain_model_news. For TYPO3 < v13 do not forget to extend Custom Tables Documentation/Configuration/ExtensionConfiguration/Readme.md
+# cat=general; type=string; label=Additional supported Tables: Comma separated list of supported TCA tables e.g.: tx_news_domain_model_news
 additionalTables =
 
-# cat=general; type=string; label=Additional supported reference Tables: Comma seperated list of supported tca elements e.g.: sys_file_reference. For TYPO3 < v13 do not forget to extend Custom Tables Documentation/Configuration/ExtensionConfiguration/Readme.md
+# cat=general; type=string; label=Additional supported reference Tables: Comma separated list of supported TCA tables e.g.: sys_file_reference
 additionalReferenceTables = sys_file_reference
 
 # cat=general/O; type=string; label=DeepL API Key
@@ -13,5 +13,5 @@ fieldsToCopy = pi_flexform, hidden
 # cat=general; type=boolean; label=Enable debug mode for Autotranslate: You can see logs in the backend module
 debug = 0
 
-# cat=general; type=boolean; label=Enable caching for translations: Speed ​​up repeated translations and save quota
+# cat=general; type=boolean; label=Enable caching for translations: Speed up repeated translations and save quota
 caching = 1

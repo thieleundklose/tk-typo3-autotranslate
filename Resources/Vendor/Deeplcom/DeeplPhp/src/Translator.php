@@ -102,6 +102,7 @@ class Translator
      */
     public function getSourceLanguages(): array
     {
+        // @extensionScannerIgnoreLine
         return $this->getLanguages(false);
     }
 
@@ -112,6 +113,7 @@ class Translator
      */
     public function getTargetLanguages(): array
     {
+        // @extensionScannerIgnoreLine
         return $this->getLanguages(true);
     }
 

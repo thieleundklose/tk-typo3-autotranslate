@@ -2,43 +2,57 @@
 
 declare(strict_types=1);
 
-/*
- * This file is part of the TYPO3 CMS project.
- *
- * It is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License, either version 2
- * of the License, or any later version.
- *
- * For the full copyright and license information, please read the
- * LICENSE.txt file that was distributed with this source code.
- *
- * The TYPO3 project - inspiring people to share!
- */
-
 namespace ThieleUndKlose\Autotranslate\Utility;
 
-use Doctrine\DBAL\Driver\Exception;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\EndTimeRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\StartTimeRestriction;
-use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
-class Records
+/**
+ * Utility class for database record operations
+ */
+final class Records
 {
+    /**
+     * Get a record or a single column value from a record
+     *
+     * @return mixed|array|null Record array, single column value, or null if not found
+     */
+    public static function getRecord(string $table, int $uid, ?string $column = null): mixed
+    {
+        $queryBuilder = self::getQueryBuilder($table);
+
+        $result = $queryBuilder
+            ->select('*')
+            ->from($table)
+            ->where(
+                $queryBuilder->expr()->eq(
+                    'uid',
+                    $queryBuilder->createNamedParameter($uid, Connection::PARAM_INT)
+                )
+            )
+            ->executeQuery()
+            ->fetchAssociative();
+
+        if ($result === false) {
+            return null;
+        }
+
+        return $column !== null ? ($result[$column] ?? null) : $result;
+    }
 
     /**
-     * Get QueryBuilder for given or loaded table
-     *
-     * @param string $table tablename
-     * @return QueryBuilder
+     * Get QueryBuilder for given table with relaxed restrictions
      */
     public static function getQueryBuilder(string $table): QueryBuilder
     {
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable($table);
 
-        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)->getQueryBuilderForTable($table);
         $queryBuilder->getRestrictions()
             ->removeByType(HiddenRestriction::class)
             ->removeByType(StartTimeRestriction::class)
@@ -48,155 +62,83 @@ class Records
     }
 
     /**
-     * Get whole record or optional one column from the record.
+     * Get a translated record for a specified language
      *
-     * @param string $table
-     * @param int $uid
-     * @param string|null $column
-     * @return mixed|mixed[]|null
-     * @throws Exception
+     * @return mixed|array|null Record array, single column value, or null if not found
      */
-    public static function getRecord(string $table, int $uid, ?string $column = null)
+    public static function getRecordTranslation(string $table, int $uid, int $langUid, ?string $column = null): mixed
     {
-        $queryBuilder = self::getQueryBuilder($table);
-        $query = $queryBuilder->select('*')
-            ->from($table)
-            ->where(
-                $queryBuilder->expr()->eq(
-                    'uid',
-                    $queryBuilder->createNamedParameter($uid, \TYPO3\CMS\Core\Database\Connection::PARAM_INT)
-                )
-            );
+        $parentField = $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] ?? null;
 
-        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-        if ($versionInformation->getMajorVersion() > 11) {
-            $res = $query->executeQuery()->fetchAssociative();
-        } else {
-            $res = $query->execute()->fetchAssociative();
-        }
-
-        if ($res === false) {
+        if ($parentField === null) {
             return null;
         }
 
-        if ($column !== null) {
-            return $res[$column] ?? null;
-        }
-
-        return $res;
-    }
-
-    /**
-     * Get record translation for a specified language.
-     *
-     * @param string $table
-     * @param int $uid
-     * @param int $langUid
-     * @param string|null $column
-     * @return mixed|mixed[]|null
-     * @throws Exception
-     */
-    public static function getRecordTranslation(string $table, int $uid, int $langUid, ?string $column = null)
-    {
-        $parentField = $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'];
         $queryBuilder = self::getQueryBuilder($table);
 
-        $query = $queryBuilder->select('*')
+        $result = $queryBuilder
+            ->select('*')
             ->from($table)
             ->where(
-                $queryBuilder->expr()->eq(
-                    'sys_language_uid',
-                    $queryBuilder->createNamedParameter($langUid, \TYPO3\CMS\Core\Database\Connection::PARAM_INT)
-                )
+                $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter($langUid, Connection::PARAM_INT)),
+                $queryBuilder->expr()->eq($parentField, $queryBuilder->createNamedParameter($uid, Connection::PARAM_INT))
             )
-            ->andWhere(
-                $queryBuilder->expr()->eq(
-                    $parentField,
-                    $queryBuilder->createNamedParameter($uid, \TYPO3\CMS\Core\Database\Connection::PARAM_INT)
-                )
-            );
+            ->executeQuery()
+            ->fetchAssociative();
 
-        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-        if ($versionInformation->getMajorVersion() > 11) {
-            $res = $query->executeQuery()->fetchAssociative();
-        } else {
-            $res = $query->execute()->fetchAssociative();
-        }
-
-        if ($res === false) {
+        if ($result === false) {
             return null;
         }
 
-        if ($column !== null) {
-            return $res[$column] ?? null;
-        }
-
-        return $res;
+        return $column !== null ? ($result[$column] ?? null) : $result;
     }
 
     /**
-     * Update record fields.
-     *
-     * @param string $table
-     * @param int $uid
-     * @param array|null $properties
-     * @return void
+     * Update record fields
      */
-    public static function updateRecord(string $table, int $uid, ?array $properties = null)
+    public static function updateRecord(string $table, int $uid, ?array $properties = null): void
     {
+        if ($properties === null || empty($properties)) {
+            return;
+        }
+
         $queryBuilder = self::getQueryBuilder($table);
         $update = $queryBuilder
             ->update($table)
             ->where(
-                $queryBuilder->expr()->eq(
-                    'uid',
-                    $queryBuilder->createNamedParameter(
-                        $uid,
-                        \TYPO3\CMS\Core\Database\Connection::PARAM_INT
-                    )
-                )
+                $queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, Connection::PARAM_INT))
             );
 
-        if ($properties !== null) {
-            foreach ($properties as $property => $value) {
-                if ($value !== null) {
-                    $update->set($property, $value);
-                }
+        foreach ($properties as $property => $value) {
+            if ($value !== null) {
+                $update->set($property, $value);
             }
         }
-        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-        if ($versionInformation->getMajorVersion() > 11) {
-            $update->executeStatement();
-        } else {
-            $update->execute();
-        }
+
+        $update->executeStatement();
     }
 
     /**
-     * Get record fields by table and constraints.
+     * Get record field values by table and constraints
      *
-     * @param string $table
-     * @param string $fields
-     * @param array $constraints
-     * @return array|mixed[]
-     * @throws Exception
+     * @param string $table Table name
+     * @param string $fields Comma-separated field names
+     * @param array $constraints Array of WHERE constraints
+     * @return array First column values of matching records
      */
     public static function getRecords(string $table, string $fields, array $constraints = []): array
     {
         $queryBuilder = self::getQueryBuilder($table);
         $fieldList = GeneralUtility::trimExplode(',', $fields, true);
 
-        $query = $queryBuilder->select(...$fieldList)
+        $query = $queryBuilder
+            ->select(...$fieldList)
             ->from($table);
+
         foreach ($constraints as $constraint) {
             $query->andWhere($constraint);
         }
 
-        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-        if ($versionInformation->getMajorVersion() > 11) {
-            return $query->executeQuery()->fetchFirstColumn();
-        } else {
-            return $query->execute()->fetchFirstColumn();
-        }
+        return $query->executeQuery()->fetchFirstColumn();
     }
 }
