@@ -33,6 +33,7 @@ CREATE TABLE tx_news_domain_model_news (
 # Table structure for extending table 'sys_file_reference'
 #
 CREATE TABLE sys_file_reference (
+    autotranslate_exclude tinyint(4) DEFAULT '0' NOT NULL,
     autotranslate_last int(11) DEFAULT '0' NOT NULL,
 );
 
