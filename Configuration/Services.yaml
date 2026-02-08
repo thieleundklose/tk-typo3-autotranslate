@@ -17,6 +17,13 @@ services:
         description: "Command for automatic translation of a number of elements."
         schedulable: false
 
+  ThieleUndKlose\Autotranslate\Command\SetAutotranslateLanguages:
+    tags:
+      - name: console.command
+        command: "autotranslate:set-languages"
+        description: "Set autotranslate_languages field for existing records."
+        schedulable: false
+
   ThieleUndKlose\Autotranslate\TsConfig\Loader:
     public: true
     tags:

@@ -104,6 +104,15 @@ final class Translator implements LoggerAwareInterface
         if ($languagesToTranslate === null) {
             $languagesToTranslate = $record[self::AUTOTRANSLATE_LANGUAGES] ?? '';
         }
+        
+        // Fall back to site configuration default if record has no languages set
+        if ($languagesToTranslate === '' || $languagesToTranslate === null) {
+            $siteConfig = TranslationHelper::siteConfigurationValue($this->pageId);
+            if (is_array($siteConfig)) {
+                $settings = TranslationHelper::translationSettingsDefaults($siteConfig, $table);
+                $languagesToTranslate = $settings['autotranslateLanguages'] ?? '';
+            }
+        }
 
         $localizedContents = [];
         $languageIds = GeneralUtility::trimExplode(',', $languagesToTranslate, true);
@@ -120,7 +129,7 @@ final class Translator implements LoggerAwareInterface
             $localizedContents[$languageId] = [];
 
             // Skip translation if language matches original record
-            if ((int)$languageId === $record['sys_language_uid']) {
+            if ((int)$languageId === (int)$record['sys_language_uid']) {
                 continue;
             }
 
