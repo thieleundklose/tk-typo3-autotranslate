@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.5.1] - 2026-02-08
+
+### Fixes
+- Fixed: The `autotranslate_languages` field was accidentally removed from the database, which prevented content elements from being translated.
+
 ## [2.5.0] - 2026-01-17
 
 ### Features
