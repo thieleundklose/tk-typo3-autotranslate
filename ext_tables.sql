@@ -30,6 +30,7 @@ CREATE TABLE tx_news_domain_model_news (
 #
 CREATE TABLE sys_file_reference (
     autotranslate_last int(11) DEFAULT '0' NOT NULL
+    autotranslate_exclude tinyint(4) DEFAULT '0' NOT NULL,
 );
 
 #
