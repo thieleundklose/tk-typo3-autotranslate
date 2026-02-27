@@ -71,26 +71,6 @@ class Translator implements LoggerAwareInterface
     public function translate(string $table, int $recordUid, ?DataHandler $parentObject = null, ?string $languagesToTranslate = null, string $translateMode = self::TRANSLATE_MODE_BOTH): void
     {
 
-        $deeplApiKeyDetails = DeeplApiHelper::checkApiKey($this->apiKey);
-        if ($deeplApiKeyDetails['error']){
-            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
-                'error' => $deeplApiKeyDetails['error']
-            ]);
-            throw new \RuntimeException('DeepL API Key is not valid: ' . $deeplApiKeyDetails['error']);
-        }
-        if (!$deeplApiKeyDetails['isValid']) {
-            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
-                'error' => 'No API Key given.'
-            ]);
-            throw new \RuntimeException('DeepL API Key is not valid: No API Key given.');
-        }
-        if ($deeplApiKeyDetails['charactersLeft'] <= 0) {
-            LogUtility::log($this->logger, 'DeepL API Key has no characters left: {charactersLeft}', [
-                'charactersLeft' => $deeplApiKeyDetails['charactersLeft']
-            ]);
-            throw new \RuntimeException('DeepL API Key has no characters left: ' . $deeplApiKeyDetails['charactersLeft']);
-        }
-
         $record = Records::getRecord($table, $recordUid);
 
         // exit if record does not exist (e.g. deleted between query and access)
@@ -117,6 +97,26 @@ class Translator implements LoggerAwareInterface
         $columns = TranslationHelper::translationTextfields($this->pageId, $table);
         if ($columns === null) {
             return;
+        }
+
+        $deeplApiKeyDetails = DeeplApiHelper::checkApiKey($this->apiKey);
+        if ($deeplApiKeyDetails['error']){
+            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
+                'error' => $deeplApiKeyDetails['error']
+            ]);
+            throw new \RuntimeException('DeepL API Key is not valid: ' . $deeplApiKeyDetails['error']);
+        }
+        if (!$deeplApiKeyDetails['isValid']) {
+            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
+                'error' => 'No API Key given.'
+            ]);
+            throw new \RuntimeException('DeepL API Key is not valid: No API Key given.');
+        }
+        if ($deeplApiKeyDetails['charactersLeft'] <= 0) {
+            LogUtility::log($this->logger, 'DeepL API Key has no characters left: {charactersLeft}', [
+                'charactersLeft' => $deeplApiKeyDetails['charactersLeft']
+            ]);
+            throw new \RuntimeException('DeepL API Key has no characters left: ' . $deeplApiKeyDetails['charactersLeft']);
         }
 
         // set target languages by record if null is given
