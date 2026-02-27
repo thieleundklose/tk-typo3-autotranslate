@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.6/phpunit.xsd"
-    bootstrap="../.Build/vendor/autoload.php"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/12.5/phpunit.xsd"
+    bootstrap="../.Build/vendor/typo3/testing-framework/Resources/Core/Build/UnitTestsBootstrap.php"
     colors="true"
-    executionOrder="depends,defects"
-    cacheResultFile="../.Build/.phpunit.result.cache"
 >
     <testsuites>
         <testsuite name="Unit Tests">
