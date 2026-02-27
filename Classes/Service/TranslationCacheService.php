@@ -178,20 +178,26 @@ class TranslationCacheService
                 $results[$index] = null;
                 continue;
             }
-            
-            // Create TextResult-like object (since TextResult constructor is protected)
-            $result = new class($data['text'], $data['detected_source_lang']) {
-                public $text;
-                public $detectedSourceLang;
-                public $billedCharacters;
 
-                public function __construct(string $text, ?string $detectedSourceLang) {
-                    $this->text = $text;
-                    $this->detectedSourceLang = $detectedSourceLang;
+            $constructor = new \ReflectionMethod(TextResult::class, '__construct');
+            if ($constructor->getNumberOfRequiredParameters() >= 3) {
+                $results[$index] = new TextResult(
+                    $data['text'],
+                    $data['detected_source_lang'] ?? '',
+                    $data['billed_characters'] ?? 0
+                );
+            } else {
+                $result = new TextResult(
+                    $data['text'],
+                    $data['detected_source_lang'] ?? ''
+                );
+
+                if (property_exists($result, 'billedCharacters')) {
+                    $result->billedCharacters = $data['billed_characters'] ?? 0;
                 }
-            };
-            $result->billedCharacters = $data['billed_characters'];
-            $results[$index] = $result;
+
+                $results[$index] = $result;
+            }
         }
         return $results;
     }
