@@ -797,7 +797,7 @@ class Translator implements LoggerAwareInterface
             $fieldsToUpdate = [];
 
             foreach (array_keys($slugFields) as $field) {
-                $slug = SlugUtility::generateSlug($record, $table, $field);
+                $slug = SlugUtility::generateSlug($record, $table, $field, $slugFields);
                 if ($slug === null) {
                     continue;
                 }

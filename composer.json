@@ -17,7 +17,7 @@
         "php": ">= 7.4 < 8.5"
     },
     "require-dev": {
-        "typo3/testing-framework": "^6.8"
+        "typo3/testing-framework": "^6.8 || ^7.0 || ^8.2 || ^9.0"
     },
     "autoload": {
         "psr-4": {
@@ -34,11 +34,21 @@
     },
     "config": {
         "vendor-dir": ".Build/vendor",
-        "bin-dir": ".Build/bin"
+        "bin-dir": ".Build/bin",
+        "allow-plugins": {
+            "typo3/cms-composer-installers": true,
+            "typo3/class-alias-loader": true
+        }
     },
     "scripts": {
         "post-autoload-dump": [
             "TYPO3\\TestingFramework\\Composer\\ExtensionTestEnvironment::prepare"
+        ],
+        "ci:test:php:unit": [
+            "phpunit --configuration Build/UnitTests.xml"
+        ],
+        "ci:test": [
+            "@ci:test:php:unit"
         ]
     },
     "extra": {
