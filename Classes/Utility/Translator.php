@@ -71,6 +71,34 @@ class Translator implements LoggerAwareInterface
     public function translate(string $table, int $recordUid, ?DataHandler $parentObject = null, ?string $languagesToTranslate = null, string $translateMode = self::TRANSLATE_MODE_BOTH): void
     {
 
+        $record = Records::getRecord($table, $recordUid);
+
+        // exit if record does not exist (e.g. deleted between query and access)
+        if ($record === null) {
+            LogUtility::log($this->logger, 'Record {table}:{uid} not found, skipping translation.', [
+                'table' => $table,
+                'uid' => $recordUid,
+            ], LogUtility::MESSAGE_WARNING);
+            return;
+        }
+
+        // exit if record is localized one
+        $parentField = TranslationHelper::translationOrigPointerField($table);
+        if ($parentField === null || $record[$parentField] > 0) {
+            return;
+        }
+
+        // exit if record is marked for exclude
+        if ($record[self::AUTOTRANSLATE_EXCLUDE] === 1) {
+            return;
+        }
+
+        // load translation columns for table
+        $columns = TranslationHelper::translationTextfields($this->pageId, $table);
+        if ($columns === null) {
+            return;
+        }
+
         $deeplApiKeyDetails = DeeplApiHelper::checkApiKey($this->apiKey);
         if ($deeplApiKeyDetails['error']){
             LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
@@ -89,25 +117,6 @@ class Translator implements LoggerAwareInterface
                 'charactersLeft' => $deeplApiKeyDetails['charactersLeft']
             ]);
             throw new \RuntimeException('DeepL API Key has no characters left: ' . $deeplApiKeyDetails['charactersLeft']);
-        }
-
-        $record = Records::getRecord($table, $recordUid);
-
-        // exit if record is localized one
-        $parentField = TranslationHelper::translationOrigPointerField($table);
-        if ($parentField === null || $record[$parentField] > 0) {
-            return;
-        }
-
-        // exit if record is marked for exclude
-        if ($record[self::AUTOTRANSLATE_EXCLUDE] === 1) {
-            return;
-        }
-
-        // load translation columns for table
-        $columns = TranslationHelper::translationTextfields($this->pageId, $table);
-        if ($columns === null) {
-            return;
         }
 
         // set target languages by record if null is given
