@@ -80,11 +80,24 @@ class DataHandler implements SingletonInterface
             return;
         }
 
+        // Forward the list of datamap keys so Translator::translate() can
+        // skip DeepL round-trips for the main record when only status fields
+        // (e.g. "hidden" flipped by a cron) have changed. New records pass
+        // null, which keeps the previous "translate everything" behaviour.
+        $changedFields = TranslationHelper::extractChangedFieldsFromDatamap($status, $fields);
+
         $translator = GeneralUtility::makeInstance(Translator::class, $pageId);
 
         try {
             if (in_array($table, TranslationHelper::tablesToTranslate())) {
-                $translator->translate($table, (int)$recordUid, $parentObject);
+                $translator->translate(
+                    $table,
+                    (int)$recordUid,
+                    $parentObject,
+                    null,
+                    Translator::TRANSLATE_MODE_BOTH,
+                    $changedFields
+                );
             }
         } catch (\Exception $e) {
             FlashMessageUtility::addMessage(

@@ -65,10 +65,16 @@ class Translator implements LoggerAwareInterface
      * @param DataHandler|null $parentObject
      * @param string|null $languagesToTranslate
      * @param string $translateMode
+     * @param string[]|null $changedFields Datamap keys from the DataHandler save, or null for
+     *                                     new records. When supplied, the translation of the
+     *                                     main record is restricted to the intersection with
+     *                                     the configured translatable columns. Reference tables
+     *                                     keep their previous behaviour so editors see file
+     *                                     translations propagate on every save.
      * @return void
      * @throws \Doctrine\DBAL\Driver\Exception
      */
-    public function translate(string $table, int $recordUid, ?DataHandler $parentObject = null, ?string $languagesToTranslate = null, string $translateMode = self::TRANSLATE_MODE_BOTH): void
+    public function translate(string $table, int $recordUid, ?DataHandler $parentObject = null, ?string $languagesToTranslate = null, string $translateMode = self::TRANSLATE_MODE_BOTH, ?array $changedFields = null): void
     {
 
         $deeplApiKeyDetails = DeeplApiHelper::checkApiKey($this->apiKey);
@@ -109,6 +115,10 @@ class Translator implements LoggerAwareInterface
         if ($columns === null) {
             return;
         }
+
+        // narrow the main-record translation to the columns that actually
+        // changed; reference handling below keeps the full configured set
+        $mainRecordColumns = TranslationHelper::filterChangedTranslatableColumns($columns, $changedFields);
 
         // set target languages by record if null is given
         if (is_null($languagesToTranslate)) {
@@ -249,7 +259,7 @@ class Translator implements LoggerAwareInterface
 
 
             // Translate properties with given service
-            $translatedColumns = $this->translateRecordProperties($record, (int)$languageId, $columns, $table, $localizedUid);
+            $translatedColumns = $this->translateRecordProperties($record, (int)$languageId, $mainRecordColumns, $table, $localizedUid);
 
             if (count($translatedColumns) > 0) {
                 Records::updateRecord($table, $localizedUid, $translatedColumns);
