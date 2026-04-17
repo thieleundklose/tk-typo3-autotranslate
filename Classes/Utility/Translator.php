@@ -218,11 +218,14 @@ class Translator implements LoggerAwareInterface
                                     $dataHandler->start([], []);
                                     $translatedReferenceUid = $dataHandler->localize($referenceTable, $referenceUid, $languageId);
 
+                                    $hidden = Records::getRecord($referenceTable, $referenceUid, 'hidden') ?? 0;
+
                                     Records::updateRecord(
                                         $referenceTable,
                                         $translatedReferenceUid,
                                         [
                                             $foreignField => $localizedContents[$languageId][$recordUid],
+                                            'hidden' => $hidden,
                                         ]
                                     );
 
