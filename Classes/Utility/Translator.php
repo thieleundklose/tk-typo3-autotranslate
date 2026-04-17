@@ -45,6 +45,13 @@ class Translator implements LoggerAwareInterface
     protected $glossaryService = null;
 
     /**
+     * Cached DeepL checkApiKey() result for this Translator instance.
+     * Populated on the first actual DeepL invocation and reused for all
+     * subsequent ones so cron runs only hit the usage endpoint once.
+     */
+    private ?array $deeplApiKeyDetails = null;
+
+    /**
      * object constructor
      *
      * @param int $pageId
@@ -70,27 +77,6 @@ class Translator implements LoggerAwareInterface
      */
     public function translate(string $table, int $recordUid, ?DataHandler $parentObject = null, ?string $languagesToTranslate = null, string $translateMode = self::TRANSLATE_MODE_BOTH): void
     {
-
-        $deeplApiKeyDetails = DeeplApiHelper::checkApiKey($this->apiKey);
-        if ($deeplApiKeyDetails['error']){
-            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
-                'error' => $deeplApiKeyDetails['error']
-            ]);
-            throw new \RuntimeException('DeepL API Key is not valid: ' . $deeplApiKeyDetails['error']);
-        }
-        if (!$deeplApiKeyDetails['isValid']) {
-            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
-                'error' => 'No API Key given.'
-            ]);
-            throw new \RuntimeException('DeepL API Key is not valid: No API Key given.');
-        }
-        if ($deeplApiKeyDetails['charactersLeft'] <= 0) {
-            LogUtility::log($this->logger, 'DeepL API Key has no characters left: {charactersLeft}', [
-                'charactersLeft' => $deeplApiKeyDetails['charactersLeft']
-            ]);
-            throw new \RuntimeException('DeepL API Key has no characters left: ' . $deeplApiKeyDetails['charactersLeft']);
-        }
-
         $record = Records::getRecord($table, $recordUid);
 
         // exit if record is localized one
@@ -281,6 +267,13 @@ class Translator implements LoggerAwareInterface
         // create translation array from source record by keys from fielmap
         $translatedColumns = [];
 
+        // Validate the DeepL API key before entering the try/catch below so
+        // a genuinely broken key surfaces as a RuntimeException to the hook
+        // (flash message) instead of being swallowed as a translation error.
+        if (count($columns) > 0) {
+            $this->ensureValidApiKey();
+        }
+
         try {
             // prepare translated record with source record
             // create translation array from source record by keys from fielmap
@@ -427,6 +420,38 @@ class Translator implements LoggerAwareInterface
             ], LogUtility::MESSAGE_ERROR);
 
             return '{}';
+        }
+    }
+
+    /**
+     * Validate the configured DeepL API key exactly once per Translator
+     * instance and re-use the cached usage details on every subsequent
+     * DeepL invocation. Throws RuntimeException if the key is unusable.
+     */
+    private function ensureValidApiKey(): void
+    {
+        if ($this->deeplApiKeyDetails === null) {
+            $this->deeplApiKeyDetails = DeeplApiHelper::checkApiKey($this->apiKey);
+        }
+
+        $details = $this->deeplApiKeyDetails;
+        if ($details['error']) {
+            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
+                'error' => $details['error']
+            ]);
+            throw new \RuntimeException('DeepL API Key is not valid: ' . $details['error']);
+        }
+        if (!$details['isValid']) {
+            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
+                'error' => 'No API Key given.'
+            ]);
+            throw new \RuntimeException('DeepL API Key is not valid: No API Key given.');
+        }
+        if ($details['charactersLeft'] <= 0) {
+            LogUtility::log($this->logger, 'DeepL API Key has no characters left: {charactersLeft}', [
+                'charactersLeft' => $details['charactersLeft']
+            ]);
+            throw new \RuntimeException('DeepL API Key has no characters left: ' . $details['charactersLeft']);
         }
     }
 
