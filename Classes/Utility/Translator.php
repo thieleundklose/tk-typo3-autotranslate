@@ -227,6 +227,22 @@ class Translator implements LoggerAwareInterface
                                     $dataHandler->start([], []);
                                     $translatedReferenceUid = $dataHandler->localize($referenceTable, $referenceUid, $languageId);
 
+                                    if ($translatedReferenceUid === false) {
+                                        LogUtility::log(
+                                            $this->logger,
+                                            'No {referenceTable} {referenceUid} Translation of {table} with uid {uid} because DataHandler localize failed.',
+                                            [
+                                                'referenceTable' => $referenceTable,
+                                                'table' => $table,
+                                                'uid' => $recordUid,
+                                                'referenceUid' => $referenceUid,
+                                            ],
+                                            LogUtility::MESSAGE_WARNING
+                                        );
+
+                                        continue;
+                                    }
+
                                     Records::updateRecord(
                                         $referenceTable,
                                         $translatedReferenceUid,
