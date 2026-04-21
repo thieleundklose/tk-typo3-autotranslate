@@ -1,0 +1,5 @@
+"tt_content",,,,,,
+,"uid","pid","CType","header","deleted","hidden"
+,1,2,"text","Active Content",0,0
+,2,2,"text","Deleted Content",1,0
+,3,2,"text","Hidden Content",0,1
