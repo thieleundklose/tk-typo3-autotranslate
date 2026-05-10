@@ -80,6 +80,22 @@ class DataHandler implements SingletonInterface
             return;
         }
 
+        $siteConfiguration = TranslationHelper::siteConfigurationValue((int)$pageId);
+        if (!is_array($siteConfiguration)) {
+            return;
+        }
+
+        $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
+        if ($translationSettings === null) {
+            return;
+        }
+
+        $targetLanguages = GeneralUtility::trimExplode(',', (string)($translationSettings['autotranslateLanguages'] ?? ''), true);
+        $textFields = GeneralUtility::trimExplode(',', (string)($translationSettings['autotranslateTextfields'] ?? ''), true);
+        if (empty($targetLanguages) || empty($textFields)) {
+            return;
+        }
+
         $translator = GeneralUtility::makeInstance(Translator::class, $pageId);
 
         try {

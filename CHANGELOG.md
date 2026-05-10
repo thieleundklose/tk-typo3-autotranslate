@@ -6,6 +6,7 @@
 - Fixed batch translation handling for translated MM/select relations so localized records are linked correctly instead of keeping obsolete default-language references.
 - Fixed site configuration handling so disabled tables are no longer localized or remapped by accident during batch translation.
 - Fixed reference synchronization for localized relations to respect whether a table is enabled in the current site configuration.
+- Fixed an unnecessary flash message during page save when autotranslate is installed but no translation targets or languages are configured for the site.
 
 ### Stabilizations
 - Improved relation remapping for translated records with `MM` and `MM_opposite_field` usage in TYPO3 v12/v13 setups.
