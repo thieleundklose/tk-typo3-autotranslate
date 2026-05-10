@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.6.0] - 2026-05-10
+
+### Fixes
+- Fixed batch translation handling for translated MM/select relations so localized records are linked correctly instead of keeping obsolete default-language references.
+- Fixed site configuration handling so disabled tables are no longer localized or remapped by accident during batch translation.
+- Fixed reference synchronization for localized relations to respect whether a table is enabled in the current site configuration.
+
+### Stabilizations
+- Improved relation remapping for translated records with `MM` and `MM_opposite_field` usage in TYPO3 v12/v13 setups.
+- Added safer guards around translation of additional tables and their reference fields.
+
 ## [2.5.1] - 2026-02-08
 
 ### Fixes

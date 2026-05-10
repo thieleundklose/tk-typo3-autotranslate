@@ -225,6 +225,9 @@ class TranslationHelper
 
         $siteConfiguration = self::siteConfigurationValue($pageId);
         $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
+        if ($translationSettings === null) {
+            return null;
+        }
         return GeneralUtility::trimExplode(',', $translationSettings['autotranslateTextfields'] ?? '', true);
     }
 
@@ -245,6 +248,9 @@ class TranslationHelper
 
         $siteConfiguration = self::siteConfigurationValue($pageId);
         $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
+        if ($translationSettings === null) {
+            return null;
+        }
         return GeneralUtility::trimExplode(',', $translationSettings['autotranslateFileReferences'] ?? '', true);
     }
 

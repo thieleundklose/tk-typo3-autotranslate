@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Utility;
 
 use DeepL\TranslateTextOptions;
+use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use Psr\Log\LoggerAwareInterface;
@@ -190,11 +191,6 @@ class Translator implements LoggerAwareInterface
                                 $references = Records::getRecords($referenceTable, 'uid', $constraints);
                                 break;
                             default:
-                                LogUtility::log($this->logger, 'Unsupported reference type {type} for column {referenceColumn} in table {table}.', [
-                                    'type' => $type,
-                                    'referenceColumn' => $referenceColumn,
-                                    'table' => $table,
-                                ], LogUtility::MESSAGE_WARNING);
                                 continue 2;
                         }
 
@@ -247,6 +243,13 @@ class Translator implements LoggerAwareInterface
                 }
             }
 
+            $this->synchronizeLocalizedRelations(
+                $table,
+                $record,
+                $localizedUid,
+                (int)$languageId,
+                $translateMode
+            );
 
             // Translate properties with given service
             $translatedColumns = $this->translateRecordProperties($record, (int)$languageId, $columns, $table, $localizedUid);
@@ -264,6 +267,182 @@ class Translator implements LoggerAwareInterface
             self::AUTOTRANSLATE_LAST => time()
         ]);
 
+    }
+
+    private function synchronizeLocalizedRelations(
+        string $table,
+        array $record,
+        int $localizedUid,
+        int $targetLanguageUid,
+        string $translateMode
+    ): void {
+        foreach (($GLOBALS['TCA'][$table]['columns'] ?? []) as $columnName => $columnConfiguration) {
+            $config = $columnConfiguration['config'] ?? [];
+            $type = $config['type'] ?? null;
+
+            if (!in_array($type, ['select', 'group', 'category'], true)) {
+                continue;
+            }
+
+            $referenceTable = $this->resolveReferenceTableForColumn($config);
+            if ($referenceTable === null || !isset($GLOBALS['TCA'][$referenceTable]['ctrl']['transOrigPointerField'])) {
+                continue;
+            }
+
+            $relatedSourceUids = $this->getRelatedRecordUids($table, $record, $columnName, $config, $referenceTable);
+            if ($relatedSourceUids === []) {
+                continue;
+            }
+
+            $translatedRelationUids = [];
+            foreach ($relatedSourceUids as $relatedSourceUid) {
+                $translatedRelationUid = $this->ensureLocalizedReferenceRecord(
+                    $referenceTable,
+                    $relatedSourceUid,
+                    $targetLanguageUid,
+                    $translateMode
+                );
+
+                if ($translatedRelationUid !== null) {
+                    $translatedRelationUids[] = $translatedRelationUid;
+                }
+            }
+
+            if ($translatedRelationUids === []) {
+                continue;
+            }
+
+            $this->updateRelationField($table, $localizedUid, $columnName, $config, $translatedRelationUids);
+        }
+    }
+
+    private function resolveReferenceTableForColumn(array $config): ?string
+    {
+        if (($config['type'] ?? null) === 'category') {
+            return 'sys_category';
+        }
+
+        return $config['foreign_table'] ?? null;
+    }
+
+    private function getRelatedRecordUids(
+        string $table,
+        array $record,
+        string $columnName,
+        array $config,
+        string $referenceTable
+    ): array {
+        $relationHandler = GeneralUtility::makeInstance(RelationHandler::class);
+        $relationHandler->start(
+            (string)($record[$columnName] ?? ''),
+            $config['allowed'] ?? $referenceTable,
+            $config['MM'] ?? '',
+            (int)$record['uid'],
+            $table,
+            $config
+        );
+
+        return array_values(array_map(
+            'intval',
+            $relationHandler->tableArray[$referenceTable] ?? []
+        ));
+    }
+
+    private function ensureLocalizedReferenceRecord(
+        string $referenceTable,
+        int $referenceUid,
+        int $targetLanguageUid,
+        string $translateMode
+    ): ?int {
+        $referenceTranslation = Records::getRecordTranslation($referenceTable, $referenceUid, $targetLanguageUid);
+        $translationCreationAllowed = $this->isTranslationCreationAllowedForTable($referenceTable);
+
+        if (!$translationCreationAllowed) {
+            return $referenceUid;
+        }
+
+        if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && empty($referenceTranslation)) {
+            LogUtility::log($this->logger, 'Skip reference localization for {referenceTable}:{referenceUid} in language {languageUid} because mode is update only.', [
+                'referenceTable' => $referenceTable,
+                'referenceUid' => $referenceUid,
+                'languageUid' => $targetLanguageUid,
+            ]);
+            return null;
+        }
+
+        if (!empty($referenceTranslation)) {
+            $translatedReferenceUid = (int)$referenceTranslation['uid'];
+        } else {
+            $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+            $dataHandler->start([], []);
+            $translatedReferenceUid = (int)$dataHandler->localize($referenceTable, $referenceUid, $targetLanguageUid);
+        }
+
+        if ($translatedReferenceUid <= 0) {
+            LogUtility::log($this->logger, 'Failed to localize reference record {referenceTable}:{referenceUid} for language {languageUid}.', [
+                'referenceTable' => $referenceTable,
+                'referenceUid' => $referenceUid,
+                'languageUid' => $targetLanguageUid,
+            ], LogUtility::MESSAGE_WARNING);
+            return null;
+        }
+
+        $referenceColumns = TranslationHelper::translationTextfields($this->pageId, $referenceTable);
+        if (!empty($referenceColumns)) {
+            $sourceReferenceRecord = Records::getRecord($referenceTable, $referenceUid);
+            if (is_array($sourceReferenceRecord)) {
+                $translatedColumns = $this->translateRecordProperties(
+                    $sourceReferenceRecord,
+                    $targetLanguageUid,
+                    $referenceColumns,
+                    $referenceTable,
+                    $translatedReferenceUid
+                );
+
+                if ($translatedColumns !== []) {
+                    Records::updateRecord($referenceTable, $translatedReferenceUid, $translatedColumns);
+                }
+            }
+        }
+
+        return $translatedReferenceUid;
+    }
+
+    private function isTranslationCreationAllowedForTable(string $table): bool
+    {
+        $siteConfiguration = TranslationHelper::siteConfigurationValue($this->pageId);
+        if (!is_array($siteConfiguration)) {
+            return true;
+        }
+
+        $enabledField = TranslationHelper::configurationFieldname($table, 'enabled');
+        if (!array_key_exists($enabledField, $siteConfiguration)) {
+            return true;
+        }
+
+        return (bool)$siteConfiguration[$enabledField];
+    }
+
+    private function updateRelationField(
+        string $table,
+        int $localizedUid,
+        string $columnName,
+        array $config,
+        array $translatedRelationUids
+    ): void {
+        $fieldValue = in_array(($config['renderType'] ?? ''), ['selectSingle', 'selectTree'], true)
+            ? (string)($translatedRelationUids[0] ?? 0)
+            : implode(',', $translatedRelationUids);
+
+        $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+        $dataHandler->start([
+            $table => [
+                $localizedUid => [
+                    $columnName => $fieldValue,
+                ],
+            ],
+        ], []);
+        $dataHandler->process_datamap();
     }
 
     /**
