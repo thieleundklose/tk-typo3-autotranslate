@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.6.1] - 2026-05-17
+
+### Fixes
+- Fixed auto translation for newly created records by deferring the translation run until all DataHandler operations have finished, so MM relations are available on first save.
+- Fixed relation synchronization for translated records so `l10n_parent` and other localization metadata are not overwritten during remapping.
+- Fixed relation handling for translated `MM`/`select` fields so existing target-language relations are preferred and missing relations are removed instead of keeping default-language references.
+- Fixed the save hook so a record translation is triggered from the stored `autotranslate_languages` value even when the field was not part of the incoming datamap.
+
+### Stabilizations
+- Added request-local caching and rate-limit handling for DeepL API validation to reduce repeated quota checks and avoid unnecessary failures during busy translation runs.
+- Tightened relation discovery for translated records by reading MM relations from the join table and filtering deleted source records.
+- Improved backend translation processing for batch and single-record runs by separating translation queuing from execution.
+
 ## [2.6.0] - 2026-05-10
 
 ### Fixes

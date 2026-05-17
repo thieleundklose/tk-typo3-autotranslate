@@ -6,6 +6,7 @@ namespace ThieleUndKlose\Autotranslate\Utility;
 use DeepL\Translator;
 use DeepL\AuthorizationException;
 use DeepL\DeepLException;
+use DeepL\TooManyRequestsException;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException;
 use TYPO3\CMS\Core\Core\Environment;
@@ -13,6 +14,13 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class DeeplApiHelper
 {
+    /**
+     * Cache validation results per request to avoid hitting DeepL for every record.
+     *
+     * @var array<string,array>
+     */
+    private static array $apiKeyCheckCache = [];
+
     /**
      * Prüft, ob der DeepL API-Key gültig ist und gibt optional die Usage zurück.
      *
@@ -27,7 +35,12 @@ class DeeplApiHelper
                 'usage' => null,
                 'charactersLeft' => 0,
                 'error' => null,
+                'warning' => null,
             ];
+        }
+
+        if (isset(self::$apiKeyCheckCache[$apiKey])) {
+            return self::$apiKeyCheckCache[$apiKey];
         }
 
         try {
@@ -37,32 +50,44 @@ class DeeplApiHelper
             if (is_object($usage) && isset($usage->character)) {
                 $charactersLeft = $usage->character->limit - $usage->character->count;
             }
-            return [
+            return self::$apiKeyCheckCache[$apiKey] = [
                 'isValid' => true,
                 'usage' => $usage,
                 'charactersLeft' => $charactersLeft,
                 'error' => null,
+                'warning' => null,
             ];
         } catch (AuthorizationException $e) {
-            return [
+            return self::$apiKeyCheckCache[$apiKey] = [
                 'isValid' => false,
                 'usage' => null,
                 'charactersLeft' => 0,
                 'error' => $e->getMessage(),
+                'warning' => null,
+            ];
+        } catch (TooManyRequestsException $e) {
+            return self::$apiKeyCheckCache[$apiKey] = [
+                'isValid' => true,
+                'usage' => null,
+                'charactersLeft' => null,
+                'error' => null,
+                'warning' => 'DeepL is temporarily rate limiting requests: ' . $e->getMessage(),
             ];
         } catch (DeepLException $e) {
-            return [
+            return self::$apiKeyCheckCache[$apiKey] = [
                 'isValid' => false,
                 'usage' => null,
                 'charactersLeft' => 0,
                 'error' => 'DeepL error: ' . $e->getMessage(),
+                'warning' => null,
             ];
         } catch (\Throwable $e) {
-            return [
+            return self::$apiKeyCheckCache[$apiKey] = [
                 'isValid' => false,
                 'usage' => null,
                 'charactersLeft' => 0,
                 'error' => 'Unexpected error: ' . $e->getMessage(),
+                'warning' => null,
             ];
         }
     }

@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Hooks;
 
 use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
+use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -28,6 +29,11 @@ class DataHandler implements SingletonInterface
      * @var bool Hook suspended state.
      */
     private bool $suspended = false;
+
+    /**
+     * @var array<string, array<int, int>>
+     */
+    private array $translationQueue = [];
 
     /**
      * Generate a different preview link
@@ -90,27 +96,59 @@ class DataHandler implements SingletonInterface
             return;
         }
 
-        $targetLanguages = GeneralUtility::trimExplode(',', (string)($translationSettings['autotranslateLanguages'] ?? ''), true);
         $textFields = GeneralUtility::trimExplode(',', (string)($translationSettings['autotranslateTextfields'] ?? ''), true);
-        if (empty($targetLanguages) || empty($textFields)) {
+        if (empty($textFields)) {
             return;
         }
 
-        $translator = GeneralUtility::makeInstance(Translator::class, $pageId);
-
-        try {
-            if (in_array($table, TranslationHelper::tablesToTranslate())) {
-                $translator->translate($table, (int)$recordUid, $parentObject);
-            }
-        } catch (\Exception $e) {
-            FlashMessageUtility::addMessage(
-                'Error during translation: ' . $e->getMessage(),
-                'Translation Error',
-                FlashMessageUtility::MESSAGE_WARNING
-            );
-        }
+        $this->translationQueue[$table][(int)$recordUid] = (int)$pageId;
 
         return;
+    }
+
+    public function processDatamap_afterAllOperations(\TYPO3\CMS\Core\DataHandling\DataHandler $parentObject): void
+    {
+        if ($this->suspended || $this->translationQueue === []) {
+            return;
+        }
+
+        $translationQueue = $this->translationQueue;
+        $this->translationQueue = [];
+
+        foreach ($translationQueue as $table => $records) {
+            if (!in_array($table, TranslationHelper::tablesToTranslate(), true)) {
+                continue;
+            }
+
+            foreach ($records as $recordUid => $pageId) {
+                $record = Records::getRecord($table, (int)$recordUid);
+                if ($record === null) {
+                    continue;
+                }
+
+                $targetLanguages = GeneralUtility::trimExplode(
+                    ',',
+                    (string)($record[Translator::AUTOTRANSLATE_LANGUAGES] ?? ''),
+                    true
+                );
+
+                if ($targetLanguages === []) {
+                    continue;
+                }
+
+                $translator = GeneralUtility::makeInstance(Translator::class, (int)$pageId);
+
+                try {
+                    $translator->translate($table, (int)$recordUid, $parentObject, implode(',', $targetLanguages));
+                } catch (\Exception $e) {
+                    FlashMessageUtility::addMessage(
+                        'Error during translation: ' . $e->getMessage(),
+                        'Translation Error',
+                        FlashMessageUtility::MESSAGE_WARNING
+                    );
+                }
+            }
+        }
     }
 
     /**
