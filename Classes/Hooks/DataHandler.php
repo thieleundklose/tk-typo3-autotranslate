@@ -25,6 +25,8 @@ use ThieleUndKlose\Autotranslate\Utility\Translator;
 
 class DataHandler implements SingletonInterface
 {
+    private static int $suspensionLevel = 0;
+
     /**
      * @var bool Hook suspended state.
      */
@@ -34,6 +36,17 @@ class DataHandler implements SingletonInterface
      * @var array<string, array<int, int>>
      */
     private array $translationQueue = [];
+
+    public static function runWithSuspendedHook(callable $callback): mixed
+    {
+        self::$suspensionLevel++;
+
+        try {
+            return $callback();
+        } finally {
+            self::$suspensionLevel--;
+        }
+    }
 
     /**
      * Generate a different preview link
@@ -54,7 +67,7 @@ class DataHandler implements SingletonInterface
     {
 
         // Skip auto translation if hook is suspended. @see processCmdmap() for detailed description.
-        if ($this->suspended) {
+        if ($this->suspended || self::$suspensionLevel > 0) {
             return;
         }
 
@@ -108,7 +121,7 @@ class DataHandler implements SingletonInterface
 
     public function processDatamap_afterAllOperations(\TYPO3\CMS\Core\DataHandling\DataHandler $parentObject): void
     {
-        if ($this->suspended || $this->translationQueue === []) {
+        if ($this->suspended || self::$suspensionLevel > 0 || $this->translationQueue === []) {
             return;
         }
 
@@ -139,7 +152,9 @@ class DataHandler implements SingletonInterface
                 $translator = GeneralUtility::makeInstance(Translator::class, (int)$pageId);
 
                 try {
-                    $translator->translate($table, (int)$recordUid, $parentObject, implode(',', $targetLanguages));
+                    self::runWithSuspendedHook(static function () use ($translator, $table, $recordUid, $parentObject, $targetLanguages): void {
+                        $translator->translate($table, (int)$recordUid, $parentObject, implode(',', $targetLanguages));
+                    });
                 } catch (\Exception $e) {
                     FlashMessageUtility::addMessage(
                         'Error during translation: ' . $e->getMessage(),

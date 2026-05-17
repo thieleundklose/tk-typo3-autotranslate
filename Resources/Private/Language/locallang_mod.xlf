@@ -36,6 +36,39 @@
             <trans-unit id="function_links_add_item" resname="function_links_add_item">
                 <source>Add New Item</source>
             </trans-unit>
+            <trans-unit id="record_translation.button" resname="record_translation.button">
+                <source>Translate record</source>
+            </trans-unit>
+            <trans-unit id="record_translation.modal.title" resname="record_translation.modal.title">
+                <source>Translate "%s"</source>
+            </trans-unit>
+            <trans-unit id="record_translation.modal.description" resname="record_translation.modal.description">
+                <source>Select the target language(s) for this record.</source>
+            </trans-unit>
+            <trans-unit id="record_translation.modal.submit" resname="record_translation.modal.submit">
+                <source>Start translation</source>
+            </trans-unit>
+            <trans-unit id="record_translation.modal.cancel" resname="record_translation.modal.cancel">
+                <source>Cancel</source>
+            </trans-unit>
+            <trans-unit id="record_translation.modal.loading" resname="record_translation.modal.loading">
+                <source>Translation is running...</source>
+            </trans-unit>
+            <trans-unit id="record_translation.modal.existing_translation" resname="record_translation.modal.existing_translation">
+                <source>Existing translation will be updated</source>
+            </trans-unit>
+            <trans-unit id="record_translation.success" resname="record_translation.success">
+                <source>Record translation was triggered successfully.</source>
+            </trans-unit>
+            <trans-unit id="record_translation.error.invalid_record" resname="record_translation.error.invalid_record">
+                <source>The selected record could not be resolved.</source>
+            </trans-unit>
+            <trans-unit id="record_translation.error.not_available" resname="record_translation.error.not_available">
+                <source>This record is currently not available for manual autotranslation.</source>
+            </trans-unit>
+            <trans-unit id="record_translation.error.no_languages" resname="record_translation.error.no_languages">
+                <source>Please select at least one target language.</source>
+            </trans-unit>
         </body>
     </file>
 </xliff>

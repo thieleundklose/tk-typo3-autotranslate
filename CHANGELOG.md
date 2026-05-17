@@ -1,25 +1,18 @@
 # Changelog
 
-## [2.6.1] - 2026-05-17
-
-### Fixes
-- Fixed auto translation for newly created records by deferring the translation run until all DataHandler operations have finished, so MM relations are available on first save.
-- Fixed relation synchronization for translated records so `l10n_parent` and other localization metadata are not overwritten during remapping.
-- Fixed relation handling for translated `MM`/`select` fields so existing target-language relations are preferred and missing relations are removed instead of keeping default-language references.
-- Fixed the save hook so a record translation is triggered from the stored `autotranslate_languages` value even when the field was not part of the incoming datamap.
-
-### Stabilizations
-- Added request-local caching and rate-limit handling for DeepL API validation to reduce repeated quota checks and avoid unnecessary failures during busy translation runs.
-- Tightened relation discovery for translated records by reading MM relations from the join table and filtering deleted source records.
-- Improved backend translation processing for batch and single-record runs by separating translation queuing from execution.
-
 ## [2.6.0] - 2026-05-10
+
+### Features
+- Added a backend record action in the TYPO3 list module to trigger autotranslation for a single record, including target language selection in a modal dialog.
 
 ### Fixes
 - Fixed batch translation handling for translated MM/select relations so localized records are linked correctly instead of keeping obsolete default-language references.
 - Fixed site configuration handling so disabled tables are no longer localized or remapped by accident during batch translation.
 - Fixed reference synchronization for localized relations to respect whether a table is enabled in the current site configuration.
 - Fixed an unnecessary flash message during page save when autotranslate is installed but no translation targets or languages are configured for the site.
+- Fixed DeepL rate-limit handling so temporary `429 Too many requests` responses are no longer reported as an invalid API key.
+- Cached DeepL API usage validation per request to avoid calling `getUsage()` for every translated record in a batch run.
+- Improved DeepL error messaging so temporary API overload is surfaced as a warning instead of stopping the translation flow with a misleading key validation error.
 
 ### Stabilizations
 - Improved relation remapping for translated records with `MM` and `MM_opposite_field` usage in TYPO3 v12/v13 setups.
