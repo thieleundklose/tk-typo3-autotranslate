@@ -176,16 +176,17 @@ final class TranslationCacheService
                 $results[$index] = null;
                 continue;
             }
-            
-            // Create TextResult-like object (since TextResult constructor is protected)
-            $result = new class($data['text'], $data['detected_source_lang'], $data['billed_characters']) {
-                public function __construct(
-                    public string $text,
-                    public ?string $detectedSourceLang,
-                    public ?int $billedCharacters,
-                ) {}
-            };
-            $results[$index] = $result;
+
+            // Reconstruct real TextResult objects so serializeTextResults() can
+            // recognise them on the next roundtrip. The previous anonymous-class
+            // implementation failed the instanceof TextResult check there and
+            // got silently serialized as null, causing cache data loss on the
+            // second roundtrip.
+            $results[$index] = new TextResult(
+                $data['text'],
+                $data['detected_source_lang'] ?? '',
+                $data['billed_characters'] ?? 0
+            );
         }
         return $results;
     }
