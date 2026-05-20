@@ -29,6 +29,7 @@ final class Translator implements LoggerAwareInterface
     private readonly ?string $apiKey;
     private readonly array $siteLanguages;
     private readonly GlossaryService $glossaryService;
+    private ?array $deeplApiKeyDetails = null;
 
     public function __construct(private readonly int $pageId)
     {
@@ -49,26 +50,6 @@ final class Translator implements LoggerAwareInterface
         ?string $languagesToTranslate = null,
         string $translateMode = self::TRANSLATE_MODE_BOTH
     ): void {
-        $deeplApiKeyDetails = DeeplApiHelper::checkApiKey($this->apiKey);
-        if ($deeplApiKeyDetails['error']) {
-            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
-                'error' => $deeplApiKeyDetails['error'],
-            ]);
-            throw new \RuntimeException('DeepL API Key is not valid: ' . $deeplApiKeyDetails['error']);
-        }
-        if (!$deeplApiKeyDetails['isValid']) {
-            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
-                'error' => 'No API Key given.',
-            ]);
-            throw new \RuntimeException('DeepL API Key is not valid: No API Key given.');
-        }
-        if ($deeplApiKeyDetails['charactersLeft'] <= 0) {
-            LogUtility::log($this->logger, 'DeepL API Key has no characters left: {charactersLeft}', [
-                'charactersLeft' => $deeplApiKeyDetails['charactersLeft'],
-            ]);
-            throw new \RuntimeException('DeepL API Key has no characters left: ' . $deeplApiKeyDetails['charactersLeft']);
-        }
-
         $record = Records::getRecord($table, $recordUid);
 
         if ($record === null) {
@@ -294,6 +275,10 @@ final class Translator implements LoggerAwareInterface
     {
         $translatedColumns = [];
 
+        if (count($columns) > 0) {
+            $this->ensureValidApiKey();
+        }
+
         try {
             $toTranslateObject = array_intersect_key($record, array_flip($columns));
             $toTranslate = array_filter($toTranslateObject, static fn($value) => is_string($value) && $value !== '');
@@ -408,6 +393,44 @@ final class Translator implements LoggerAwareInterface
         }
 
         return $translatedColumns;
+    }
+
+    /**
+     * Validate the DeepL API key on first use and cache the result on this Translator instance.
+     *
+     * Calling this once a translation is actually about to be attempted (instead of eagerly
+     * at the top of translate()) avoids one DeepL usage HTTP round-trip per record for records
+     * that never reach the translation path (excluded records, records with no translatable
+     * columns, records filtered out by changedFields logic).
+     *
+     * @throws \RuntimeException If the API key has an error, is missing, or has no characters left.
+     */
+    private function ensureValidApiKey(): void
+    {
+        if ($this->deeplApiKeyDetails !== null) {
+            return;
+        }
+
+        $this->deeplApiKeyDetails = DeeplApiHelper::checkApiKey($this->apiKey);
+
+        if ($this->deeplApiKeyDetails['error']) {
+            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
+                'error' => $this->deeplApiKeyDetails['error'],
+            ]);
+            throw new \RuntimeException('DeepL API Key is not valid: ' . $this->deeplApiKeyDetails['error']);
+        }
+        if (!$this->deeplApiKeyDetails['isValid']) {
+            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
+                'error' => 'No API Key given.',
+            ]);
+            throw new \RuntimeException('DeepL API Key is not valid: No API Key given.');
+        }
+        if ($this->deeplApiKeyDetails['charactersLeft'] <= 0) {
+            LogUtility::log($this->logger, 'DeepL API Key has no characters left: {charactersLeft}', [
+                'charactersLeft' => $this->deeplApiKeyDetails['charactersLeft'],
+            ]);
+            throw new \RuntimeException('DeepL API Key has no characters left: ' . $this->deeplApiKeyDetails['charactersLeft']);
+        }
     }
 
     private function deeplSourceLanguage(): ?string
