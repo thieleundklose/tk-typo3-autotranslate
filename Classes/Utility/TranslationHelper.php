@@ -46,6 +46,58 @@ final class TranslationHelper
         return $GLOBALS['TCA'][$table]['ctrl']['transOrigPointerField'] ?? null;
     }
 
+    /**
+     * Derive the list of changed fields from a DataHandler datamap operation.
+     *
+     * New records save a pristine state with every column provided, so the
+     * caller should not reduce the translation scope, null is returned to
+     * signal "translate everything". Updates return the datamap keys, which
+     * are the exact fields that were submitted for this save; downstream
+     * code intersects them with the configured translatable columns to
+     * decide whether a translation is necessary.
+     *
+     * @param string $status DataHandler hook status ('new' or 'update').
+     * @param array $datamap Datamap entry for the current record (fieldArray).
+     * @return string[]|null Null for new records, otherwise the changed field names.
+     */
+    public static function extractChangedFieldsFromDatamap(string $status, array $datamap): ?array
+    {
+        if ($status === 'new') {
+            return null;
+        }
+
+        return array_keys($datamap);
+    }
+
+    /**
+     * Narrow the configured translatable columns to the ones that actually
+     * have to be translated in the current DataHandler operation.
+     *
+     * New records supply a null changed-fields list, which means the whole
+     * configured set is returned (translate everything, as before).
+     * Updates supply the keys of the datamap entry: the result is the
+     * intersection with the configured columns, so a status-only update
+     * (e.g. hidden/starttime) yields an empty list and the caller can
+     * skip the translation call entirely.
+     *
+     * The result preserves the order of $translatableColumns so downstream
+     * processing stays deterministic.
+     *
+     * @param string[] $translatableColumns Columns configured as translatable.
+     * @param string[]|null $changedFields Datamap field names, or null for new records.
+     * @return string[] Empty array = nothing to translate.
+     */
+    public static function filterChangedTranslatableColumns(
+        array $translatableColumns,
+        ?array $changedFields
+    ): array {
+        if ($changedFields === null) {
+            return array_values($translatableColumns);
+        }
+
+        return array_values(array_intersect($translatableColumns, $changedFields));
+    }
+
     public static function unusedTranslateableColumns(string $table, string $value, int $type): array
     {
         $translateableColumns = self::translateableColumns($table);

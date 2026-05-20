@@ -47,7 +47,8 @@ final class Translator implements LoggerAwareInterface
         int $recordUid,
         ?DataHandler $parentObject = null,
         ?string $languagesToTranslate = null,
-        string $translateMode = self::TRANSLATE_MODE_BOTH
+        string $translateMode = self::TRANSLATE_MODE_BOTH,
+        ?array $changedFields = null
     ): void {
         $deeplApiKeyDetails = DeeplApiHelper::checkApiKey($this->apiKey);
         if ($deeplApiKeyDetails['error']) {
@@ -99,6 +100,10 @@ final class Translator implements LoggerAwareInterface
             ], LogUtility::MESSAGE_WARNING);
             return;
         }
+
+        // Narrow the main-record translation to the columns that actually
+        // changed; reference handling below keeps the full configured set.
+        $mainRecordColumns = TranslationHelper::filterChangedTranslatableColumns($columns, $changedFields);
 
         // Set target languages by record if null is given
         if ($languagesToTranslate === null) {
@@ -271,7 +276,7 @@ final class Translator implements LoggerAwareInterface
             }
 
             // Translate properties with given service
-            $translatedColumns = $this->translateRecordProperties($record, (int)$languageId, $columns, $table, $localizedUid);
+            $translatedColumns = $this->translateRecordProperties($record, (int)$languageId, $mainRecordColumns, $table, $localizedUid);
 
             if (count($translatedColumns) > 0) {
                 Records::updateRecord($table, $localizedUid, $translatedColumns);
