@@ -42,7 +42,19 @@ final class SlugUtility
      */
     public static function generateSlug(array $record, string $table, string $field): ?string
     {
-        $fieldConfig = $GLOBALS['TCA'][$table]['columns'][$field]['config'] ?? null;
+        $columnConfig = $GLOBALS['TCA'][$table]['columns'][$field] ?? null;
+
+        if ($columnConfig === null) {
+            return null;
+        }
+
+        // Respect TCA 'exclude' flag, so editors can opt slug fields out of
+        // automatic regeneration when they want to manage them manually.
+        if (($columnConfig['exclude'] ?? false) === true) {
+            return null;
+        }
+
+        $fieldConfig = $columnConfig['config'] ?? null;
 
         if ($fieldConfig === null) {
             return null;
