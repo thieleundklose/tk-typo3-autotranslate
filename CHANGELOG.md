@@ -1,6 +1,6 @@
 # Changelog
 
-## [2.6.0] - 2026-05-10
+## [2.6.0] - 2026-05-31
 
 ### Features
 - Added backend triggers for autotranslating a single record, including a TYPO3 list module action with target language selection in a modal dialog and context menu entries in backend record and page menus. The context menu integration is available in TYPO3 v12 and newer; TYPO3 v11 does not support it.
