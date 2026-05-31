@@ -3,7 +3,7 @@
 ## [2.6.0] - 2026-05-10
 
 ### Features
-- Added a backend record action in the TYPO3 list module to trigger autotranslation for a single record, including target language selection in a modal dialog.
+- Added backend triggers for autotranslating a single record, including a TYPO3 list module action with target language selection in a modal dialog and context menu entries in backend record and page menus. The context menu integration is available in TYPO3 v12 and newer; TYPO3 v11 does not support it.
 
 ### Fixes
 - Fixed batch translation handling for translated MM/select relations so localized records are linked correctly instead of keeping obsolete default-language references.
