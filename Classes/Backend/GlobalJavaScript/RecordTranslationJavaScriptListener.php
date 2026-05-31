@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace ThieleUndKlose\Autotranslate\Backend\PageLayout;
+namespace ThieleUndKlose\Autotranslate\Backend\GlobalJavaScript;
 
-use TYPO3\CMS\Backend\Controller\Event\ModifyPageLayoutContentEvent;
+use TYPO3\CMS\Backend\Controller\Event\AfterBackendPageRenderEvent;
 use TYPO3\CMS\Core\Page\PageRenderer;
 
-class RecordTranslationPageLayoutListener
+class RecordTranslationJavaScriptListener
 {
     public function __construct(
         private readonly PageRenderer $pageRenderer,
     ) {}
 
-    public function __invoke(ModifyPageLayoutContentEvent $event): void
+    public function __invoke(AfterBackendPageRenderEvent $event): void
     {
         $this->pageRenderer->loadJavaScriptModule('@thieleundklose/autotranslate/record-translation-trigger.js');
     }

@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Backend\ContextMenu;
 
 use ThieleUndKlose\Autotranslate\Service\RecordTranslationConfigurationService;
-use TYPO3\CMS\Backend\ContextMenu\ItemProviders\RecordProvider;
+use TYPO3\CMS\Backend\ContextMenu\ItemProviders\PageProvider;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 
-class RecordTranslationContextMenuProvider extends RecordProvider
+class PageTranslationContextMenuProvider extends PageProvider
 {
     public function __construct(
         private readonly RecordTranslationConfigurationService $recordTranslationConfigurationService,
@@ -19,7 +19,7 @@ class RecordTranslationContextMenuProvider extends RecordProvider
 
     public function getPriority(): int
     {
-        return 55;
+        return 95;
     }
 
     public function addItems(array $items): array
@@ -34,7 +34,7 @@ class RecordTranslationContextMenuProvider extends RecordProvider
         }
 
         try {
-            $configuration = $this->recordTranslationConfigurationService->getConfiguration($this->table, $this->record);
+            $configuration = $this->recordTranslationConfigurationService->getConfiguration('pages', $this->record);
         } catch (\Throwable) {
             $configuration = null;
         }
@@ -44,10 +44,10 @@ class RecordTranslationContextMenuProvider extends RecordProvider
         }
 
         $autotranslateItems = $this->prepareItems([
-            'autotranslateRecordDivider' => [
+            'autotranslatePageDivider' => [
                 'type' => 'divider',
             ],
-            'autotranslateRecord' => [
+            'autotranslatePage' => [
                 'label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:record_translation.button',
                 'iconIdentifier' => 'autotranslate-extension',
                 'callbackAction' => 'triggerRecordTranslation',
@@ -59,11 +59,11 @@ class RecordTranslationContextMenuProvider extends RecordProvider
 
     protected function canRender(string $itemName, string $type): bool
     {
-        if ($itemName === 'autotranslateRecordDivider' && $type === 'divider') {
+        if ($itemName === 'autotranslatePageDivider' && $type === 'divider') {
             return true;
         }
 
-        if ($itemName === 'autotranslateRecord') {
+        if ($itemName === 'autotranslatePage') {
             return !in_array($itemName, $this->disabledItems, true);
         }
 
@@ -72,7 +72,7 @@ class RecordTranslationContextMenuProvider extends RecordProvider
 
     protected function getAdditionalAttributes(string $itemName): array
     {
-        if ($itemName === 'autotranslateRecord') {
+        if ($itemName === 'autotranslatePage') {
             return [
                 'data-callback-module' => $this->getCallbackModulePath(),
             ];

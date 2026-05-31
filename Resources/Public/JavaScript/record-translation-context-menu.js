@@ -1,4 +1,4 @@
-import RecordTranslationTrigger from '@thieleundklose/autotranslate/record-translation-trigger.js';
+import RecordTranslationTrigger from './record-translation-trigger.js';
 
 export default {
     triggerRecordTranslation(table, uid) {

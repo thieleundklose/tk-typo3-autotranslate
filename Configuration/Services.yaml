@@ -33,8 +33,8 @@ services:
         identifier: 'autotranslate-record-list-action-listener'
         event: TYPO3\CMS\Backend\RecordList\Event\ModifyRecordListRecordActionsEvent
 
-  ThieleUndKlose\Autotranslate\Backend\PageLayout\RecordTranslationPageLayoutListener:
+  ThieleUndKlose\Autotranslate\Backend\GlobalJavaScript\RecordTranslationJavaScriptListener:
     tags:
       - name: event.listener
-        identifier: 'autotranslate-page-layout-action-listener'
-        event: TYPO3\CMS\Backend\Controller\Event\ModifyPageLayoutContentEvent
+        identifier: 'autotranslate-backend-javascript-listener'
+        event: TYPO3\CMS\Backend\Controller\Event\AfterBackendPageRenderEvent
