@@ -19,7 +19,9 @@ class RecordTranslationContextMenuProvider extends RecordProvider
 
     public function getPriority(): int
     {
-        return 55;
+        // Must be unique and lower than RecordProvider (60), otherwise our item
+        // is either processed too early or overwritten by another custom provider.
+        return 59;
     }
 
     public function addItems(array $items): array
