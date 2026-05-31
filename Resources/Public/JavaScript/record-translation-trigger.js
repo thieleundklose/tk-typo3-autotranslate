@@ -13,12 +13,17 @@ class RecordTranslationTrigger {
     registerEvents() {
         new RegularEvent('click', (event, button) => {
             event.preventDefault();
-            this.openLanguageDialog(button);
+            this.trigger(button.dataset.table, parseInt(button.dataset.uid, 10), button);
         }).delegateTo(document, '.t3js-autotranslate-record-trigger');
     }
 
-    async openLanguageDialog(button) {
-        if (button.dataset.loading === '1') {
+    async trigger(table, uid, button = null) {
+        if (!table || !Number.isInteger(uid) || uid <= 0) {
+            Notification.error('Translation could not be prepared.');
+            return;
+        }
+
+        if (button && button.dataset.loading === '1') {
             return;
         }
 
@@ -27,8 +32,8 @@ class RecordTranslationTrigger {
         try {
             const response = await new AjaxRequest(TYPO3.settings.ajaxUrls.autotranslate_record_translation_languages)
                 .withQueryArguments({
-                    table: button.dataset.table,
-                    uid: button.dataset.uid,
+                    table,
+                    uid,
                 })
                 .get();
 
@@ -90,8 +95,8 @@ class RecordTranslationTrigger {
                 try {
                     const translateResponse = await new AjaxRequest(TYPO3.settings.ajaxUrls.autotranslate_record_translation_translate)
                         .post({
-                            table: button.dataset.table,
-                            uid: parseInt(button.dataset.uid, 10),
+                            table,
+                            uid,
                             languages: languageIds,
                         });
                     const translatePayload = await translateResponse.resolve();
@@ -155,6 +160,10 @@ class RecordTranslationTrigger {
     }
 
     setButtonLoading(button, isLoading) {
+        if (!button) {
+            return;
+        }
+
         if (isLoading) {
             if (!button.dataset.originalHtml) {
                 button.dataset.originalHtml = button.innerHTML;

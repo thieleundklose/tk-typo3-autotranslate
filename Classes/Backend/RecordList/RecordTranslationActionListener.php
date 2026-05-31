@@ -45,7 +45,7 @@ class RecordTranslationActionListener
             (int)$event->getRecord()['uid'],
             htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
             htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
-            $this->iconFactory->getIcon('actions-localize', Icon::SIZE_SMALL)->render()
+            $this->iconFactory->getIcon('autotranslate-extension', Icon::SIZE_SMALL)->render()
         );
 
         $event->setAction($button, 'autotranslateRecord', 'secondary', 'localize');

@@ -37,7 +37,7 @@
                 <source>Add New Item</source>
             </trans-unit>
             <trans-unit id="record_translation.button" resname="record_translation.button">
-                <source>Translate record</source>
+                <source>Translate with "autotranslate"</source>
             </trans-unit>
             <trans-unit id="record_translation.modal.title" resname="record_translation.modal.title">
                 <source>Translate "%s"</source>
