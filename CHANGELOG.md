@@ -1,5 +1,23 @@
 # Changelog
 
+## [2.6.0] - 2026-05-31
+
+### Features
+- Added backend triggers for autotranslating a single record, including a TYPO3 list module action with target language selection in a modal dialog and context menu entries in backend record and page menus. The context menu integration is available in TYPO3 v12 and newer; TYPO3 v11 does not support it.
+
+### Fixes
+- Fixed batch translation handling for translated MM/select relations so localized records are linked correctly instead of keeping obsolete default-language references.
+- Fixed site configuration handling so disabled tables are no longer localized or remapped by accident during batch translation.
+- Fixed reference synchronization for localized relations to respect whether a table is enabled in the current site configuration.
+- Fixed an unnecessary flash message during page save when autotranslate is installed but no translation targets or languages are configured for the site.
+- Fixed DeepL rate-limit handling so temporary `429 Too many requests` responses are no longer reported as an invalid API key.
+- Cached DeepL API usage validation per request to avoid calling `getUsage()` for every translated record in a batch run.
+- Improved DeepL error messaging so temporary API overload is surfaced as a warning instead of stopping the translation flow with a misleading key validation error.
+
+### Stabilizations
+- Improved relation remapping for translated records with `MM` and `MM_opposite_field` usage in TYPO3 v12/v13 setups.
+- Added safer guards around translation of additional tables and their reference fields.
+
 ## [2.5.1] - 2026-02-08
 
 ### Fixes
