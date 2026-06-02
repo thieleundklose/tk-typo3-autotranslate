@@ -81,9 +81,12 @@ final class GlossaryService
 
         $pidConstraint = $db->expr()->in('pid', $ids);
 
+        $normalizedSourceLang = strtolower(strlen($sourceLanguage) > 2 ? substr($sourceLanguage, 0, 2) : $sourceLanguage);
+        $normalizedTargetLang = strtolower(strlen($targetLanguage) > 2 ? substr($targetLanguage, 0, 2) : $targetLanguage);
+
         $where = $db->expr()->and(
-            $db->expr()->eq('source_lang', $db->createNamedParameter($sourceLanguage)),
-            $db->expr()->eq('target_lang', $db->createNamedParameter($targetLanguage)),
+            $db->expr()->eq('source_lang', $db->createNamedParameter($normalizedSourceLang)),
+            $db->expr()->eq('target_lang', $db->createNamedParameter($normalizedTargetLang)),
             $db->expr()->in('glossary_id', $db->createNamedParameter($glossaryIds, Connection::PARAM_STR_ARRAY)),
             $pidConstraint
         );
