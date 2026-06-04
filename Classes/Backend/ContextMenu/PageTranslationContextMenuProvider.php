@@ -5,17 +5,28 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Backend\ContextMenu;
 
 use ThieleUndKlose\Autotranslate\Service\RecordTranslationConfigurationService;
-use TYPO3\CMS\Backend\ContextMenu\ItemProviders\PageProvider;
+use TYPO3\CMS\Backend\ContextMenu\ItemProviders\AbstractProvider;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 
-class PageTranslationContextMenuProvider extends PageProvider
+class PageTranslationContextMenuProvider extends AbstractProvider
 {
     private ?RecordTranslationConfigurationService $recordTranslationConfigurationService = null;
+
+    /**
+     * @var array<string, mixed>
+     */
+    protected array $record = [];
 
     public function getPriority(): int
     {
         return 95;
+    }
+
+    public function canHandle(): bool
+    {
+        return $this->table === 'pages';
     }
 
     public function addItems(array $items): array
@@ -45,6 +56,12 @@ class PageTranslationContextMenuProvider extends PageProvider
         ]);
 
         return $this->insertItemsBefore($items, 'history', $autotranslateItems);
+    }
+
+    protected function initialize()
+    {
+        parent::initialize();
+        $this->record = BackendUtility::getRecordWSOL('pages', (int)$this->identifier) ?: [];
     }
 
     protected function canRender(string $itemName, string $type): bool
