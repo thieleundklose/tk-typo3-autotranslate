@@ -29,13 +29,7 @@ class PageTranslationContextMenuProvider extends PageProvider
             return $items;
         }
 
-        try {
-            $configuration = $this->getRecordTranslationConfigurationService()->getConfiguration('pages', $this->record);
-        } catch (\Throwable) {
-            $configuration = null;
-        }
-
-        if ($configuration === null) {
+        if (!$this->getRecordTranslationConfigurationService()->isAvailableForContextMenu('pages', $this->record)) {
             return $items;
         }
 

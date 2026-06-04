@@ -31,13 +31,7 @@ class RecordTranslationContextMenuProvider extends RecordProvider
             return $items;
         }
 
-        try {
-            $configuration = $this->getRecordTranslationConfigurationService()->getConfiguration($this->table, $this->record);
-        } catch (\Throwable) {
-            $configuration = null;
-        }
-
-        if ($configuration === null) {
+        if (!$this->getRecordTranslationConfigurationService()->isAvailableForContextMenu($this->table, $this->record)) {
             return $items;
         }
 
