@@ -55,8 +55,8 @@ class Tca {
         $parameters['title'] = $translationDate;
         try {
             $site = $siteFinder->getSiteByPageId($pageId);
-            foreach ($site->getAllLanguages() as $siteLanguage) {
-                if ($siteLanguage->getLanguageId() === $languageId) {
+            foreach ($site->getAllLanguages() as $siteLanguageId => $siteLanguage) {
+                if ((int)$siteLanguageId === $languageId) {
                     $parameters['title'] = $siteLanguage->getTitle() . ' - ' . $parameters['title'];
                     break;
                 }

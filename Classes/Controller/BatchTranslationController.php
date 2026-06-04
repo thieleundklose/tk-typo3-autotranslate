@@ -18,7 +18,7 @@ use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
- * Class BatchTranslationController for backend modules used in TYPO3 V12
+ * Class BatchTranslationController for backend modules used in TYPO3 v12 and newer
  */
 class BatchTranslationController extends BatchTranslationBaseController
 {
@@ -44,7 +44,7 @@ class BatchTranslationController extends BatchTranslationBaseController
         $data = $this->getBatchTranslationData();
         $view->assignMultiple($this->getCommonTemplateVariables($data));
 
-        $requestUri = $this->request->getAttribute('normalizedParams')->getRequestUri();
+        $requestUri = (string)$this->request->getUri();
         $languageService = $this->getLanguageService();
 
         $view->assign('actions', [
@@ -110,7 +110,7 @@ class BatchTranslationController extends BatchTranslationBaseController
         $view = $this->initializeModuleTemplate($this->request);
         $view->assignMultiple($this->getLogData());
 
-        $requestUri = $this->request->getAttribute('normalizedParams')->getRequestUri();
+        $requestUri = (string)$this->request->getUri();
         $languageService = $this->getLanguageService();
 
         $view->assign('actions', [

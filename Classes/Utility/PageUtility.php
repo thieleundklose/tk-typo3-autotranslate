@@ -19,7 +19,6 @@ namespace ThieleUndKlose\Autotranslate\Utility;
 
 use Doctrine\DBAL\ParameterType;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class PageUtility
@@ -48,12 +47,7 @@ class PageUtility
                 $queryBuilder->expr()->eq('sys_language_uid', $queryBuilder->createNamedParameter(0, ParameterType::INTEGER))
             );
 
-        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-        if ($versionInformation->getMajorVersion() > 11) {
-            $result = $queryBuilder->executeQuery();
-        } else {
-            $result = $queryBuilder->execute();
-        }
+        $result = $queryBuilder->executeQuery();
 
         $rows = $result->fetchAllAssociative();
         foreach ($rows as $row) {

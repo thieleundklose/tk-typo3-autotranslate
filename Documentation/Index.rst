@@ -38,7 +38,7 @@ Einführung
 Was ist AutoTranslate?
 ---------------------
 
-AutoTranslate ist eine TYPO3-Extension, die automatische Übersetzungen von Seiten und Inhaltselementen über die DeepL API ermöglicht. Die Extension unterstützt TYPO3 v11.5 und höher.
+AutoTranslate ist eine TYPO3-Extension, die automatische Übersetzungen von Seiten und Inhaltselementen über die DeepL API ermöglicht. Die Extension unterstützt TYPO3 v12 LTS und höher.
 
 Features
 --------

@@ -134,7 +134,11 @@ class DeeplApiHelper
             }
             $result = [];
             foreach ($languages as $language) {
-                $result[] = [$language->name, $language->code];
+                $languageData = get_object_vars($language);
+                $result[] = [
+                    (string)($languageData['name'] ?? ''),
+                    (string)($languageData['code'] ?? ''),
+                ];
             }
             if ($cache) {
                 $cache->set($cacheIdentifier, $result, [], 86400 * 7); // 7 days cache-lifetime

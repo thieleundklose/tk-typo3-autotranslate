@@ -6,7 +6,6 @@ namespace ThieleUndKlose\Autotranslate\Backend\RecordList;
 
 use ThieleUndKlose\Autotranslate\Service\RecordTranslationConfigurationService;
 use TYPO3\CMS\Backend\RecordList\Event\ModifyRecordListRecordActionsEvent;
-use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
@@ -45,7 +44,7 @@ class RecordTranslationActionListener
             (int)$event->getRecord()['uid'],
             htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
             htmlspecialchars($label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
-            $this->iconFactory->getIcon('autotranslate-extension', Icon::SIZE_SMALL)->render()
+            $this->iconFactory->getIcon('autotranslate-extension', $this->getSmallIconSize())->render()
         );
 
         $event->setAction($button, 'autotranslateRecord', 'secondary', 'localize');
@@ -54,5 +53,14 @@ class RecordTranslationActionListener
     private function getLanguageService(): LanguageService
     {
         return $GLOBALS['LANG'];
+    }
+
+    private function getSmallIconSize(): string|\TYPO3\CMS\Core\Imaging\IconSize
+    {
+        if (class_exists(\TYPO3\CMS\Core\Imaging\IconSize::class)) {
+            return \TYPO3\CMS\Core\Imaging\IconSize::SMALL;
+        }
+
+        return 'small';
     }
 }

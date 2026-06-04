@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Utility;
 
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -43,13 +44,13 @@ class LogUtility
 
         switch ($type) {
             case self::MESSAGE_INFO:
-                    $logger->info($message, $data);
+                    $logger->log(LogLevel::INFO, $message, $data);
                 break;
             case self::MESSAGE_WARNING:
-                    $logger->warning($message, $data);
+                    $logger->log(LogLevel::WARNING, $message, $data);
                 break;
             case self::MESSAGE_ERROR:
-                    $logger->error($message, $data);
+                    $logger->log(LogLevel::ERROR, $message, $data);
                 break;
         }
 

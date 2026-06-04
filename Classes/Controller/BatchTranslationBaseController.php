@@ -176,7 +176,7 @@ class BatchTranslationBaseController extends ActionController
                     $log['dataDecoded'] = is_array($decoded) ? $decoded : [];
                 } else {
 
-                    // TYPO3 v11/v12: Log data is typically in var_export format with a "- " prefix.
+                    // TYPO3 v12: Log data is typically in var_export format with a "- " prefix.
                     // The prefix is removed before attempting to decode the data as JSON.
                     if (strpos($log['data'], '- ') === 0) {
                         $log['data'] = substr($log['data'], 2); // Remove "- "
@@ -229,11 +229,7 @@ class BatchTranslationBaseController extends ActionController
             $data['moduleName'] = $this->moduleName;
         }
 
-        if ($this->typo3Version->getMajorVersion() < 12) {
-            $pageId = (int)GeneralUtility::_GP('id');
-        } else {
-            $pageId = $this->request->hasArgument('id') ? (int)$this->request->getArgument('id') : 0;
-        }
+        $pageId = $this->request->hasArgument('id') ? (int)$this->request->getArgument('id') : 0;
 
         $batchItems = $this->batchItemRepository->findAll();
         $batchItemsRecursive = $this->batchItemRepository->findAllRecursive(
@@ -258,7 +254,11 @@ class BatchTranslationBaseController extends ActionController
 
         // Filter languages by users access rights
         $languages = isset($data['rootPageId']) ? TranslationHelper::possibleTranslationLanguages($siteConfiguration->getLanguages()) : [];
-        $languages = array_filter($languages, fn($language) => $backendUser->checkLanguageAccess($language->getLanguageId()));
+        $languages = array_filter(
+            $languages,
+            fn($languageId) => $backendUser->checkLanguageAccess((int)$languageId),
+            ARRAY_FILTER_USE_KEY
+        );
 
         if (empty($languages)) {
             $this->addFlashMessage(
@@ -395,18 +395,6 @@ class BatchTranslationBaseController extends ActionController
 
         if (isset($this->queryParams['id'])){
             $this->pageUid = (int)$this->queryParams['id'];
-        }
-
-        if ($this->typo3Version->getMajorVersion() < 12) {
-            // define moduleName for legacy version
-            $this->moduleName = str_replace(['/module/', '/'], ['', '_'], $this->queryParams['route']);
-
-            // merge query params for legacy modules
-            $moduleQueryKey = strtolower('tx_autotranslate_' . $this->moduleName);
-            if (isset($this->queryParams[$moduleQueryKey])) {
-                $this->queryParams = array_merge($this->queryParams, $this->queryParams[$moduleQueryKey]);
-                unset($this->queryParams[$moduleQueryKey]);
-            }
         }
 
         // get levels from session
@@ -681,21 +669,10 @@ class BatchTranslationBaseController extends ActionController
     {
 
         $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
-        if ($this->typo3Version->getMajorVersion() < 12) {
-            // TYPO3 v11: legacy module argument structure
-            $arguments = [
-                'id' => $pageUid,
-                strtolower('tx_autotranslate_' . $this->moduleName) => [
-                    'action' => $this->request->getControllerActionName()
-                ]
-            ];
-        } else {
-            // TYPO3 v12+: modern argument structure
-            $arguments = [
-                'id' => $pageUid,
-                'action' => $this->request->getControllerActionName()
-            ];
-        }
+        $arguments = [
+            'id' => $pageUid,
+            'action' => $this->request->getControllerActionName()
+        ];
 
         $uri = $uriBuilder->buildUriFromRoute($this->moduleName, $arguments);
 

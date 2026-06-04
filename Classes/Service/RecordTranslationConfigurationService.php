@@ -40,8 +40,8 @@ class RecordTranslationConfigurationService
 
         $configuredLanguageIds = $this->resolveConfiguredLanguageIds($table, $record, $siteConfiguration);
         $languages = [];
-        foreach (TranslationHelper::possibleTranslationLanguages($site->getLanguages()) as $language) {
-            $languageId = (int)$language->getLanguageId();
+        foreach (TranslationHelper::possibleTranslationLanguages($site->getLanguages()) as $languageId => $language) {
+            $languageId = (int)$languageId;
             if (!$this->getBackendUser()->checkLanguageAccess($languageId)) {
                 continue;
             }

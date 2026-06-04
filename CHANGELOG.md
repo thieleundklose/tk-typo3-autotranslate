@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.0.0] - 2026-06-04
+
+### Breaking Changes
+- Dropped TYPO3 v11 support. The extension now supports TYPO3 v12 and v13 only.
+- Raised the supported PHP range to 8.1.0 - 8.4.99.
+
 ## [2.6.0] - 2026-05-31
 
 ### Features

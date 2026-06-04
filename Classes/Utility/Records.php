@@ -23,7 +23,6 @@ use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 use TYPO3\CMS\Core\Database\Query\Restriction\EndTimeRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\HiddenRestriction;
 use TYPO3\CMS\Core\Database\Query\Restriction\StartTimeRestriction;
-use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class Records
@@ -68,12 +67,7 @@ class Records
                 )
             );
 
-        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-        if ($versionInformation->getMajorVersion() > 11) {
-            $res = $query->executeQuery()->fetchAssociative();
-        } else {
-            $res = $query->execute()->fetchAssociative();
-        }
+        $res = $query->executeQuery()->fetchAssociative();
 
         if ($res === false) {
             return null;
@@ -116,12 +110,7 @@ class Records
                 )
             );
 
-        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-        if ($versionInformation->getMajorVersion() > 11) {
-            $res = $query->executeQuery()->fetchAssociative();
-        } else {
-            $res = $query->execute()->fetchAssociative();
-        }
+        $res = $query->executeQuery()->fetchAssociative();
 
         if ($res === false) {
             return null;
@@ -164,12 +153,7 @@ class Records
                 }
             }
         }
-        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-        if ($versionInformation->getMajorVersion() > 11) {
-            $update->executeStatement();
-        } else {
-            $update->execute();
-        }
+        $update->executeStatement();
     }
 
     /**
@@ -192,11 +176,6 @@ class Records
             $query->andWhere($constraint);
         }
 
-        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-        if ($versionInformation->getMajorVersion() > 11) {
-            return $query->executeQuery()->fetchFirstColumn();
-        } else {
-            return $query->execute()->fetchFirstColumn();
-        }
+        return $query->executeQuery()->fetchFirstColumn();
     }
 }

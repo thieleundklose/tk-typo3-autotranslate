@@ -22,10 +22,11 @@ DeepL autotranslator is a powerful tool for editors with many features, especial
 
 | Autotranslate | TYPO3     | PHP          | DeepL PHP | Notes                                     |
 |---------------|-----------|--------------|-----------|-------------------------------------------|
-| 2.x           | 11 - 13   | 7.4 - 8.4.99 | 1.4 - 1.x | BatchTranslation now for none admin users |
+| 3.x           | 12 - 13   | 8.1 - 8.4.99 | 1.4 - 1.x | BatchTranslation now for none admin users |
+| 2.x           | 11 - 13   | 7.4 - 8.4.99 | 1.4 - 1.x | Previous release path                     |
 | 1.x           | 10 - 13   | 7.4 - 8.3.99 | 1.4       |
 
-The DeepL Autotranslate extension is available in the version for TYPO3 v10, v11, v12 and v13. Translations for news articles of the extension [News](https://extensions.typo3.org/extension/news) are also already integrated.
+The DeepL Autotranslate extension is available for TYPO3 v10 through v13 across its supported release lines. The current 3.x release supports TYPO3 v12 and v13, while older releases remain available for TYPO3 v10 and v11. Translations for news articles of the extension [News](https://extensions.typo3.org/extension/news) are also already integrated.
 
 ## Documentation
 

@@ -6,7 +6,6 @@ namespace ThieleUndKlose\Autotranslate\Utility;
 
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
-use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -44,7 +43,7 @@ final class FlashMessageUtility
         // Add the FlashMessage to the FlashMessageQueue
         $flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
         $messageQueue = $flashMessageService->getMessageQueueByIdentifier();
-        $messageQueue->addMessage($flashMessage);
+        $messageQueue->enqueue($flashMessage);
     }
 
     /**
@@ -55,15 +54,7 @@ final class FlashMessageUtility
      */
     public static function adjustSeverityForTypo3Version(int $severity): int|ContextualFeedbackSeverity
     {
-        $typo3Version = GeneralUtility::makeInstance(Typo3Version::class);
-        $majorVersion = $typo3Version->getMajorVersion();
-
-        // Map severity for TYPO3 >= 12
-        if ($majorVersion >= 12) {
-            return self::mapSeverity($severity);
-        }
-
-        return $severity;
+        return self::mapSeverity($severity);
     }
 
     /**

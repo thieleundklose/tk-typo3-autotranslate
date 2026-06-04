@@ -21,12 +21,10 @@ use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
-use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 
 class TranslationHelper
 {
@@ -88,14 +86,8 @@ class TranslationHelper
                 return false;
             }
 
-            if (VersionNumberUtility::convertVersionStringToArray((new Typo3Version())->getVersion())['version_main'] > 11) {
-                if ($config['type'] != 'file') {
-                    return false;
-                }
-            } else {
-                if ($config['type'] != 'inline') {
-                    return false;
-                }
+            if ($config['type'] !== 'file') {
+                return false;
             }
 
             return true;
@@ -169,6 +161,17 @@ class TranslationHelper
     }
 
     /**
+     * Receive default language id from Site.
+     *
+     * @param Site $site
+     * @return int
+     */
+    public static function defaultLanguageIdFromSiteConfiguration(Site $site): int
+    {
+        return self::defaultLanguageId($site->getLanguages());
+    }
+
+    /**
      * Receive default language.
      * @param array|null $siteLanguages
      * @return SiteLanguage
@@ -180,6 +183,21 @@ class TranslationHelper
         }
 
         return $siteLanguages[0];
+    }
+
+    /**
+     * Receive default language id.
+     *
+     * @param array|null $siteLanguages
+     * @return int
+     */
+    public static function defaultLanguageId(?array $siteLanguages): int
+    {
+        if (empty($siteLanguages)) {
+            throw new SiteNotFoundException('No site languages found.', 1633031234);
+        }
+
+        return (int)array_key_first($siteLanguages);
     }
 
     /**

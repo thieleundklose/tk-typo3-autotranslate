@@ -382,7 +382,10 @@ class TranslationCacheService
 
             foreach ($iterator as $file) {
                 if ($file->isFile()) {
-                    $size += $file->getSize();
+                    $fileSize = filesize($file->getPathname());
+                    if ($fileSize !== false) {
+                        $size += $fileSize;
+                    }
                 }
             }
         } catch (\Exception $e) {

@@ -36,7 +36,7 @@ class BatchTranslationService implements LoggerAwareInterface
             return false;
         }
 
-        $defaultLanguage = TranslationHelper::defaultLanguageFromSiteConfiguration($siteConfiguration);
+        $defaultLanguageId = TranslationHelper::defaultLanguageIdFromSiteConfiguration($siteConfiguration);
         $languages = TranslationHelper::possibleTranslationLanguages($siteConfiguration->getLanguages());
 
         // check if target language is in pissible translation languages
@@ -71,7 +71,7 @@ class BatchTranslationService implements LoggerAwareInterface
             } else {
                 $constraints = [
                     "pid = " . $item->getPid(),
-                    "sys_language_uid = " . $defaultLanguage->getLanguageId(),
+                    "sys_language_uid = " . $defaultLanguageId,
                 ];
 
                 // if record has column for exclude deleted

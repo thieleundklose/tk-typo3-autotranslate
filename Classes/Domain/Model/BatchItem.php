@@ -267,8 +267,8 @@ class BatchItem extends AbstractEntity
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
         try {
             $site = $siteFinder->getSiteByPageId($this->pid);
-            foreach ($site->getAllLanguages() as $siteLanguage) {
-                if ($siteLanguage->getLanguageId() === $this->getSysLanguageUid()) {
+            foreach ($site->getAllLanguages() as $languageId => $siteLanguage) {
+                if ((int)$languageId === $this->getSysLanguageUid()) {
                     return $siteLanguage->getTitle();
                 }
             }
