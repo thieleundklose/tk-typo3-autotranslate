@@ -11,11 +11,7 @@ use TYPO3\CMS\Core\Utility\PathUtility;
 
 class PageTranslationContextMenuProvider extends PageProvider
 {
-    public function __construct(
-        private readonly RecordTranslationConfigurationService $recordTranslationConfigurationService,
-    ) {
-        parent::__construct();
-    }
+    private ?RecordTranslationConfigurationService $recordTranslationConfigurationService = null;
 
     public function getPriority(): int
     {
@@ -34,7 +30,7 @@ class PageTranslationContextMenuProvider extends PageProvider
         }
 
         try {
-            $configuration = $this->recordTranslationConfigurationService->getConfiguration('pages', $this->record);
+            $configuration = $this->getRecordTranslationConfigurationService()->getConfiguration('pages', $this->record);
         } catch (\Throwable) {
             $configuration = null;
         }
@@ -116,5 +112,10 @@ class PageTranslationContextMenuProvider extends PageProvider
             '',
             PathUtility::getAbsoluteWebPath($absoluteFilePath)
         ) ?: '';
+    }
+
+    private function getRecordTranslationConfigurationService(): RecordTranslationConfigurationService
+    {
+        return $this->recordTranslationConfigurationService ??= GeneralUtility::makeInstance(RecordTranslationConfigurationService::class);
     }
 }
