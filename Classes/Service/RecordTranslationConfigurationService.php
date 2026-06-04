@@ -18,11 +18,19 @@ class RecordTranslationConfigurationService
 
     public function getConfiguration(string $table, array $record): ?array
     {
-        if (!$this->isAvailableForContextMenu($table, $record)) {
+        if (!$this->hasTriggerFields($table) || !$this->isDefaultLanguageRecord($table, $record)) {
+            return null;
+        }
+
+        if ((int)($record[Translator::AUTOTRANSLATE_EXCLUDE] ?? 0) === 1) {
             return null;
         }
 
         $pageId = $this->resolvePageId($table, $record);
+        if ($pageId <= 0) {
+            return null;
+        }
+
         $site = $this->siteFinder->getSiteByPageId($pageId);
         $siteConfiguration = $site->getConfiguration();
 
@@ -56,30 +64,6 @@ class RecordTranslationConfigurationService
             'pageId' => $pageId,
             'languages' => $languages,
         ];
-    }
-
-    public function isAvailableForContextMenu(string $table, array $record): bool
-    {
-        if (!$this->hasTriggerFields($table) || !$this->isDefaultLanguageRecord($table, $record)) {
-            return false;
-        }
-
-        if ((int)($record[Translator::AUTOTRANSLATE_EXCLUDE] ?? 0) === 1) {
-            return false;
-        }
-
-        $pageId = $this->resolvePageId($table, $record);
-        if ($pageId <= 0) {
-            return false;
-        }
-
-        try {
-            $site = $this->siteFinder->getSiteByPageId($pageId);
-        } catch (\Throwable) {
-            return false;
-        }
-
-        return TranslationHelper::translationSettingsDefaults($site->getConfiguration(), $table) !== null;
     }
 
     public function resolvePageId(string $table, array $record): int

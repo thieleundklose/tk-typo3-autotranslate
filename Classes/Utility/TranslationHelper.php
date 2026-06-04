@@ -131,16 +131,20 @@ class TranslationHelper
 
     /**
      * Receive possible translatable languages.
-     *
-     * Supports both the plain site configuration array and TYPO3 SiteLanguage objects/collections.
-     *
-     * @param iterable<mixed>|null $siteLanguages
-     * @return array<int, mixed>
+     * @param array|null $siteLanguages
+     * @return array
      */
-    public static function possibleTranslationLanguages(iterable|null $siteLanguages): array
+    public static function possibleTranslationLanguages(?array $siteLanguages): array
     {
-        $languages = self::normalizeSiteLanguages($siteLanguages);
-        unset($languages[0]);
+        if (empty($siteLanguages)) {
+            return [];
+        }
+        $languages = array_filter($siteLanguages, function ($k) {
+            if ($k === 0) {
+                return;
+            }
+            return true;
+        }, ARRAY_FILTER_USE_KEY);
 
         return $languages;
     }
@@ -169,57 +173,31 @@ class TranslationHelper
 
     /**
      * Receive default language.
-     * @param iterable<mixed>|null $siteLanguages
+     * @param array|null $siteLanguages
      * @return SiteLanguage
      */
-    public static function defaultLanguage(iterable|null $siteLanguages): SiteLanguage
+    public static function defaultLanguage(?array $siteLanguages): SiteLanguage
     {
-        $languages = self::normalizeSiteLanguages($siteLanguages);
-        if ($languages === []) {
+        if (empty($siteLanguages)) {
             throw new SiteNotFoundException('No site languages found.', 1633031234);
         }
 
-        return reset($languages);
+        return $siteLanguages[0];
     }
 
     /**
      * Receive default language id.
      *
-     * @param iterable<mixed>|null $siteLanguages
+     * @param array|null $siteLanguages
      * @return int
      */
-    public static function defaultLanguageId(iterable|null $siteLanguages): int
+    public static function defaultLanguageId(?array $siteLanguages): int
     {
-        $languages = self::normalizeSiteLanguages($siteLanguages);
-        if ($languages === []) {
+        if (empty($siteLanguages)) {
             throw new SiteNotFoundException('No site languages found.', 1633031234);
         }
 
-        return (int)array_key_first($languages);
-    }
-
-    /**
-     * @param iterable<mixed>|null $siteLanguages
-     * @return array<int, mixed>
-     */
-    private static function normalizeSiteLanguages(iterable|null $siteLanguages): array
-    {
-        if ($siteLanguages === null) {
-            return [];
-        }
-
-        $languages = [];
-        foreach ($siteLanguages as $key => $language) {
-            if ($language instanceof SiteLanguage) {
-                $languages[$language->getLanguageId()] = $language;
-                continue;
-            }
-
-            $languages[(int)$key] = $language;
-        }
-
-        ksort($languages);
-        return $languages;
+        return (int)array_key_first($siteLanguages);
     }
 
     /**

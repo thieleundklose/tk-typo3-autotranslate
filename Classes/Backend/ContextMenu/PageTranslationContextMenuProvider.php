@@ -5,28 +5,21 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Backend\ContextMenu;
 
 use ThieleUndKlose\Autotranslate\Service\RecordTranslationConfigurationService;
-use TYPO3\CMS\Backend\ContextMenu\ItemProviders\AbstractProvider;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\ContextMenu\ItemProviders\PageProvider;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 
-class PageTranslationContextMenuProvider extends AbstractProvider
+class PageTranslationContextMenuProvider extends PageProvider
 {
-    private ?RecordTranslationConfigurationService $recordTranslationConfigurationService = null;
-
-    /**
-     * @var array<string, mixed>
-     */
-    protected array $record = [];
+    public function __construct(
+        private readonly RecordTranslationConfigurationService $recordTranslationConfigurationService,
+    ) {
+        parent::__construct();
+    }
 
     public function getPriority(): int
     {
         return 95;
-    }
-
-    public function canHandle(): bool
-    {
-        return $this->table === 'pages';
     }
 
     public function addItems(array $items): array
@@ -40,7 +33,13 @@ class PageTranslationContextMenuProvider extends AbstractProvider
             return $items;
         }
 
-        if (!$this->getRecordTranslationConfigurationService()->isAvailableForContextMenu('pages', $this->record)) {
+        try {
+            $configuration = $this->recordTranslationConfigurationService->getConfiguration('pages', $this->record);
+        } catch (\Throwable) {
+            $configuration = null;
+        }
+
+        if ($configuration === null) {
             return $items;
         }
 
@@ -57,13 +56,6 @@ class PageTranslationContextMenuProvider extends AbstractProvider
 
         return $this->insertItemsBefore($items, 'history', $autotranslateItems);
     }
-
-    protected function initialize()
-    {
-        parent::initialize();
-        $this->record = BackendUtility::getRecordWSOL('pages', (int)$this->identifier) ?: [];
-    }
-
     protected function canRender(string $itemName, string $type): bool
     {
         if ($itemName === 'autotranslatePageDivider' && $type === 'divider') {
@@ -123,10 +115,5 @@ class PageTranslationContextMenuProvider extends AbstractProvider
             '',
             PathUtility::getAbsoluteWebPath($absoluteFilePath)
         ) ?: '';
-    }
-
-    private function getRecordTranslationConfigurationService(): RecordTranslationConfigurationService
-    {
-        return $this->recordTranslationConfigurationService ??= GeneralUtility::makeInstance(RecordTranslationConfigurationService::class);
     }
 }

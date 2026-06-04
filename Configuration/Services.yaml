@@ -6,8 +6,6 @@ services:
 
   ThieleUndKlose\Autotranslate\:
     resource: '../Classes/*'
-    exclude:
-      - '../Classes/Backend/ContextMenu/*'
 
   ThieleUndKlose\Autotranslate\Command\BatchTranslation:
     tags:
@@ -34,15 +32,3 @@ services:
       - name: event.listener
         identifier: 'autotranslate-backend-javascript-listener'
         event: TYPO3\CMS\Backend\Controller\Event\AfterBackendPageRenderEvent
-
-  ThieleUndKlose\Autotranslate\Backend\ContextMenu\PageTranslationContextMenuProvider:
-    autowire: true
-    autoconfigure: true
-    tags:
-      - name: backend.contextmenu.itemprovider
-
-  ThieleUndKlose\Autotranslate\Backend\ContextMenu\RecordTranslationContextMenuProvider:
-    autowire: true
-    autoconfigure: true
-    tags:
-      - name: backend.contextmenu.itemprovider

@@ -5,31 +5,23 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Backend\ContextMenu;
 
 use ThieleUndKlose\Autotranslate\Service\RecordTranslationConfigurationService;
-use TYPO3\CMS\Backend\ContextMenu\ItemProviders\AbstractProvider;
-use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Backend\ContextMenu\ItemProviders\RecordProvider;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 
-class RecordTranslationContextMenuProvider extends AbstractProvider
+class RecordTranslationContextMenuProvider extends RecordProvider
 {
-    private ?RecordTranslationConfigurationService $recordTranslationConfigurationService = null;
-
-    /**
-     * @var array<string, mixed>
-     */
-    protected array $record = [];
+    public function __construct(
+        private readonly RecordTranslationConfigurationService $recordTranslationConfigurationService,
+    ) {
+        parent::__construct();
+    }
 
     public function getPriority(): int
     {
         // Must be unique and lower than RecordProvider (60), otherwise our item
         // is either processed too early or overwritten by another custom provider.
         return 59;
-    }
-
-    public function canHandle(): bool
-    {
-        return !in_array($this->table, ['pages', 'sys_file'], true)
-            && isset($GLOBALS['TCA'][$this->table]);
     }
 
     public function addItems(array $items): array
@@ -43,7 +35,13 @@ class RecordTranslationContextMenuProvider extends AbstractProvider
             return $items;
         }
 
-        if (!$this->getRecordTranslationConfigurationService()->isAvailableForContextMenu($this->table, $this->record)) {
+        try {
+            $configuration = $this->recordTranslationConfigurationService->getConfiguration($this->table, $this->record);
+        } catch (\Throwable) {
+            $configuration = null;
+        }
+
+        if ($configuration === null) {
             return $items;
         }
 
@@ -60,13 +58,6 @@ class RecordTranslationContextMenuProvider extends AbstractProvider
 
         return $this->insertItemsBefore($items, 'history', $autotranslateItems);
     }
-
-    protected function initialize()
-    {
-        parent::initialize();
-        $this->record = BackendUtility::getRecordWSOL($this->table, (int)$this->identifier) ?: [];
-    }
-
     protected function canRender(string $itemName, string $type): bool
     {
         if ($itemName === 'autotranslateRecordDivider' && $type === 'divider') {
@@ -126,10 +117,5 @@ class RecordTranslationContextMenuProvider extends AbstractProvider
             '',
             PathUtility::getAbsoluteWebPath($absoluteFilePath)
         ) ?: '';
-    }
-
-    private function getRecordTranslationConfigurationService(): RecordTranslationConfigurationService
-    {
-        return $this->recordTranslationConfigurationService ??= GeneralUtility::makeInstance(RecordTranslationConfigurationService::class);
     }
 }
