@@ -17,7 +17,7 @@ class Translator
     /**
      * Library version.
      */
-    public const VERSION = '1.11.1';
+    public const VERSION = '1.18.0';
 
     /**
      * Implements all HTTP requests and retries.
@@ -174,7 +174,7 @@ class Translator
 
         list(, $content) = $response;
 
-        // DeepL API responses might have invalid UTF8 sequence
+        // Deepl API responses might have invalid UTF8 sequence
         // @see https://github.com/DeepLcom/deepl-php/pull/43
         mb_substitute_character(0xFFFD);
         $content = mb_convert_encoding($content, 'UTF-8', 'UTF-8');
@@ -270,6 +270,11 @@ class Translator
             $targetLang,
             $options[TranslateDocumentOptions::FORMALITY] ?? null,
             $options[TranslateDocumentOptions::GLOSSARY] ?? null
+        );
+
+        $this->applyExtraBodyParameters(
+            $params,
+            $options[TranslateDocumentOptions::EXTRA_BODY_PARAMETERS] ?? null
         );
 
         $response = $this->client->sendRequestWithBackoff(
@@ -563,7 +568,8 @@ class Translator
      * @param string|null $sourceLang Source language code, or null to use auto-detection.
      * @param string $targetLang Target language code.
      * @param string|null $formality Formality option, or null if not specified.
-     * @param string|GlossaryInfo|null $glossary Glossary ID, GlossaryInfo, or null if not specified.
+     * @param string|GlossaryInfo|MultilingualGlossaryInfo|null $glossary Glossary ID, GlossaryInfo,
+     *  MultilingualGlossaryInfo, or null if not specified.
      * @return array Associative array of HTTP parameters.
      * @throws DeepLException
      */
@@ -665,6 +671,9 @@ class Translator
         if (isset($options[TranslateTextOptions::TAG_HANDLING])) {
             $params[TranslateTextOptions::TAG_HANDLING] = $options[TranslateTextOptions::TAG_HANDLING];
         }
+        if (isset($options[TranslateTextOptions::TAG_HANDLING_VERSION])) {
+            $params[TranslateTextOptions::TAG_HANDLING_VERSION] = $options[TranslateTextOptions::TAG_HANDLING_VERSION];
+        }
         if (isset($options[TranslateTextOptions::OUTLINE_DETECTION])) {
             $params[TranslateTextOptions::OUTLINE_DETECTION] =
                 $this->toBoolString($options[TranslateTextOptions::OUTLINE_DETECTION]);
@@ -686,6 +695,56 @@ class Translator
         if (isset($options[TranslateTextOptions::IGNORE_TAGS])) {
             $params[TranslateTextOptions::IGNORE_TAGS] =
                 $this->joinTagList($options[TranslateTextOptions::IGNORE_TAGS]);
+        }
+        if (isset($options[TranslateTextOptions::STYLE_ID])) {
+            $styleRule = $options[TranslateTextOptions::STYLE_ID];
+            if (is_string($styleRule)) {
+                $params['style_id'] = $styleRule;
+            } elseif ($styleRule instanceof StyleRuleInfo) {
+                $params['style_id'] = $styleRule->styleId;
+            } else {
+                throw new DeepLException('style_id must be a string or StyleRuleInfo object');
+            }
+        }
+        if (isset($options[TranslateTextOptions::CUSTOM_INSTRUCTIONS])) {
+            $params[TranslateTextOptions::CUSTOM_INSTRUCTIONS] = $options[TranslateTextOptions::CUSTOM_INSTRUCTIONS];
+        }
+        if (isset($options[TranslateTextOptions::TRANSLATION_MEMORY_ID])) {
+            $tm = $options[TranslateTextOptions::TRANSLATION_MEMORY_ID];
+            if (is_string($tm)) {
+                $params['translation_memory_id'] = $tm;
+            } elseif ($tm instanceof TranslationMemoryInfo) {
+                $params['translation_memory_id'] = $tm->translationMemoryId;
+            } else {
+                throw new DeepLException('translation_memory_id must be a string or TranslationMemoryInfo object');
+            }
+        }
+        if (isset($options[TranslateTextOptions::TRANSLATION_MEMORY_THRESHOLD])) {
+            if (!isset($options[TranslateTextOptions::TRANSLATION_MEMORY_ID])) {
+                throw new DeepLException('translation_memory_threshold requires translation_memory_id');
+            }
+            $threshold = $options[TranslateTextOptions::TRANSLATION_MEMORY_THRESHOLD];
+            if (!is_int($threshold) || $threshold < 0 || $threshold > 100) {
+                throw new DeepLException('translation_memory_threshold must be an integer between 0 and 100');
+            }
+            $params['translation_memory_threshold'] = strval($threshold);
+        }
+        $this->applyExtraBodyParameters(
+            $params,
+            $options[TranslateTextOptions::EXTRA_BODY_PARAMETERS] ?? null
+        );
+    }
+
+    /**
+     * Adds extra body parameters to the params array. Extra parameters can override existing keys.
+     * Values are converted to strings.
+     */
+    private function applyExtraBodyParameters(array &$params, ?array $extraParams): void
+    {
+        if ($extraParams !== null) {
+            foreach ($extraParams as $key => $value) {
+                $params[$key] = (string)$value;
+            }
         }
     }
 
@@ -724,7 +783,7 @@ class Translator
                 if ($usingGlossary) {
                     throw new GlossaryNotFoundException("Glossary not found$message");
                 }
-                throw new NotFoundException("Not found, check server_url$message");
+                throw new NotFoundException("Not found$message");
             case 400:
                 throw new DeepLException("Bad request$message");
             case 429:

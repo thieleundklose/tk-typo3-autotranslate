@@ -45,6 +45,9 @@ class TranslateTextOptions
     /** Type of tags to parse before translation, options are 'html' and 'xml'. */
     public const TAG_HANDLING = 'tag_handling';
 
+    /** Version of tag handling algorithm to use, options are 'v1' and 'v2'. */
+    public const TAG_HANDLING_VERSION = 'tag_handling_version';
+
     /** Set to false to disable automatic tag detection, default is true. */
     public const OUTLINE_DETECTION = 'outline_detection';
 
@@ -58,10 +61,15 @@ class TranslateTextOptions
     public const IGNORE_TAGS = 'ignore_tags';
 
     /** Set to string containing a glossary ID to use the glossary for translation.
-     *  Can also be set to a GlossaryInfo as returned by createGlossary, getGlossary or listGlossaries.
+     *  Can also be set to a GlossaryInfo as returned by createGlossary, getGlossary or listGlossaries,
+     *  or a MultilingualGlossaryInfo as returned by createMultilingualGlossary, getMultilingualGlossary or
+     *  listMultilingualGlossaries.
      *  @see \DeepL\Translator::createGlossary()
      *  @see \DeepL\Translator::getGlossary()
      *  @see \DeepL\Translator::listGlossaries()
+     *  @see \DeepL\DeepLClient::createMultilingualGlossary()
+     *  @see \DeepL\DeepLClient::getMultilingualGlossary()
+     *  @see \DeepL\DeepLClient::listMultilingualGlossaries()
      */
     public const GLOSSARY = 'glossary';
 
@@ -74,4 +82,36 @@ class TranslateTextOptions
      * - 'latency_optimized': Use translation models that have been optimized for translation speed.
      */
     public const MODEL_TYPE = 'model_type';
+
+    /** Dictionary of extra parameters to pass in the body of the HTTP request.
+     * Can be used to access beta features, override built-in parameters, or for testing purposes.
+     * Keys in this array will be added to the request body and can override existing keys.
+     * Values must be of string type.
+     */
+    public const EXTRA_BODY_PARAMETERS = 'extra_body_parameters';
+
+    /** Set to string containing a style rule ID to use the style rule for translation.
+     *  Can also be set to a StyleRuleInfo as returned by getAllStyleRules.
+     *  @see \DeepL\DeepLClient::getAllStyleRules()
+     */
+    public const STYLE_ID = 'style_id';
+
+    /** Array of custom instructions to customize text translation behavior. Maximum 10 elements, each max
+     * 300 characters. Only supported for target languages: `de`, `en`, `es`, `fr`, `it`, `ja`, `ko`, `zh`
+     * and their variants. Note: using the `custom_instructions` parameter will use the `quality_optimized`
+     * model type as the default. Requests combining `custom_instructions` and the `latency_optimized`
+     * model type will be rejected.
+     */
+    public const CUSTOM_INSTRUCTIONS = 'custom_instructions';
+
+    /** Set to string containing a translation memory ID to use the translation memory for translation.
+     *  Can also be set to a TranslationMemoryInfo as returned by listTranslationMemories.
+     *  @see \DeepL\DeepLClient::listTranslationMemories()
+     */
+    public const TRANSLATION_MEMORY_ID = 'translation_memory_id';
+
+    /** Set to an integer between 0 and 100 to control the minimum matching percentage
+     *  for translation memory matches. We recommend a minimum threshold of 75%.
+     */
+    public const TRANSLATION_MEMORY_THRESHOLD = 'translation_memory_threshold';
 }
