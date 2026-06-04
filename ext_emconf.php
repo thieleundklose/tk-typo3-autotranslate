@@ -25,6 +25,7 @@ $EM_CONF[$_EXTKEY] = [
             'ThieleUndKlose\\Autotranslate\\' => 'Classes/',
             'DeepL\\' => 'Resources/Vendor/Deeplcom/DeeplPhp/src/',
             'Http\\Discovery\\' => 'Resources/Vendor/php-http/discovery/src/',
+            'Http\\Message\\' => 'Resources/Vendor/php-http/multipart-stream-builder/src/',
         ],
 	],
 ];
