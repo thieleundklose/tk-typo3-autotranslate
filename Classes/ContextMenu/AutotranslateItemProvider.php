@@ -20,7 +20,6 @@ use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Backend\ContextMenu\ItemProviders\AbstractProvider;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
-use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 
 /**
@@ -40,8 +39,8 @@ class AutotranslateItemProvider extends AbstractProvider
     protected $itemsConfiguration = [
         'autotranslatePage' => [
             'type' => 'item',
-            'label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:record_translation.button', // you can use "LLL:" syntax here
-            'iconIdentifier' => 'autotranslate-context-menu',
+            'label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:record_translation.button',
+            'iconIdentifier' => 'autotranslate-extension-v14',
             'callbackAction' => 'triggerRecordTranslation',
         ],
     ];
