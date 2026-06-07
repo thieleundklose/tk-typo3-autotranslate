@@ -6,6 +6,8 @@ services:
 
   ThieleUndKlose\Autotranslate\:
     resource: '../Classes/*'
+    exclude:
+      - '../Classes/Backend/ContextMenu/*'
 
   ThieleUndKlose\Autotranslate\Command\BatchTranslation:
     tags:
