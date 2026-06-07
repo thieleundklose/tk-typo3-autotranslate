@@ -16,12 +16,18 @@
 namespace ThieleUndKlose\Autotranslate\ContextMenu;
 
 use TYPO3\CMS\Backend\ContextMenu\ItemProviders\AbstractProvider;
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 
 /**
  * Item provider adding Hello World item
  */
 class AutotranslateItemProvider extends AbstractProvider
 {
+    /**
+     * @var array<string, mixed>
+     */
+    protected array $record = [];
+
     /**
      * This array contains configuration for items you want to add
      * @var array<string, array<string, string>>
@@ -43,6 +49,11 @@ class AutotranslateItemProvider extends AbstractProvider
         // Current table is: $this->table
         // Current UID is: $this->identifier
         // return $this->table === 'pages';
+        // abort for localized items
+        $this->record = BackendUtility::getRecordWSOL($this->table, (int)$this->identifier) ?: [];
+        if ($this->record['sys_language_uid'] !== 0)
+            return false;
+
         return true;
     }
 
