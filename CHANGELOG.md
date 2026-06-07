@@ -6,6 +6,11 @@
 - Dropped TYPO3 v11 support. The extension now supports TYPO3 v12 and v13 only.
 - Raised the supported PHP range to 8.1.0 - 8.4.99.
 
+### Refactor
+- Consolidated the backend context menu integration into a single `AutotranslateItemProvider` with shared JS callback handling.
+- Kept a TYPO3 v12 legacy callback-module path for backward compatibility while TYPO3 v13+ uses the modern module alias.
+- Added guard rails so the context menu entry only appears for source-language records, enabled tables, and sites with available target languages.
+
 ## [2.6.0] - 2026-05-31
 
 ### Features
