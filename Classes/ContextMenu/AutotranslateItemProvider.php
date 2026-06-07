@@ -15,8 +15,13 @@
 
 namespace ThieleUndKlose\Autotranslate\ContextMenu;
 
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
+use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Backend\ContextMenu\ItemProviders\AbstractProvider;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
+use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
+use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 
 /**
  * Item provider adding Hello World item
@@ -37,7 +42,7 @@ class AutotranslateItemProvider extends AbstractProvider
             'type' => 'item',
             'label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:record_translation.button', // you can use "LLL:" syntax here
             'iconIdentifier' => 'autotranslate-context-menu',
-            'callbackAction' => 'helloWorld', //name of the function in the JS file
+            'callbackAction' => 'triggerRecordTranslation',
         ],
     ];
 
@@ -49,10 +54,25 @@ class AutotranslateItemProvider extends AbstractProvider
         // Current table is: $this->table
         // Current UID is: $this->identifier
         // return $this->table === 'pages';
+        // DebuggerUtility::var_dump($this->table);
+
         // abort for localized items
         $this->record = BackendUtility::getRecordWSOL($this->table, (int)$this->identifier) ?: [];
-        if ($this->record['sys_language_uid'] !== 0)
+        if ((int)($this->record['sys_language_uid'] ?? 0) !== 0)
             return false;
+
+        $siteConfiguration = TranslationHelper::siteConfigurationValue($this->resolvePageId());
+        if (!is_array($siteConfiguration)) {
+            return false;
+        }
+
+        if (TranslationHelper::translationSettingsDefaults($siteConfiguration, $this->table) === null) {
+            return false;
+        }
+
+        if (TranslationHelper::possibleTranslationLanguages($siteConfiguration['languages'] ?? []) === []) {
+            return false;
+        }
 
         return true;
     }
@@ -80,7 +100,10 @@ class AutotranslateItemProvider extends AbstractProvider
     protected function getAdditionalAttributes(string $itemName): array
     {
         return [
-            'data-callback-module' => '@thieleundklose/autotranslate/context-menu-actions',
+            // Legacy fallback for TYPO3 v12 only. Remove once v12 support is dropped.
+            'data-callback-module' => (new Typo3Version())->getMajorVersion() <= 12
+                ? $this->getLegacyCallbackModulePath()
+                : '@thieleundklose/autotranslate/context-menu-actions',
             // Here you can also add any other useful "data-" attribute you'd like to use in your JavaScript (e.g. localized messages)
         ];
     }
@@ -141,5 +164,31 @@ class AutotranslateItemProvider extends AbstractProvider
     {
         //usually here you can find more sophisticated condition. See e.g. PageProvider::canBeEdited()
         return true;
+    }
+
+    private function resolvePageId(): int
+    {
+        if ($this->table === 'pages') {
+            return (int)($this->record['uid'] ?? 0);
+        }
+
+        return (int)($this->record['pid'] ?? 0);
+    }
+
+    /**
+     * Legacy callback-module path for TYPO3 v12.
+     * Keep this only until v12 support is removed.
+     */
+    private function getLegacyCallbackModulePath(): string
+    {
+        $absoluteFilePath = GeneralUtility::getFileAbsFileName(
+            'EXT:autotranslate/Resources/Public/JavaScript/context-menu-actions.js'
+        );
+
+        return preg_replace(
+            '/\.js$/',
+            '',
+            PathUtility::getAbsoluteWebPath($absoluteFilePath)
+        ) ?: '';
     }
 }

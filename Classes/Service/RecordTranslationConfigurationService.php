@@ -46,13 +46,14 @@ class RecordTranslationConfigurationService
                 continue;
             }
 
+            $translated = Records::getRecordTranslation($table, (int)$record['uid'], $languageId) !== null;
             $languages[] = [
                 'id' => $languageId,
                 'title' => $language->getTitle(),
                 'selected' => $configuredLanguageIds === []
                     ? true
-                    : in_array($languageId, $configuredLanguageIds, true),
-                'translated' => Records::getRecordTranslation($table, (int)$record['uid'], $languageId) !== null,
+                    : in_array($languageId, $configuredLanguageIds, true) || $translated,
+                'translated' => $translated,
             ];
         }
 
