@@ -23,12 +23,6 @@ services:
         event: TYPO3\CMS\Core\TypoScript\IncludeTree\Event\ModifyLoadedPageTsConfigEvent
         method: 'addPageConfiguration'
 
-  ThieleUndKlose\Autotranslate\Backend\RecordList\RecordTranslationActionListener:
-    tags:
-      - name: event.listener
-        identifier: 'autotranslate-record-list-action-listener'
-        event: TYPO3\CMS\Backend\RecordList\Event\ModifyRecordListRecordActionsEvent
-
   ThieleUndKlose\Autotranslate\Backend\GlobalJavaScript\RecordTranslationJavaScriptListener:
     tags:
       - name: event.listener
