@@ -1,5 +1,5 @@
-<?php 
-// used in TYPO3 v12
+<?php
+// used since TYPO3 v13
 return [
     'dependencies' => [
         'backend',

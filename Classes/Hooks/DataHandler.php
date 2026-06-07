@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Hooks;
 
+use TYPO3\CMS\Backend\Utility\BackendUtility;
 use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
 use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
@@ -91,7 +92,7 @@ class DataHandler implements SingletonInterface
             return;
         }
 
-        $pid = $parentObject->getPID($table, $recordUid);
+        $pid = $this->resolvePid($table, (int)$recordUid, $fields);
         $pageId = ($pid === 0 && $table === 'pages') ? $recordUid : $pid;
 
         // Skip auto translation if page id is not set, because no site configuration could be exist on root page 0.
@@ -117,6 +118,19 @@ class DataHandler implements SingletonInterface
         $this->translationQueue[$table][(int)$recordUid] = (int)$pageId;
 
         return;
+    }
+
+    /**
+     * Resolve the record pid in a way that works across TYPO3 v12-v14.
+     */
+    private function resolvePid(string $table, int $recordUid, array $fields): int
+    {
+        if (isset($fields['pid']) && is_numeric($fields['pid'])) {
+            return (int)$fields['pid'];
+        }
+
+        $record = BackendUtility::getRecord($table, $recordUid, 'pid');
+        return is_array($record) ? (int)($record['pid'] ?? 0) : 0;
     }
 
     public function processDatamap_afterAllOperations(\TYPO3\CMS\Core\DataHandling\DataHandler $parentObject): void

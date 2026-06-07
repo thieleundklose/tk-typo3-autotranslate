@@ -125,7 +125,10 @@ class Translator implements LoggerAwareInterface
 
         $localizedContents = [];
         // loop over all target languages
-        $languageIds = GeneralUtility::trimExplode(',', $languagesToTranslate, true);
+        $languageIds = array_map(
+            'intval',
+            GeneralUtility::trimExplode(',', $languagesToTranslate, true)
+        );
         foreach ($languageIds as $languageId) {
             $localizedContents[$languageId] = [];
 
@@ -219,7 +222,7 @@ class Translator implements LoggerAwareInterface
                                 if (empty($referenceTranslation)) {
                                     $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
                                     $dataHandler->start([], []);
-                                    $translatedReferenceUid = $dataHandler->localize($referenceTable, $referenceUid, $languageId);
+                                    $translatedReferenceUid = $dataHandler->localize($referenceTable, $referenceUid, (int)$languageId);
 
                                     Records::updateRecord(
                                         $referenceTable,
