@@ -73,7 +73,7 @@ class DataHandler implements SingletonInterface
         }
 
         $languageField = $GLOBALS['TCA'][$table]['ctrl']['languageField'] ?? 'sys_language_uid';
-        $languageUid = isset($parentObject->datamap[$table][$recordUid][$languageField]) ? (int)$parentObject->datamap[$table][$recordUid][$languageField] : null;
+        $languageUid = isset($fields[$languageField]) ? (int)$fields[$languageField] : null;
 
         // Skip auto translation if page created on root level.
         if ($table == 'pages' && $status == 'new' && $fields['pid'] === 0) {
@@ -84,11 +84,21 @@ class DataHandler implements SingletonInterface
         if (isset($parentObject->substNEWwithIDs[$recordUid])) {
             $recordUid = $parentObject->substNEWwithIDs[$recordUid];
         }
+
+        if ($languageUid === null && is_numeric($recordUid)) {
+            $record = BackendUtility::getRecord($table, (int)$recordUid, $languageField);
+            if (is_array($record) && isset($record[$languageField])) {
+                $languageUid = (int)$record[$languageField];
+            }
+        }
+
         if (!isset($GLOBALS['TCA'][$table]['columns']['autotranslate_languages'])) {
             return;
         }
         if ($languageUid && $languageUid > 0) {
-            $parentObject->updateDB($table, $recordUid, ['autotranslate_languages' => NULL]);
+            // Localized records must never enter the autotranslate queue.
+            // The TCA fields are only meant for source-language records, so there is nothing
+            // to reset here when editors create translations manually in the TYPO3 backend.
             return;
         }
 
@@ -169,7 +179,7 @@ class DataHandler implements SingletonInterface
                     self::runWithSuspendedHook(static function () use ($translator, $table, $recordUid, $parentObject, $targetLanguages): void {
                         $translator->translate($table, (int)$recordUid, $parentObject, implode(',', $targetLanguages));
                     });
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     FlashMessageUtility::addMessage(
                         'Error during translation: ' . $e->getMessage(),
                         'Translation Error',
