@@ -17,6 +17,13 @@ use WebVision\Deepltranslate\Core\ConfigurationInterface;
 final class Configuration implements ConfigurationInterface, SingletonInterface
 {
     private string $apiKey = '';
+    private string $modelType = 'prefer_quality_optimized';
+    private string $splitSentences = 'on';
+    private bool $preserveFormatting = false;
+    private string $ignoreTags = '';
+    private string $nonSplittingTags = '';
+    private string $splittingTags = '';
+    private bool $outlineDetection = true;
 
     /**
      * @throws ExtensionConfigurationPathDoesNotExistException
@@ -43,14 +50,57 @@ final class Configuration implements ConfigurationInterface, SingletonInterface
         }
 
         // fallback to api key from deepltranslate core
+        $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('deepltranslate_core');
         if (!$this->apiKey) {
-            $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('deepltranslate_core');
             $this->apiKey = (string)($extensionConfiguration['apiKey'] ?? '');
         }
+
+        $this->modelType = (string)($extensionConfiguration['modelType'] ?? 'prefer_quality_optimized');
+        $this->splitSentences = (string)($extensionConfiguration['splitSentences'] ?? 'on');
+        $this->preserveFormatting = (bool)($extensionConfiguration['preserverFormatting'] ?? false);
+        $this->ignoreTags = (string)($extensionConfiguration['ignoreTags'] ?? '');
+        $this->nonSplittingTags = (string)($extensionConfiguration['nonSplittingTags'] ?? '');
+        $this->splittingTags = (string)($extensionConfiguration['splittingTags'] ?? '');
+        $this->outlineDetection = (bool)($extensionConfiguration['outlineDetection'] ?? true);
     }
 
     public function getApiKey(): string
     {
         return $this->apiKey;
+    }
+
+    public function getModelType(): string
+    {
+        return $this->modelType;
+    }
+
+    public function getSplitSentences(): string
+    {
+        return $this->splitSentences;
+    }
+
+    public function isPreserveFormattingEnabled(): bool
+    {
+        return $this->preserveFormatting;
+    }
+
+    public function getIgnoreTags(): string
+    {
+        return $this->ignoreTags;
+    }
+
+    public function getNonSplittingTags(): string
+    {
+        return $this->nonSplittingTags;
+    }
+
+    public function getSplittingTags(): string
+    {
+        return $this->splittingTags;
+    }
+
+    public function isOutlineDetectionEnabled(): bool
+    {
+        return $this->outlineDetection;
     }
 }
