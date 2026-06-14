@@ -72,8 +72,8 @@ class DataHandler implements SingletonInterface
             return;
         }
 
-        $languageField = $GLOBALS['TCA'][$table]['ctrl']['languageField'] ?? 'sys_language_uid';
-        $languageUid = isset($fields[$languageField]) ? (int)$fields[$languageField] : null;
+        $languageField = $GLOBALS['TCA'][$table]['ctrl']['languageField'] ?? null;
+        $languageUid = ($languageField !== null && isset($fields[$languageField])) ? (int)$fields[$languageField] : null;
 
         // Skip auto translation if page created on root level.
         if ($table == 'pages' && $status == 'new' && $fields['pid'] === 0) {
@@ -85,7 +85,7 @@ class DataHandler implements SingletonInterface
             $recordUid = $parentObject->substNEWwithIDs[$recordUid];
         }
 
-        if ($languageUid === null && is_numeric($recordUid)) {
+        if ($languageField !== null && $languageUid === null && is_numeric($recordUid)) {
             $record = BackendUtility::getRecord($table, (int)$recordUid, $languageField);
             if (is_array($record) && isset($record[$languageField])) {
                 $languageUid = (int)$record[$languageField];
