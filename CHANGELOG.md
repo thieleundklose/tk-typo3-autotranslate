@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.6.1] - 2026-06-14
+
+### Fixes
+- Fixed a fatal error with `deepltranslate-core` 6.x by extending the XClass configuration to implement the additional `ConfigurationInterface` methods introduced in the newer core version. This restores compatibility with `deepltranslate-glossary` 6.x and prevents backend/frontend crashes on page load, thanks to Tobias Hein ([Pull request #133](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/133)).
+
 ## [2.6.0] - 2026-05-31
 
 ### Features
