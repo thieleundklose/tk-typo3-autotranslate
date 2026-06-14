@@ -11,29 +11,47 @@ use TYPO3\CMS\Core\Site\SiteFinder;
 
 class Loader
 {
+    /**
+     * Builds and adds page TSconfig for site-specific form defaults.
+     *
+     * The loader collects TSconfig blocks for all configured sites and applies
+     * them once to the event. This ensures that newly created records receive
+     * the configured `autotranslate_languages` defaults for the current site
+     * context.
+     */
     public function addPageConfiguration(ModifyLoadedPageTsConfigEvent $event): void
     {
         $this->findAndAddConfiguration($event);
     }
 
-    protected function findAndAddConfiguration($event): void
+    protected function findAndAddConfiguration(ModifyLoadedPageTsConfigEvent $event): void
     {
-        // Business code
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
         $sites = $siteFinder->getAllSites();
+        $tsConfigBlocks = [];
 
         foreach ($sites as $site) {
+            $rootPageId = (int)$site->getRootPageId();
             foreach (TranslationHelper::tablesToTranslate() as $table) {
                 $settings = TranslationHelper::translationSettingsDefaults($site->getConfiguration(), $table);
                 if (!$settings) {
                     continue;
                 }
-                $event->addTsConfig('
-                    [traverse(page, "uid") == ' . $site->getRootPageId() . ' || ' . $site->getRootPageId() . '  in tree.rootLineParentIds]
-                        TCAdefaults.' . $table . '.autotranslate_languages = ' . $settings['autotranslateLanguages'] . '
-                    [end]
-                ');
+
+                $tsConfigBlocks[] = sprintf(
+                    '[traverse(page, "uid") == %d || %d in tree.rootLineParentIds]' . PHP_EOL
+                    . '    TCAdefaults.%s.autotranslate_languages = %s' . PHP_EOL
+                    . '[END]',
+                    $rootPageId,
+                    $rootPageId,
+                    $table,
+                    $settings['autotranslateLanguages']
+                );
             }
+        }
+
+        if ($tsConfigBlocks !== []) {
+            $event->addTsConfig(implode(PHP_EOL . PHP_EOL, $tsConfigBlocks));
         }
     }
 }
