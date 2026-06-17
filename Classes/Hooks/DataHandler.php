@@ -33,7 +33,7 @@ class DataHandler implements SingletonInterface
     private bool $suspended = false;
 
     /**
-     * @var array<string, array<int, int>>
+     * @var array<string, array<int, array{pageId: int, changedFields: string[]|null}>>
      */
     private array $translationQueue = [];
 
@@ -114,7 +114,16 @@ class DataHandler implements SingletonInterface
             return;
         }
 
-        $this->translationQueue[$table][(int)$recordUid] = (int)$pageId;
+        // Forward the list of datamap keys so Translator::translate() can
+        // skip DeepL round-trips for the main record when only status fields
+        // (e.g. "hidden" flipped by a cron) have changed. New records pass
+        // null, which keeps the previous "translate everything" behaviour.
+        $changedFields = TranslationHelper::extractChangedFieldsFromDatamap($status, $fields);
+
+        $this->translationQueue[$table][(int)$recordUid] = [
+            'pageId' => (int)$pageId,
+            'changedFields' => $changedFields,
+        ];
 
         return;
     }
@@ -133,7 +142,10 @@ class DataHandler implements SingletonInterface
                 continue;
             }
 
-            foreach ($records as $recordUid => $pageId) {
+            foreach ($records as $recordUid => $queueItem) {
+                $pageId = (int)($queueItem['pageId'] ?? 0);
+                $changedFields = $queueItem['changedFields'] ?? null;
+
                 $record = Records::getRecord($table, (int)$recordUid);
                 if ($record === null) {
                     continue;
@@ -152,8 +164,15 @@ class DataHandler implements SingletonInterface
                 $translator = GeneralUtility::makeInstance(Translator::class, (int)$pageId);
 
                 try {
-                    self::runWithSuspendedHook(static function () use ($translator, $table, $recordUid, $parentObject, $targetLanguages): void {
-                        $translator->translate($table, (int)$recordUid, $parentObject, implode(',', $targetLanguages));
+                    self::runWithSuspendedHook(static function () use ($translator, $table, $recordUid, $parentObject, $targetLanguages, $changedFields): void {
+                        $translator->translate(
+                            $table,
+                            (int)$recordUid,
+                            $parentObject,
+                            implode(',', $targetLanguages),
+                            Translator::TRANSLATE_MODE_BOTH,
+                            $changedFields
+                        );
                     });
                 } catch (\Exception $e) {
                     FlashMessageUtility::addMessage(

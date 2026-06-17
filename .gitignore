@@ -1,1 +1,4 @@
 .DS_Store
+/.Build/
+/composer.lock
+/Build/.phpunit.result.cache
