@@ -24,12 +24,12 @@ class SlugUtility
 {
 
     /**
-     * Receive possible slug fields which should  be generated for new items.
+     * Receive possible slug fields which should be generated for new items.
      *
      * @param string $table
      * @return array|null
      */
-    public static function slugFields(string $table): ?array 
+    public static function slugFields(string $table): ?array
     {
 
         $slugFields = array_filter($GLOBALS['TCA'][$table]['columns'], function($v) {
@@ -45,12 +45,13 @@ class SlugUtility
      * @param string $field
      * @return string|null
      */
-    public static function generateSlug(array $record, string $tableName, string $field): ?string
+    public static function generateSlug(array $record, string $tableName, string $field, ?array $slugFields = null): ?string
     {
-        $slugFields = self::slugFields($tableName);
+        $slugFields ??= self::slugFields($tableName);
 
-        if (empty($slugFields) || !isset($slugFields[$field]))
+        if (empty($slugFields) || !isset($slugFields[$field]) || ($slugFields[$field]['exclude'] ?? false)) {
             return null;
+        }
 
         $fieldConfig = $slugFields[$field]['config'];
 
@@ -61,7 +62,7 @@ class SlugUtility
             $fieldConfig
         );
 
-        $evalInfo = GeneralUtility::trimExplode(',', $fieldConfig['eval'], true);
+        $evalInfo = GeneralUtility::trimExplode(',', $fieldConfig['eval'] ?? '', true);
         $state = RecordStateFactory::forName($tableName)->fromArray($record, $record['pid'], $record['uid']);
 
         // Generate slug

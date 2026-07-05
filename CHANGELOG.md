@@ -11,6 +11,12 @@
 - Kept a TYPO3 v12 legacy callback-module path for backward compatibility while TYPO3 v13+ uses the modern module alias.
 - Added guard rails so the context menu entry only appears for source-language records, enabled tables, and sites with available target languages.
 
+## [2.6.2] - 2026-07-05
+
+### Fixes
+- Fixed slug generation to respect excluded slug fields and guard missing `eval` configuration, preventing PHP warnings during localization, thanks to xerc and magicsunday ([Issue #108](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/108) / [Pull request #112](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/112)).
+- Restored and stabilized recursive queue filtering in the batch translation module across TYPO3 v11, v12, and v13, including a dedicated recursion selector and clearer empty-state feedback when no queue entries exist for the selected page scope.
+
 ## [2.6.1] - 2026-06-14
 
 ### Fixes

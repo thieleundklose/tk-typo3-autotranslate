@@ -24,10 +24,46 @@
                 </f:if>
             </div>
         </div>
+        <div class="autotranslate-toolbar mb-3">
+            <div class="autotranslate-level-filter">
+                <label class="form-label" for="autotranslate-levels">
+                    <f:translate key="mlang_labels_recursive" />
+                </label>
+                <select
+                    class="form-select autotranslate-level-select"
+                    id="autotranslate-levels"
+                    data-autotranslate-level-select
+                >
+                    <f:render section="recursiveOptions" arguments="{levelFilterItems: levelFilterItems}" />
+                </select>
+            </div>
+        </div>
         <f:if condition="{batchItemsRecursive -> f:count()}">
             <f:render section="table" arguments="{_all}"/>
         </f:if>
+        <f:if condition="{batchItemsRecursive -> f:count()} == 0">
+            <div class="alert alert-info autotranslate-empty-state" role="status">
+                <f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:batch_translation.empty_queue" />
+            </div>
+        </f:if>
     </div>
+
+    <f:section name="recursiveOptions">
+        <f:for each="{levelFilterItems}" as="levelFilterItem">
+            <f:if condition="{levelFilterItem.selected}">
+                <f:then>
+                    <option value="{levelFilterItem.href}" selected="selected">
+                        {levelFilterItem.label}
+                    </option>
+                </f:then>
+                <f:else>
+                    <option value="{levelFilterItem.href}">
+                        {levelFilterItem.label}
+                    </option>
+                </f:else>
+            </f:if>
+        </f:for>
+    </f:section>
 
     <f:section name="table">
         <div class="panel panel-default autotranslate-panel">

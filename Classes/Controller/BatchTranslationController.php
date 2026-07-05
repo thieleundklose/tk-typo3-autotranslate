@@ -6,7 +6,6 @@ namespace ThieleUndKlose\Autotranslate\Controller;
 
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
-use TYPO3\CMS\Backend\Template\Components\Menu\MenuItem;
 use TYPO3\CMS\Backend\Template\Components\MultiRecordSelection\Action;
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Http\HtmlResponse;
@@ -169,26 +168,6 @@ class BatchTranslationController extends BatchTranslationBaseController
                 ->setActive($isActive);
             $menu->addMenuItem($menuItem);
         }
-        $view->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
-
-        if ($this->request->getControllerActionName() === 'default') {
-            // Recursive Level Items
-            $menu = $view->getDocHeaderComponent()->getMenuRegistry()->makeMenu();
-            $menu->setIdentifier('BatchTranslationLevels');
-            foreach ($this->menuLevelItems as $level) {
-                /** @var MenuItem $menuItem */
-                $menuItem = $menu->makeMenuItem()
-                    ->setTitle($this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $level))
-                    ->setHref($this->uriBuilder->reset()->uriFor(
-                        'default',
-                        ['levels' => $level],
-                        'BatchTranslation'
-                    ))
-                    ->setActive($this->levels === $level);
-                $menu->addMenuItem($menuItem);
-            }
-        }
-
         $view->getDocHeaderComponent()->getMenuRegistry()->addMenu($menu);
 
         $permissionClause = $this->getBackendUserAuthentication()->getPagePermsClause(Permission::PAGE_SHOW);

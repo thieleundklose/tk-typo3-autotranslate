@@ -141,6 +141,43 @@ class BatchTranslationBaseController extends ActionController
      */
     protected array $deeplApiKeyDetails = [];
 
+    protected function getRecursiveOptions(): array
+    {
+        return array_combine(
+            $this->menuLevelItems,
+            array_map(
+                fn(int $item) => $this->getLanguageService()->sL(
+                    'LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $item
+                ),
+                $this->menuLevelItems
+            )
+        );
+    }
+
+    protected function getLevelFilterItems(): array
+    {
+        $items = [];
+
+        foreach ($this->getRecursiveOptions() as $level => $label) {
+            $href = $this->uriBuilder->reset()->uriFor(
+                'default',
+                [
+                    'id' => $this->pageUid,
+                    'levels' => (int)$level,
+                ],
+                'BatchTranslation'
+            );
+
+            $items[] = [
+                'label' => $label,
+                'href' => $href,
+                'selected' => $this->levels === (int)$level,
+            ];
+        }
+
+        return $items;
+    }
+
 
     /**
      * get log data
@@ -295,13 +332,14 @@ class BatchTranslationBaseController extends ActionController
                 'batchItemsRecursive' => $batchItemsRecursive,
                 'pageUid' => $this->pageUid,
                 'levels' => $this->levels,
+                'levelFilterItems' => $this->getLevelFilterItems(),
                 'queryParams' =>  $this->queryParams,
                 'pageTitle' => $rowPage['title'],
                 'createForm' => [
                     'pages' => isset($batchItem) ? [
                         $batchItem->getPid() => $batchItem->getPageTitle()
                     ] : null,
-                    'recursive' => array_map(fn($item) => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $item), $this->menuLevelItems),
+                    'recursive' => $this->getRecursiveOptions(),
                     'priority' => [
                         BatchItem::PRIORITY_LOW => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.' . BatchItem::PRIORITY_LOW),
                         BatchItem::PRIORITY_MEDIUM => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.' . BatchItem::PRIORITY_MEDIUM),
@@ -396,6 +434,9 @@ class BatchTranslationBaseController extends ActionController
         if (isset($this->queryParams['id'])){
             $this->pageUid = (int)$this->queryParams['id'];
         }
+        if ($this->request->hasArgument('id')) {
+            $this->pageUid = (int)$this->request->getArgument('id');
+        }
 
         // get levels from session
         $levelsFromSession = $this->getBackendUserAuthentication()->getSessionData('autotranslate.levels');
@@ -406,6 +447,10 @@ class BatchTranslationBaseController extends ActionController
         // check query params for given levels and store it in session
         if (isset($this->queryParams['levels'])) {
             $this->levels = (int)$this->queryParams['levels'];
+            $this->getBackendUserAuthentication()->setAndSaveSessionData('autotranslate.levels', $this->levels);
+        }
+        if ($this->request->hasArgument('levels')) {
+            $this->levels = (int)$this->request->getArgument('levels');
             $this->getBackendUserAuthentication()->setAndSaveSessionData('autotranslate.levels', $this->levels);
         }
 
