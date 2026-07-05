@@ -24,12 +24,12 @@ class SlugUtility
 {
 
     /**
-     * Receive possible slug fields which should  be generated for new items.
+     * Receive possible slug fields which should be generated for new items.
      *
      * @param string $table
      * @return array|null
      */
-    public static function slugFields(string $table): ?array 
+    public static function slugFields(string $table): ?array
     {
 
         $slugFields = array_filter($GLOBALS['TCA'][$table]['columns'], function($v) {

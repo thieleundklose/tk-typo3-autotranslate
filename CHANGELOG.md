@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.6.2] - 2026-07-05
+
+### Fixes
+- Fixed slug generation to respect excluded slug fields and guard missing `eval` configuration, preventing PHP warnings during localization, thanks to xerc and magicsunday ([Issue #108](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/108) / [Pull request #112](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/112)).
+- Restored and stabilized recursive queue filtering in the batch translation module across TYPO3 v11, v12, and v13, including a dedicated recursion selector and clearer empty-state feedback when no queue entries exist for the selected page scope.
+
 ## [2.6.1] - 2026-06-14
 
 ### Fixes
