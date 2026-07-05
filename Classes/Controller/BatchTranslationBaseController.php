@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Property\TypeConverter\DateTimeConverter;
 use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
 
 /**
@@ -140,6 +141,43 @@ class BatchTranslationBaseController extends ActionController
      * @var array
      */
     protected array $deeplApiKeyDetails = [];
+
+    protected function getRecursiveOptions(): array
+    {
+        return array_combine(
+            $this->menuLevelItems,
+            array_map(
+                fn(int $item) => $this->getLanguageService()->sL(
+                    'LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $item
+                ),
+                $this->menuLevelItems
+            )
+        );
+    }
+
+    protected function getLevelFilterItems(): array
+    {
+        $items = [];
+
+        foreach ($this->getRecursiveOptions() as $level => $label) {
+            $href = $this->uriBuilder->reset()->uriFor(
+                'default',
+                [
+                    'id' => $this->pageUid,
+                    'levels' => (int)$level,
+                ],
+                'BatchTranslation'
+            );
+
+            $items[] = [
+                'label' => $label,
+                'href' => $href,
+                'selected' => $this->levels === (int)$level,
+            ];
+        }
+
+        return $items;
+    }
 
 
     /**
@@ -295,13 +333,14 @@ class BatchTranslationBaseController extends ActionController
                 'batchItemsRecursive' => $batchItemsRecursive,
                 'pageUid' => $this->pageUid,
                 'levels' => $this->levels,
+                'levelFilterItems' => $this->getLevelFilterItems(),
                 'queryParams' =>  $this->queryParams,
                 'pageTitle' => $rowPage['title'],
                 'createForm' => [
                     'pages' => isset($batchItem) ? [
                         $batchItem->getPid() => $batchItem->getPageTitle()
                     ] : null,
-                    'recursive' => array_map(fn($item) => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_mod.xlf:mlang_labels_menu_level.' . $item), $this->menuLevelItems),
+                    'recursive' => $this->getRecursiveOptions(),
                     'priority' => [
                         BatchItem::PRIORITY_LOW => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.' . BatchItem::PRIORITY_LOW),
                         BatchItem::PRIORITY_MEDIUM => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.priority.' . BatchItem::PRIORITY_MEDIUM),
@@ -318,6 +357,8 @@ class BatchTranslationBaseController extends ActionController
                         BatchItem::FREQUENCY_DAILY => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.' . BatchItem::FREQUENCY_DAILY),
                         BatchItem::FREQUENCY_RECURRING => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.' . BatchItem::FREQUENCY_RECURRING),
                     ],
+                    'translateDateFormat' => $this->getTranslateDateFormatForRendering(),
+                    'translateInputType' => $this->getTranslateInputTypeForRendering(),
                     'redirectAction' => $this->request->getControllerActionName(),
                     'batchItem' =>  $batchItem ?? null,
                 ],
@@ -345,6 +386,7 @@ class BatchTranslationBaseController extends ActionController
      */
     protected function createActionAbstract(BatchItem $batchItem, int $levels): void
     {
+        $rootPageUid = $this->pageUid ?: $batchItem->getPid();
 
         $context = GeneralUtility::makeInstance(Context::class);
 
@@ -364,7 +406,7 @@ class BatchTranslationBaseController extends ActionController
         $counter = 1;
 
         if ($levels > 0)  {
-            $subPages = PageUtility::getSubpageIds($this->pageUid, $levels - 1);
+            $subPages = PageUtility::getSubpageIds($rootPageUid, $levels - 1);
             $backendUser = $this->getBackendUserAuthentication();
             foreach ($subPages as $subPageUid) {
                 $rowSubPage = BackendUtility::getRecordWSOL('pages', $subPageUid);
@@ -380,8 +422,49 @@ class BatchTranslationBaseController extends ActionController
 
         $this->addFlashMessage(
             'Queue items created',
-            $counter . ' items created with given parameters for page with uid ' . $this->pageUid . '.',
+            $counter . ' items created with given parameters for page with uid ' . $rootPageUid . '.',
         );
+    }
+
+    protected function initializeCreateAction(): void
+    {
+        $translateFormat = $this->detectSubmittedTranslateFormat();
+
+        $this->arguments
+            ->getArgument('batchItem')
+            ->getPropertyMappingConfiguration()
+            ->forProperty('translate')
+            ->setTypeConverterOption(
+                DateTimeConverter::class,
+                DateTimeConverter::CONFIGURATION_DATE_FORMAT,
+                $translateFormat
+            );
+    }
+
+    protected function getTranslateDateFormatForRendering(): string
+    {
+        return $this->typo3Version->getMajorVersion() >= 14
+            ? 'Y-m-d\TH:i:s'
+            : 'Y-m-d\TH:i:s\Z';
+    }
+
+    protected function getTranslateInputTypeForRendering(): string
+    {
+        return $this->typo3Version->getMajorVersion() >= 14 ? 'datetime-local' : 'datetime';
+    }
+
+    protected function detectSubmittedTranslateFormat(): string
+    {
+        $translateValue = $this->queryParams['batchItem']['translate'] ?? null;
+        if (!is_string($translateValue) || $translateValue === '') {
+            return $this->getTranslateDateFormatForRendering();
+        }
+
+        if (preg_match('/(?:Z|[+-]\d{2}:\d{2})$/', $translateValue) === 1) {
+            return \DateTimeInterface::W3C;
+        }
+
+        return 'Y-m-d\TH:i:s';
     }
 
     /**
@@ -396,6 +479,9 @@ class BatchTranslationBaseController extends ActionController
         if (isset($this->queryParams['id'])){
             $this->pageUid = (int)$this->queryParams['id'];
         }
+        if ($this->request->hasArgument('id')) {
+            $this->pageUid = (int)$this->request->getArgument('id');
+        }
 
         // get levels from session
         $levelsFromSession = $this->getBackendUserAuthentication()->getSessionData('autotranslate.levels');
@@ -406,6 +492,10 @@ class BatchTranslationBaseController extends ActionController
         // check query params for given levels and store it in session
         if (isset($this->queryParams['levels'])) {
             $this->levels = (int)$this->queryParams['levels'];
+            $this->getBackendUserAuthentication()->setAndSaveSessionData('autotranslate.levels', $this->levels);
+        }
+        if ($this->request->hasArgument('levels')) {
+            $this->levels = (int)$this->request->getArgument('levels');
             $this->getBackendUserAuthentication()->setAndSaveSessionData('autotranslate.levels', $this->levels);
         }
 

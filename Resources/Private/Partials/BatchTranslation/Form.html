@@ -1,7 +1,7 @@
 <f:if condition="{createForm.batchItem}">
-    <f:variable name="dateFormat">Y-m-d\TH:i:s\Z</f:variable>
+    <f:variable name="dateFormat">{createForm.translateDateFormat}</f:variable>
 
-    <h1><f:translate key="function_links_add_item"/></h1>
+    <h1 class="autotranslate-form-heading"><f:translate key="function_links_add_item"/></h1>
     <f:form action="create" name="batchItem" method="post" object="{createForm.batchItem}">
         <div class="form-group">
             <label  class="form-label" for="pid">
@@ -37,9 +37,9 @@
                         <div class="form-wizards-item-element">
                             <div class="input-group" id="tceforms-datetimefield-translate_row-wrapper">
                                 <f:form.textfield
-                                    name="batchItem[translate]"
+                                    property="translate"
                                     value="{f:format.date(format: dateFormat, date: createForm.batchItem.translate)}"
-                                    type="datetime"
+                                    type="{createForm.translateInputType}"
                                     class="form-control t3js-datetimepicker t3js-clearable"
                                     data="{date-type:'datetime', date-offset:dateOffset}"
                                     id="tceforms-datetimefield-translate_row" />
@@ -70,6 +70,8 @@
             </label>
             <f:form.select property="frequency" options="{createForm.frequency}" class="form-control" id="frequency"/>
         </div>
+        <f:form.hidden name="id" value="{pageUid}"/>
+        <f:form.hidden name="levels" value="{levels}"/>
         <f:form.hidden name="redirectAction" value="{createForm.redirectAction}"/>
         <f:form.submit value="{f:translate(key:'function_links_add_items')}" name="create" class="btn btn-default"/>
     </f:form>

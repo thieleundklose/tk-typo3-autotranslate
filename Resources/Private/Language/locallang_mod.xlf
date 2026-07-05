@@ -33,6 +33,9 @@
             <trans-unit id="mlang_labels_menu_level.250" resname="mlang_labels_menu_level.250">
                 <source>Infinite</source>
             </trans-unit>
+            <trans-unit id="batch_translation.empty_queue" resname="batch_translation.empty_queue">
+                <source>No queue entries were found for the selected page, its subpages, and the chosen recursion level.</source>
+            </trans-unit>
             <trans-unit id="function_links_add_item" resname="function_links_add_item">
                 <source>Add New Item</source>
             </trans-unit>
