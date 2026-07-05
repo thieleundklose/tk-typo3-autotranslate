@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.0.1] - 2026-07-05
+
+### Fixes
+- Fixed recursive queue filtering in the batch translation backend module so the selected recursion scope is applied reliably again in the TYPO3 v12, v13, and v14 module variants.
+- Fixed creation of batch translation queue items in the backend module across TYPO3 v12, v13, and v14, including compatible handling of the scheduled translation date field and stable submission of the selected page context.
+
 ## [3.0.0] - 2026-06-04
 
 ### Breaking Changes
