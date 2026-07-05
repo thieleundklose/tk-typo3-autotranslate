@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Type\Bitmask\Permission;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Property\TypeConverter\DateTimeConverter;
 use TYPO3\CMS\Extbase\Persistence\Generic\PersistenceManager;
 
 /**
@@ -356,6 +357,8 @@ class BatchTranslationBaseController extends ActionController
                         BatchItem::FREQUENCY_DAILY => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.' . BatchItem::FREQUENCY_DAILY),
                         BatchItem::FREQUENCY_RECURRING => $this->getLanguageService()->sL('LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.' . BatchItem::FREQUENCY_RECURRING),
                     ],
+                    'translateDateFormat' => $this->getTranslateDateFormatForRendering(),
+                    'translateInputType' => $this->getTranslateInputTypeForRendering(),
                     'redirectAction' => $this->request->getControllerActionName(),
                     'batchItem' =>  $batchItem ?? null,
                 ],
@@ -383,6 +386,7 @@ class BatchTranslationBaseController extends ActionController
      */
     protected function createActionAbstract(BatchItem $batchItem, int $levels): void
     {
+        $rootPageUid = $this->pageUid ?: $batchItem->getPid();
 
         $context = GeneralUtility::makeInstance(Context::class);
 
@@ -402,7 +406,7 @@ class BatchTranslationBaseController extends ActionController
         $counter = 1;
 
         if ($levels > 0)  {
-            $subPages = PageUtility::getSubpageIds($this->pageUid, $levels - 1);
+            $subPages = PageUtility::getSubpageIds($rootPageUid, $levels - 1);
             $backendUser = $this->getBackendUserAuthentication();
             foreach ($subPages as $subPageUid) {
                 $rowSubPage = BackendUtility::getRecordWSOL('pages', $subPageUid);
@@ -418,8 +422,49 @@ class BatchTranslationBaseController extends ActionController
 
         $this->addFlashMessage(
             'Queue items created',
-            $counter . ' items created with given parameters for page with uid ' . $this->pageUid . '.',
+            $counter . ' items created with given parameters for page with uid ' . $rootPageUid . '.',
         );
+    }
+
+    protected function initializeCreateAction(): void
+    {
+        $translateFormat = $this->detectSubmittedTranslateFormat();
+
+        $this->arguments
+            ->getArgument('batchItem')
+            ->getPropertyMappingConfiguration()
+            ->forProperty('translate')
+            ->setTypeConverterOption(
+                DateTimeConverter::class,
+                DateTimeConverter::CONFIGURATION_DATE_FORMAT,
+                $translateFormat
+            );
+    }
+
+    protected function getTranslateDateFormatForRendering(): string
+    {
+        return $this->typo3Version->getMajorVersion() >= 14
+            ? 'Y-m-d\TH:i:s'
+            : 'Y-m-d\TH:i:s\Z';
+    }
+
+    protected function getTranslateInputTypeForRendering(): string
+    {
+        return $this->typo3Version->getMajorVersion() >= 14 ? 'datetime-local' : 'datetime';
+    }
+
+    protected function detectSubmittedTranslateFormat(): string
+    {
+        $translateValue = $this->queryParams['batchItem']['translate'] ?? null;
+        if (!is_string($translateValue) || $translateValue === '') {
+            return $this->getTranslateDateFormatForRendering();
+        }
+
+        if (preg_match('/(?:Z|[+-]\d{2}:\d{2})$/', $translateValue) === 1) {
+            return \DateTimeInterface::W3C;
+        }
+
+        return 'Y-m-d\TH:i:s';
     }
 
     /**
