@@ -126,6 +126,10 @@ class Translator implements LoggerAwareInterface
                 continue;
             }
 
+            if ($this->hasDeepLTranslationWork($record, $table, (int)$languageId, $columns, $parentObject, $translateMode)) {
+                $this->ensureValidApiKey();
+            }
+
             if (!$existingTranslation) {
                 $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
                 $dataHandler->start([], []);
@@ -475,21 +479,18 @@ class Translator implements LoggerAwareInterface
         // create translation array from source record by keys from fielmap
         $translatedColumns = [];
 
-        // Validate the DeepL API key before entering the try/catch below so
-        // a genuinely broken key surfaces as a RuntimeException to the hook
-        // (flash message) instead of being swallowed as a translation error.
-        if (count($columns) > 0) {
+        $toTranslateObject = array_intersect_key($record, array_flip($columns));
+        $toTranslate = array_filter($toTranslateObject, fn($value) => !is_null($value) && $value !== '');
+        $deeplSourceLang = $this->deeplSourceLanguage();
+        $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
+
+        if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
             $this->ensureValidApiKey();
         }
 
         try {
             // prepare translated record with source record
             // create translation array from source record by keys from fielmap
-            $toTranslateObject = array_intersect_key($record, array_flip($columns));
-
-            $toTranslate = array_filter($toTranslateObject, fn($value) => !is_null($value) && $value !== '');
-            $deeplSourceLang = $this->deeplSourceLanguage();
-            $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
             $result = null;
             $glossary = null;
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
@@ -629,6 +630,98 @@ class Translator implements LoggerAwareInterface
 
             return '{}';
         }
+    }
+
+    private function hasDeepLTranslationWork(
+        array $record,
+        string $table,
+        int $targetLanguageUid,
+        array $columns,
+        ?DataHandler $parentObject,
+        string $translateMode
+    ): bool {
+        if ($this->recordHasDeepLTranslationWork($record, $targetLanguageUid, $columns)) {
+            return true;
+        }
+
+        foreach (TranslationHelper::additionalReferenceTables() as $referenceTable) {
+            $columnsReference = TranslationHelper::translationTextfields($this->pageId, $referenceTable);
+            if (empty($columnsReference)) {
+                continue;
+            }
+
+            $autotranslateReferences = TranslationHelper::translationReferenceColumns($this->pageId, $table, $referenceTable);
+            if (empty($autotranslateReferences)) {
+                continue;
+            }
+
+            foreach ($autotranslateReferences as $referenceColumn) {
+                foreach ($this->getReferenceUidsForTranslation($table, (int)$record['uid'], $referenceTable, $referenceColumn) as $referenceUid) {
+                    $referenceTranslation = Records::getRecordTranslation($referenceTable, $referenceUid, $targetLanguageUid);
+                    if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && empty($referenceTranslation)) {
+                        continue;
+                    }
+
+                    if ($parentObject !== null && isset($parentObject->datamap[$referenceTable][$referenceUid])) {
+                        $recordReference = $parentObject->datamap[$referenceTable][$referenceUid];
+                    } else {
+                        $recordReference = Records::getRecord($referenceTable, $referenceUid);
+                    }
+
+                    if (is_array($recordReference) && $this->recordHasDeepLTranslationWork($recordReference, $targetLanguageUid, $columnsReference)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function recordHasDeepLTranslationWork(array $record, int $targetLanguageUid, array $columns): bool
+    {
+        if ($this->deeplTargetLanguage($targetLanguageUid) === null) {
+            return false;
+        }
+
+        $toTranslateObject = array_intersect_key($record, array_flip($columns));
+        $toTranslate = array_filter($toTranslateObject, fn($value) => !is_null($value) && $value !== '');
+
+        return count($toTranslate) > 0;
+    }
+
+    private function getReferenceUidsForTranslation(string $table, int $recordUid, string $referenceTable, string $referenceColumn): array
+    {
+        $type = $GLOBALS['TCA'][$table]['columns'][$referenceColumn]['config']['type'] ?? null;
+        $foreignField = $GLOBALS['TCA'][$table]['columns'][$referenceColumn]['config']['foreign_field'] ?? null;
+        if ($foreignField === null) {
+            return [];
+        }
+
+        switch ($type) {
+            case 'file':
+                return Records::getRecords($referenceTable, 'uid', [
+                    "{$foreignField} = " . $recordUid,
+                    "deleted = 0",
+                    "sys_language_uid = 0",
+                    "tablenames = '{$table}'",
+                    "fieldname = '{$referenceColumn}'",
+                ]);
+            case 'inline':
+                $constraints = [
+                    "{$foreignField} = " . $recordUid,
+                    "deleted = 0",
+                    "sys_language_uid = 0",
+                ];
+
+                if (isset($GLOBALS['TCA'][$referenceTable]['columns']['fieldname'])) {
+                    $constraints[] = "fieldname = '{$referenceColumn}'";
+                }
+
+                return Records::getRecords($referenceTable, 'uid', $constraints);
+        }
+
+        return [];
     }
 
     /**

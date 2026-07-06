@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.6.3] - 2026-07-05
+
+### Fixes
+- Deferred the DeepL API key usage check until a translation is actually attempted, while still validating the key before creating localized records. This avoids unnecessary usage endpoint calls for saves without translatable content and prevents empty localized records when the configured DeepL key is invalid or exhausted.
+
 ## [2.6.2] - 2026-07-05
 
 ### Fixes
