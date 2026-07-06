@@ -94,11 +94,11 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
      * @param int $translationsPerRun
      * @return void
      */
-    protected function logTranslationStats(int $successfulTranslations, int $translationsPerRun): void
+    protected function logTranslationStats(int $successfulTranslations, int $softFailedTranslations): void
     {
         $this->logger->info('{completed} Tasks completed and {failed} Tasks failed', [
             'completed' => $successfulTranslations,
-            'failed' => $translationsPerRun - $successfulTranslations,
+            'failed' => $softFailedTranslations,
         ]);
     }
 
@@ -120,6 +120,7 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
 
         $translationsPerRun = (int)$input->getArgument('translationsPerRun');
         $successfulTranslations = 0;
+        $softFailedTranslations = 0;
 
         $batchItemsToRun = $this->findWaitingForRun($translationsPerRun);
 
@@ -144,10 +145,11 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
             return Command::FAILURE;
         }
 
-        $this->logTranslationStats($successfulTranslations, $translationsPerRun);
+        $softFailedTranslations = count($batchItemsToRun) - $successfulTranslations;
+        $this->logTranslationStats($successfulTranslations, $softFailedTranslations);
 
         $output->writeln($successfulTranslations . ' translation(s) completed successfully!');
-        $output->writeln(($translationsPerRun - $successfulTranslations) . ' translation(s) failed.');
+        $output->writeln($softFailedTranslations . ' translation(s) failed.');
         return Command::SUCCESS;
     }
 
