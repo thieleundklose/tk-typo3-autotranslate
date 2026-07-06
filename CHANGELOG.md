@@ -1,9 +1,10 @@
 # Changelog
 
-## [2.6.3] - 2026-07-05
+## [2.6.3] - 2026-07-06
 
 ### Fixes
 - Deferred the DeepL API key usage check until a translation is actually attempted, while still validating the key before creating localized records. This avoids unnecessary usage endpoint calls for saves without translatable content and prevents empty localized records when the configured DeepL key is invalid or exhausted.
+- Fixed the CLI batch translation summary to report failed translations based on the number of processed queue items instead of the requested run limit, thanks to xerc ([Pull request #105](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/105)).
 
 ## [2.6.2] - 2026-07-05
 
