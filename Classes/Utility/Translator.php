@@ -48,6 +48,13 @@ class Translator implements LoggerAwareInterface
     protected $glossaryService = null;
 
     /**
+     * Cached DeepL checkApiKey() result for this Translator instance.
+     * Populated on the first actual DeepL invocation and reused for all
+     * subsequent ones so cron runs only hit the usage endpoint once.
+     */
+    private ?array $deeplApiKeyDetails = null;
+
+    /**
      * object constructor
      *
      * @param int $pageId
@@ -73,31 +80,6 @@ class Translator implements LoggerAwareInterface
      */
     public function translate(string $table, int $recordUid, ?DataHandler $parentObject = null, ?string $languagesToTranslate = null, string $translateMode = self::TRANSLATE_MODE_BOTH): void
     {
-
-        $deeplApiKeyDetails = DeeplApiHelper::checkApiKey($this->apiKey);
-        if ($deeplApiKeyDetails['error']){
-            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
-                'error' => $deeplApiKeyDetails['error']
-            ]);
-            throw new \RuntimeException('DeepL API Key is not valid: ' . $deeplApiKeyDetails['error']);
-        }
-        if (!empty($deeplApiKeyDetails['warning'])) {
-            LogUtility::log($this->logger, 'DeepL API warning: {warning}', [
-                'warning' => $deeplApiKeyDetails['warning']
-            ], LogUtility::MESSAGE_WARNING);
-        }
-        if (!$deeplApiKeyDetails['isValid']) {
-            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
-                'error' => 'No API Key given.'
-            ]);
-            throw new \RuntimeException('DeepL API Key is not valid: No API Key given.');
-        }
-        if ($deeplApiKeyDetails['charactersLeft'] !== null && $deeplApiKeyDetails['charactersLeft'] <= 0) {
-            LogUtility::log($this->logger, 'DeepL API Key has no characters left: {charactersLeft}', [
-                'charactersLeft' => $deeplApiKeyDetails['charactersLeft']
-            ]);
-            throw new \RuntimeException('DeepL API Key has no characters left: ' . $deeplApiKeyDetails['charactersLeft']);
-        }
 
         $record = Records::getRecord($table, $recordUid);
 
@@ -145,6 +127,10 @@ class Translator implements LoggerAwareInterface
                     'uid' => $recordUid
                 ]);
                 continue;
+            }
+
+            if ($this->hasDeepLTranslationWork($record, $table, (int)$languageId, $columns, $parentObject, $translateMode)) {
+                $this->ensureValidApiKey();
             }
 
             if (!$existingTranslation) {
@@ -496,14 +482,18 @@ class Translator implements LoggerAwareInterface
         // create translation array from source record by keys from fielmap
         $translatedColumns = [];
 
+        $toTranslateObject = array_intersect_key($record, array_flip($columns));
+        $toTranslate = array_filter($toTranslateObject, fn($value) => !is_null($value) && $value !== '');
+        $deeplSourceLang = $this->deeplSourceLanguage();
+        $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
+
+        if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
+            $this->ensureValidApiKey();
+        }
+
         try {
             // prepare translated record with source record
             // create translation array from source record by keys from fielmap
-            $toTranslateObject = array_intersect_key($record, array_flip($columns));
-
-            $toTranslate = array_filter($toTranslateObject, fn($value) => !is_null($value) && $value !== '');
-            $deeplSourceLang = $this->deeplSourceLanguage();
-            $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
             $result = null;
             $glossary = null;
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
@@ -642,6 +632,135 @@ class Translator implements LoggerAwareInterface
             ], LogUtility::MESSAGE_ERROR);
 
             return '{}';
+        }
+    }
+
+    private function hasDeepLTranslationWork(
+        array $record,
+        string $table,
+        int $targetLanguageUid,
+        array $columns,
+        ?DataHandler $parentObject,
+        string $translateMode
+    ): bool {
+        if ($this->recordHasDeepLTranslationWork($record, $targetLanguageUid, $columns)) {
+            return true;
+        }
+
+        foreach (TranslationHelper::additionalReferenceTables() as $referenceTable) {
+            $columnsReference = TranslationHelper::translationTextfields($this->pageId, $referenceTable);
+            if (empty($columnsReference)) {
+                continue;
+            }
+
+            $autotranslateReferences = TranslationHelper::translationReferenceColumns($this->pageId, $table, $referenceTable);
+            if (empty($autotranslateReferences)) {
+                continue;
+            }
+
+            foreach ($autotranslateReferences as $referenceColumn) {
+                foreach ($this->getReferenceUidsForTranslation($table, (int)$record['uid'], $referenceTable, $referenceColumn) as $referenceUid) {
+                    $referenceTranslation = Records::getRecordTranslation($referenceTable, $referenceUid, $targetLanguageUid);
+                    if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && empty($referenceTranslation)) {
+                        continue;
+                    }
+
+                    if ($parentObject !== null && isset($parentObject->datamap[$referenceTable][$referenceUid])) {
+                        $recordReference = $parentObject->datamap[$referenceTable][$referenceUid];
+                    } else {
+                        $recordReference = Records::getRecord($referenceTable, $referenceUid);
+                    }
+
+                    if (is_array($recordReference) && $this->recordHasDeepLTranslationWork($recordReference, $targetLanguageUid, $columnsReference)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function recordHasDeepLTranslationWork(array $record, int $targetLanguageUid, array $columns): bool
+    {
+        if ($this->deeplTargetLanguage($targetLanguageUid) === null) {
+            return false;
+        }
+
+        $toTranslateObject = array_intersect_key($record, array_flip($columns));
+        $toTranslate = array_filter($toTranslateObject, fn($value) => !is_null($value) && $value !== '');
+
+        return count($toTranslate) > 0;
+    }
+
+    private function getReferenceUidsForTranslation(string $table, int $recordUid, string $referenceTable, string $referenceColumn): array
+    {
+        $type = $GLOBALS['TCA'][$table]['columns'][$referenceColumn]['config']['type'] ?? null;
+        $foreignField = $GLOBALS['TCA'][$table]['columns'][$referenceColumn]['config']['foreign_field'] ?? null;
+        if ($foreignField === null) {
+            return [];
+        }
+
+        switch ($type) {
+            case 'file':
+                return Records::getRecords($referenceTable, 'uid', [
+                    "{$foreignField} = " . $recordUid,
+                    "deleted = 0",
+                    "sys_language_uid = 0",
+                    "tablenames = '{$table}'",
+                    "fieldname = '{$referenceColumn}'",
+                ]);
+            case 'inline':
+                $constraints = [
+                    "{$foreignField} = " . $recordUid,
+                    "deleted = 0",
+                    "sys_language_uid = 0",
+                ];
+
+                if (isset($GLOBALS['TCA'][$referenceTable]['columns']['fieldname'])) {
+                    $constraints[] = "fieldname = '{$referenceColumn}'";
+                }
+
+                return Records::getRecords($referenceTable, 'uid', $constraints);
+        }
+
+        return [];
+    }
+
+    /**
+     * Validate the configured DeepL API key exactly once per Translator
+     * instance and re-use the cached usage details on every subsequent
+     * DeepL invocation. Throws RuntimeException if the key is unusable.
+     */
+    private function ensureValidApiKey(): void
+    {
+        if ($this->deeplApiKeyDetails === null) {
+            $this->deeplApiKeyDetails = DeeplApiHelper::checkApiKey($this->apiKey);
+        }
+
+        $details = $this->deeplApiKeyDetails;
+        if ($details['error']) {
+            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
+                'error' => $details['error']
+            ]);
+            throw new \RuntimeException('DeepL API Key is not valid: ' . $details['error']);
+        }
+        if (!empty($details['warning'])) {
+            LogUtility::log($this->logger, 'DeepL API warning: {warning}', [
+                'warning' => $details['warning']
+            ], LogUtility::MESSAGE_WARNING);
+        }
+        if (!$details['isValid']) {
+            LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
+                'error' => 'No API Key given.'
+            ]);
+            throw new \RuntimeException('DeepL API Key is not valid: No API Key given.');
+        }
+        if ($details['charactersLeft'] !== null && $details['charactersLeft'] <= 0) {
+            LogUtility::log($this->logger, 'DeepL API Key has no characters left: {charactersLeft}', [
+                'charactersLeft' => $details['charactersLeft']
+            ]);
+            throw new \RuntimeException('DeepL API Key has no characters left: ' . $details['charactersLeft']);
         }
     }
 
