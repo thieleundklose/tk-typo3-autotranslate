@@ -190,40 +190,29 @@ class Translator implements LoggerAwareInterface
                         if (!empty($references)) {
                             foreach ($references as $referenceUid) {
 
-                                $referenceTranslation = Records::getRecordTranslation($referenceTable, $referenceUid, (int)$languageId);
+                                $translatedReferenceUid = $this->ensureLocalizedInlineReferenceRecord(
+                                    $referenceTable,
+                                    (int)$referenceUid,
+                                    (int)$languageId,
+                                    $foreignField,
+                                    (int)$localizedContents[$languageId][$recordUid],
+                                    $translateMode,
+                                    $table,
+                                    $recordUid
+                                );
 
-                                if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && empty($referenceTranslation)) {
-                                    LogUtility::log($this->logger, 'No {referenceTable} {referenceUid} Translation of {table} with uid {uid} because mode "update only".', [
-                                        'referenceTable' => $referenceTable,
-                                        'table' => $table,
-                                        'uid' => $recordUid,
-                                        'referenceUid' => $referenceUid,
-                                    ]);
+                                if ($translatedReferenceUid === null) {
                                     continue;
                                 }
 
-                                if (empty($referenceTranslation)) {
-                                    $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-                                    $dataHandler->start([], []);
-                                    $translatedReferenceUid = $dataHandler->localize($referenceTable, $referenceUid, $languageId);
-
-                                    Records::updateRecord(
-                                        $referenceTable,
-                                        $translatedReferenceUid,
-                                        [
-                                            $foreignField => $localizedContents[$languageId][$recordUid],
-                                        ]
-                                    );
-
-                                } else {
-                                    $translatedReferenceUid = $referenceTranslation['uid'];
-                                }
-
-                                if (count($columnsReference)) {
+                                if (!empty($columnsReference)) {
                                     if ($parentObject !== null && isset($parentObject->datamap[$referenceTable]) && isset($parentObject->datamap[$referenceTable][$referenceUid])) {
                                         $recordReference = $parentObject->datamap[$referenceTable][$referenceUid];
                                     } else {
                                         $recordReference = Records::getRecord($referenceTable, $referenceUid);
+                                    }
+                                    if (!is_array($recordReference)) {
+                                        continue;
                                     }
                                     $translatedColumns = $this->translateRecordProperties($recordReference, (int)$languageId, $columnsReference, $table, $translatedReferenceUid);
                                     if (count($translatedColumns)) {
@@ -409,6 +398,153 @@ class Translator implements LoggerAwareInterface
         }
 
         return null;
+    }
+
+    private function ensureLocalizedInlineReferenceRecord(
+        string $referenceTable,
+        int $referenceUid,
+        int $targetLanguageUid,
+        string $foreignField,
+        int $localizedParentUid,
+        string $translateMode,
+        string $parentTable,
+        int $parentUid
+    ): ?int {
+        $referenceTranslation = Records::getRecordTranslation($referenceTable, $referenceUid, $targetLanguageUid);
+        if (empty($referenceTranslation)) {
+            $referenceTranslation = $this->findLocalizedInlineReferenceRecord(
+                $referenceTable,
+                $referenceUid,
+                $targetLanguageUid,
+                $foreignField,
+                $localizedParentUid
+            );
+        }
+
+        if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && empty($referenceTranslation)) {
+            LogUtility::log($this->logger, 'No {referenceTable} {referenceUid} Translation of {table} with uid {uid} because mode "update only".', [
+                'referenceTable' => $referenceTable,
+                'table' => $parentTable,
+                'uid' => $parentUid,
+                'referenceUid' => $referenceUid,
+            ]);
+            return null;
+        }
+
+        if (empty($referenceTranslation)) {
+            $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+            $dataHandler->start([], []);
+            $translatedReferenceUid = $dataHandler->localize($referenceTable, $referenceUid, $targetLanguageUid);
+
+            if ($translatedReferenceUid === false || $translatedReferenceUid === null) {
+                $referenceTranslation = Records::getRecordTranslation($referenceTable, $referenceUid, $targetLanguageUid);
+                if (empty($referenceTranslation)) {
+                    $referenceTranslation = $this->findLocalizedInlineReferenceRecord(
+                        $referenceTable,
+                        $referenceUid,
+                        $targetLanguageUid,
+                        $foreignField,
+                        $localizedParentUid
+                    );
+                }
+                if (!empty($referenceTranslation)) {
+                    $translatedReferenceUid = (int)$referenceTranslation['uid'];
+                }
+            }
+
+            if ($translatedReferenceUid === false || $translatedReferenceUid === null) {
+                LogUtility::log($this->logger, 'No {referenceTable} {referenceUid} Translation of {table} with uid {uid} because DataHandler localize failed.', [
+                    'referenceTable' => $referenceTable,
+                    'table' => $parentTable,
+                    'uid' => $parentUid,
+                    'referenceUid' => $referenceUid,
+                    'languageUid' => $targetLanguageUid,
+                ], LogUtility::MESSAGE_WARNING);
+                return null;
+            }
+        } else {
+            $translatedReferenceUid = (int)$referenceTranslation['uid'];
+        }
+
+        Records::updateRecord(
+            $referenceTable,
+            (int)$translatedReferenceUid,
+            $this->buildInlineReferenceLocalizationUpdateFields(
+                $referenceTable,
+                $referenceUid,
+                $foreignField,
+                $localizedParentUid
+            )
+        );
+
+        return (int)$translatedReferenceUid;
+    }
+
+    private function findLocalizedInlineReferenceRecord(
+        string $referenceTable,
+        int $referenceUid,
+        int $targetLanguageUid,
+        string $foreignField,
+        int $localizedParentUid
+    ): ?array {
+        $sourceRecord = Records::getRecord($referenceTable, $referenceUid);
+        if (!is_array($sourceRecord)) {
+            return null;
+        }
+
+        $columns = $GLOBALS['TCA'][$referenceTable]['columns'] ?? [];
+        $constraints = [
+            'sys_language_uid' => $targetLanguageUid,
+            $foreignField => $localizedParentUid,
+        ];
+
+        $ctrl = $GLOBALS['TCA'][$referenceTable]['ctrl'] ?? [];
+        $parentField = $ctrl['transOrigPointerField'] ?? null;
+        if ($parentField !== null) {
+            $constraints[$parentField] = $referenceUid;
+        }
+
+        if (isset($columns['deleted'])) {
+            $constraints['deleted'] = 0;
+        }
+        if (isset($columns['parenttable']) && isset($sourceRecord['parenttable'])) {
+            $constraints['parenttable'] = $sourceRecord['parenttable'];
+        }
+        if (isset($columns['sorting']) && isset($sourceRecord['sorting'])) {
+            $constraints['sorting'] = $sourceRecord['sorting'];
+        }
+
+        $orderBy = [];
+        if (isset($columns['sorting'])) {
+            $orderBy['sorting'] = 'ASC';
+        }
+        $orderBy['uid'] = 'ASC';
+
+        return Records::getFirstRecordByFields($referenceTable, $constraints, $orderBy);
+    }
+
+    private function buildInlineReferenceLocalizationUpdateFields(
+        string $referenceTable,
+        int $referenceUid,
+        string $foreignField,
+        int $localizedParentUid
+    ): array {
+        $fields = [
+            $foreignField => $localizedParentUid,
+        ];
+
+        $ctrl = $GLOBALS['TCA'][$referenceTable]['ctrl'] ?? [];
+        $parentField = $ctrl['transOrigPointerField'] ?? null;
+        if ($parentField !== null) {
+            $fields[$parentField] = $referenceUid;
+        }
+
+        $translationSourceField = $ctrl['translationSource'] ?? null;
+        if ($translationSourceField !== null) {
+            $fields[$translationSourceField] = $referenceUid;
+        }
+
+        return $fields;
     }
 
     private function isTranslationCreationAllowedForTable(string $table): bool

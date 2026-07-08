@@ -135,6 +135,46 @@ class Records
     }
 
     /**
+     * Get the first record matching equality constraints.
+     *
+     * @param string $table
+     * @param array $constraints
+     * @param array $orderBy
+     * @return array|null
+     * @throws Exception
+     */
+    public static function getFirstRecordByFields(string $table, array $constraints, array $orderBy = []): ?array
+    {
+        $queryBuilder = self::getQueryBuilder($table);
+        $query = $queryBuilder
+            ->select('*')
+            ->from($table)
+            ->setMaxResults(1);
+
+        foreach ($constraints as $field => $value) {
+            $query->andWhere(
+                $queryBuilder->expr()->eq(
+                    $field,
+                    $queryBuilder->createNamedParameter($value)
+                )
+            );
+        }
+
+        foreach ($orderBy as $field => $direction) {
+            $query->addOrderBy($field, $direction);
+        }
+
+        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
+        if ($versionInformation->getMajorVersion() > 11) {
+            $res = $query->executeQuery()->fetchAssociative();
+        } else {
+            $res = $query->execute()->fetchAssociative();
+        }
+
+        return $res === false ? null : $res;
+    }
+
+    /**
      * Update record fields.
      *
      * @param string $table
