@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.7.0] - 2026-07-12
+
+### Features
+- Added recursive localization and translation for configured relation tables. Nested inline/reference records are now localized with their translated parent record and their configured text fields are translated as part of the same run.
+- Added site configuration fields for configured relation tables only when matching translatable text fields or file reference fields exist in TCA.
+
+### Fixes
+- Fixed additional relation table handling so existing localized child records are reused, re-linked to the localized parent record, and updated with their translation source fields instead of creating duplicate or orphaned relation records.
+- Fixed batch translation work detection to include nested relation tables, so parent records with translatable child content are no longer skipped when the parent itself has no text fields to translate.
+- Fixed text field filtering so only supported TCA `input` and `text` values are sent to DeepL, preventing numeric and non-text values from being translated accidentally.
+- Fixed site configuration defaults so configured relation tables do not require their own enable checkbox before their text and file reference fields can be used.
+
+### Upgrade Notes
+- No configuration key was renamed. The extension setting `additionalReferenceTables` remains compatible, but its visible label now says "Additional supported relation tables" because the setting covers inline/reference child tables, not only file references.
+- Existing site configurations should be reviewed if numeric fields were listed as translatable text fields; these values are now ignored intentionally.
+
 ## [2.6.3] - 2026-07-06
 
 ### Fixes

@@ -174,8 +174,8 @@ foreach ($referenceTablesToTranslate as $table) {
         $fieldsUnusedFileReference = TranslationHelper::unusedTranslateableColumns($table, $siteConfiguration[$fieldname] ?? '', TranslationHelper::COLUMNS_TRANSLATEABLE_GROUP_FILEREFERENCE);
         $descriptionAppendix = !empty($fieldsUnusedFileReference) ? PHP_EOL . ' Unused: ' . implode(', ', $fieldsUnusedFileReference) : '';
         $GLOBALS['SiteConfiguration']['site']['columns'][$fieldname] = [
-            'label' => 'Autotranslation file references for '.$tableUpperCamelCase,
-            'description' => 'Comma seperated list of columns.' . $descriptionAppendix,
+            'label' => 'Autotranslation file relation fields for '.$tableUpperCamelCase,
+            'description' => 'Comma separated list of file relation columns.' . $descriptionAppendix,
             'config' => [
                 'type' => 'text',
                 'cols' => 80,
