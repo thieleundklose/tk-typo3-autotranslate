@@ -206,7 +206,7 @@ class Translator implements LoggerAwareInterface
             }
 
             foreach ($autotranslateReferences as $referenceColumn) {
-                $foreignField = $GLOBALS['TCA'][$table]['columns'][$referenceColumn]['config']['foreign_field'] ?? null;
+                $foreignField = $this->getForeignFieldForReferenceColumn($table, $referenceColumn, $referenceTable);
                 if ($foreignField === null) {
                     continue;
                 }
@@ -885,7 +885,7 @@ class Translator implements LoggerAwareInterface
     private function getReferenceUidsForTranslation(string $table, int $recordUid, string $referenceTable, string $referenceColumn): array
     {
         $type = $GLOBALS['TCA'][$table]['columns'][$referenceColumn]['config']['type'] ?? null;
-        $foreignField = $GLOBALS['TCA'][$table]['columns'][$referenceColumn]['config']['foreign_field'] ?? null;
+        $foreignField = $this->getForeignFieldForReferenceColumn($table, $referenceColumn, $referenceTable);
         if ($foreignField === null) {
             return [];
         }
@@ -914,6 +914,21 @@ class Translator implements LoggerAwareInterface
         }
 
         return [];
+    }
+
+    private function getForeignFieldForReferenceColumn(string $table, string $referenceColumn, string $referenceTable): ?string
+    {
+        $config = $GLOBALS['TCA'][$table]['columns'][$referenceColumn]['config'] ?? [];
+        $foreignField = $config['foreign_field'] ?? null;
+        if (is_string($foreignField) && $foreignField !== '') {
+            return $foreignField;
+        }
+
+        if (($config['type'] ?? null) === 'file' && $referenceTable === 'sys_file_reference') {
+            return 'uid_foreign';
+        }
+
+        return null;
     }
 
     /**
