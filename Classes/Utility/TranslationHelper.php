@@ -80,17 +80,7 @@ class TranslationHelper
         }, ARRAY_FILTER_USE_BOTH);
 
         $fileReferenceColumns = array_filter($GLOBALS['TCA'][$table]['columns'], function ($v) {
-            $config = $v['config'];
-
-            if (!isset($config['type']) || !isset($config['foreign_table']) || $config['foreign_table'] != 'sys_file_reference') {
-                return false;
-            }
-
-            if ($config['type'] !== 'file') {
-                return false;
-            }
-
-            return true;
+            return self::isFileReferenceColumnConfig($v['config'] ?? []);
         });
 
         return [
@@ -212,7 +202,13 @@ class TranslationHelper
     {
         $fieldnameAutotranslateEnabled = self::configurationFieldname($table, 'enabled');
 
-        if ($table != 'sys_file_reference' && (!isset($siteConfiguration[$fieldnameAutotranslateEnabled]) || $siteConfiguration[$fieldnameAutotranslateEnabled] === FALSE)) {
+        $isAdditionalReferenceTable = in_array($table, self::additionalReferenceTables(), true);
+
+        if (
+            $table !== 'sys_file_reference'
+            && !$isAdditionalReferenceTable
+            && (!isset($siteConfiguration[$fieldnameAutotranslateEnabled]) || $siteConfiguration[$fieldnameAutotranslateEnabled] === false)
+        ) {
             return null;
         }
 
@@ -332,7 +328,7 @@ class TranslationHelper
             }
 
             // 4. File references (TYPO3 v12+)
-            if (($config['type'] ?? '') === 'file' && $referenceTable === 'sys_file_reference') {
+            if ($referenceTable === 'sys_file_reference' && self::isFileReferenceColumnConfig($config)) {
                 $referenceColumns[] = $columnName;
                 continue;
             }
@@ -360,6 +356,16 @@ class TranslationHelper
 
         // Return null if no reference columns were found, otherwise return the array
         return empty($referenceColumns) ? null : $referenceColumns;
+    }
+
+    private static function isFileReferenceColumnConfig(array $config): bool
+    {
+        $type = $config['type'] ?? null;
+        if ($type === 'file') {
+            return true;
+        }
+
+        return $type === 'inline' && ($config['foreign_table'] ?? null) === 'sys_file_reference';
     }
 
     /**
