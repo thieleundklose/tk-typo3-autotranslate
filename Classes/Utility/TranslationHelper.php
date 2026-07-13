@@ -212,7 +212,13 @@ class TranslationHelper
     {
         $fieldnameAutotranslateEnabled = self::configurationFieldname($table, 'enabled');
 
-        if ($table != 'sys_file_reference' && (!isset($siteConfiguration[$fieldnameAutotranslateEnabled]) || $siteConfiguration[$fieldnameAutotranslateEnabled] === FALSE)) {
+        $isAdditionalReferenceTable = in_array($table, self::additionalReferenceTables(), true);
+
+        if (
+            $table !== 'sys_file_reference'
+            && !$isAdditionalReferenceTable
+            && (!isset($siteConfiguration[$fieldnameAutotranslateEnabled]) || $siteConfiguration[$fieldnameAutotranslateEnabled] === false)
+        ) {
             return null;
         }
 

@@ -2,6 +2,9 @@
 
 Here you can define DeepL API Key and which 3rd party content should be supported.
 
+Use "Additional supported record tables" for regular records such as news or address records.
+Use "Additional supported relation tables" for inline/reference child tables such as `sys_file_reference` or Mask item tables.
+
 **After adding tables, a database compare must be performed using the install tool**
 
 ![DeepL](../../Images/ExtensionConfiguration.png)
@@ -22,7 +25,7 @@ CREATE TABLE tx_table_name_item (
 );
 ```
 
-## Example sql schema for reference tables
+## Example sql schema for relation tables
 
 Except for sys_file_reference, here we already provide the sql schema.
 
