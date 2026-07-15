@@ -62,12 +62,13 @@ class BatchTranslationService implements LoggerAwareInterface
 
         // init translation service
         $translator = GeneralUtility::makeInstance(Translator::class, $item->getPid());
+        $changedFields = null; // Batch jobs are explicit full translations, independent of DataHandler changes.
         $tablesToTranslate = TranslationHelper::tablesToTranslate();
         foreach ($tablesToTranslate as $table) {
 
             if ($table === 'pages') {
                 // translate page
-                $translator->translate($table, $item->getPid(), null, (string)$item->getSysLanguageUid(), $item->getMode());
+                $translator->translate($table, $item->getPid(), null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields);
             } else {
                 $constraints = [
                     "pid = " . $item->getPid(),
@@ -80,12 +81,12 @@ class BatchTranslationService implements LoggerAwareInterface
                 }
 
                 if ($table === 'tt_content') {
-                    $this->translateGridElements($translator, $constraints, $item);
-                    $this->translateRegularContent($translator, $constraints, $item);
+                    $this->translateGridElements($translator, $constraints, $item, $changedFields);
+                    $this->translateRegularContent($translator, $constraints, $item, $changedFields);
                 } else {
                     $records = Records::getRecords($table, 'uid', $constraints);
                     foreach ($records as $uid) {
-                        $translator->translate($table, $uid, null, (string)$item->getSysLanguageUid(), $item->getMode());
+                        $translator->translate($table, $uid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields);
                     }
                 }
             }
@@ -101,7 +102,7 @@ class BatchTranslationService implements LoggerAwareInterface
      * @param BatchItem $item
      * @return void
      */
-    private function translateGridElements(Translator $translator, array $constraints, BatchItem $item): void
+    private function translateGridElements(Translator $translator, array $constraints, BatchItem $item, ?array $changedFields = null): void
     {
         if (!ExtensionManagementUtility::isLoaded('gridelements')) {
             return;
@@ -116,7 +117,7 @@ class BatchTranslationService implements LoggerAwareInterface
 
         foreach ($topLevelContainers as $containerUid) {
             // Translate container and its children recursively
-            $this->translateContainerAndChildren($translator, $constraints, $containerUid, $item);
+            $this->translateContainerAndChildren($translator, $constraints, $containerUid, $item, $changedFields);
         }
     }
 
@@ -129,10 +130,10 @@ class BatchTranslationService implements LoggerAwareInterface
      * @param BatchItem $item
      * @return void
      */
-    private function translateContainerAndChildren(Translator $translator, array $constraints, int $containerUid, BatchItem $item): void
+    private function translateContainerAndChildren(Translator $translator, array $constraints, int $containerUid, BatchItem $item, ?array $changedFields = null): void
     {
         // First translate the container itself
-        $translator->translate('tt_content', $containerUid, null, (string)$item->getSysLanguageUid(), $item->getMode());
+        $translator->translate('tt_content', $containerUid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields);
 
         // Get all direct children
         $childConstraints = array_merge($constraints, [
@@ -145,10 +146,10 @@ class BatchTranslationService implements LoggerAwareInterface
 
             if ($record['CType'] === 'gridelements_pi1') {
                 // If it's a container, translate it and its children recursively
-                $this->translateContainerAndChildren($translator, $constraints, $childUid, $item);
+                $this->translateContainerAndChildren($translator, $constraints, $childUid, $item, $changedFields);
             } else {
                 // If it's a regular content element, translate it
-                $translator->translate('tt_content', $childUid, null, (string)$item->getSysLanguageUid(), $item->getMode());
+                $translator->translate('tt_content', $childUid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields);
             }
         }
     }
@@ -161,7 +162,7 @@ class BatchTranslationService implements LoggerAwareInterface
      * @param BatchItem $item
      * @return void
      */
-    private function translateRegularContent(Translator $translator, array $constraints, BatchItem $item): void
+    private function translateRegularContent(Translator $translator, array $constraints, BatchItem $item, ?array $changedFields = null): void
     {
         $records = Records::getRecords('tt_content', 'uid', $constraints);
 
@@ -173,7 +174,7 @@ class BatchTranslationService implements LoggerAwareInterface
                 continue;
             }
 
-            $translator->translate('tt_content', $uid, null, (string)$item->getSysLanguageUid(), $item->getMode());
+            $translator->translate('tt_content', $uid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields);
         }
     }
 

@@ -129,8 +129,9 @@ class RecordTranslationAjaxController
                 Translator::class,
                 $configuration['pageId']
             );
-            AutotranslateDataHandlerHook::runWithSuspendedHook(static function () use ($translator, $table, $uid, $languageIds): void {
-                $translator->translate($table, $uid, null, implode(',', $languageIds));
+            $changedFields = null; // Manual record translations are explicit full translations.
+            AutotranslateDataHandlerHook::runWithSuspendedHook(static function () use ($translator, $table, $uid, $languageIds, $changedFields): void {
+                $translator->translate($table, $uid, null, implode(',', $languageIds), Translator::TRANSLATE_MODE_BOTH, $changedFields);
             });
         } catch (\Throwable $exception) {
             return new JsonResponse([
