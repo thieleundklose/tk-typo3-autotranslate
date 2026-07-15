@@ -1,5 +1,10 @@
 # Changelog
 
+## [3.1.1] - 2026-07-14
+
+### Fixes
+- Fixed glossary lookup for DeepL site language codes with uppercase or regional variants such as `EN`, `EN-GB`, `EN_US`, `DE-AT`, and `DE-CH`, so synchronized `deepltranslate-glossary` entries are found reliably, thanks to Tobias Hein ([Pull request #134](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/134)).
+
 ## [3.1.0] - 2026-07-12
 
 ### Features
