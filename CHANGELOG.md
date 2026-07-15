@@ -4,6 +4,7 @@
 
 ### Fixes
 - Fixed glossary lookup for DeepL site language codes with uppercase or regional variants such as `EN`, `EN-GB`, `EN_US`, `DE-AT`, and `DE-CH`, so synchronized `deepltranslate-glossary` entries are found reliably, thanks to Tobias Hein ([Pull request #134](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/134)).
+- Fixed unnecessary DeepL translation requests on automatic DataHandler updates that only change unrelated fields such as `hidden`, `starttime`, `endtime`, or a content header while leaving image/file reference fields untouched, while keeping full translation for manual triggers and newly created localizations, thanks to magicsunday ([Pull request #122](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/122)).
 
 ## [2.7.0] - 2026-07-12
 
