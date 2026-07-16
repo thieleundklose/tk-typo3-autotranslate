@@ -1,5 +1,10 @@
 # Changelog
 
+## [3.1.2] - 2026-07-16
+
+### Fixes
+- Preserved the disabled/hidden state when localized inline or file reference records are re-linked to translated parent records, so hidden source references no longer become visible in translations, thanks to magicsunday ([Pull request #121](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/121)).
+
 ## [3.1.1] - 2026-07-14
 
 ### Fixes
