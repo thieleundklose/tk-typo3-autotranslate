@@ -18,8 +18,6 @@ class TranslationCacheService
     {
         try {
             $caching = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('autotranslate', 'caching');
-            // echo $caching; die;
-
         } catch (\Exception $e) {
             $caching = false;
         }
@@ -179,25 +177,24 @@ class TranslationCacheService
                 continue;
             }
 
-            $constructor = new \ReflectionMethod(TextResult::class, '__construct');
-            if ($constructor->getNumberOfRequiredParameters() >= 3) {
-                $results[$index] = new TextResult(
-                    $data['text'],
-                    $data['detected_source_lang'] ?? '',
-                    $data['billed_characters'] ?? 0
-                );
-            } else {
-                $result = new TextResult(
-                    $data['text'],
-                    $data['detected_source_lang'] ?? ''
-                );
-
-                if (property_exists($result, 'billedCharacters')) {
-                    $result->billedCharacters = $data['billed_characters'] ?? 0;
-                }
-
-                $results[$index] = $result;
+            if (!is_array($data) || !isset($data['text']) || !is_string($data['text'])) {
+                $results[$index] = null;
+                continue;
             }
+
+            $detectedSourceLang = $data['detected_source_lang'] ?? null;
+            if (!is_string($detectedSourceLang) || trim($detectedSourceLang) === '') {
+                $results[$index] = null;
+                continue;
+            }
+
+            $modelTypeUsed = $data['model_type_used'] ?? null;
+            $results[$index] = new TextResult(
+                $data['text'],
+                $detectedSourceLang,
+                (int)($data['billed_characters'] ?? 0),
+                is_string($modelTypeUsed) && $modelTypeUsed !== '' ? $modelTypeUsed : null
+            );
         }
         return $results;
     }

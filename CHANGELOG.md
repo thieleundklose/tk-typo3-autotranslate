@@ -1,5 +1,70 @@
 # Changelog
 
+## [2.7.2] - 2026-07-16
+
+### Fixes
+- Preserved the disabled/hidden state when localized inline or file reference records are re-linked to translated parent records, so hidden source references no longer become visible in translations, thanks to magicsunday ([Pull request #121](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/121)).
+- Removed an unconditional CLI status line from the batch translation command to prevent cron jobs from sending unnecessary output mails, thanks to Johannes ([Pull request #117](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/117)).
+- Fixed richtext field detection to also accept integer truthy `enableRichtext` TCA values, preventing translated richtext content from getting broken HTML tags, thanks to schugabe ([Pull request #116](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/116)).
+
+## [2.7.1] - 2026-07-14
+
+### Fixes
+- Fixed glossary lookup for DeepL site language codes with uppercase or regional variants such as `EN`, `EN-GB`, `EN_US`, `DE-AT`, and `DE-CH`, so synchronized `deepltranslate-glossary` entries are found reliably, thanks to Tobias Hein ([Pull request #134](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/134)).
+- Fixed unnecessary DeepL translation requests on automatic DataHandler updates that only change unrelated fields such as `hidden`, `starttime`, `endtime`, or a content header while leaving image/file reference fields untouched, while keeping full translation for manual triggers and newly created localizations, thanks to magicsunday ([Pull request #122](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/122)).
+
+## [2.7.0] - 2026-07-12
+
+### Features
+- Added recursive localization and translation for configured relation tables. Nested inline/reference records are now localized with their translated parent record and their configured text fields are translated as part of the same run.
+- Added site configuration fields for configured relation tables only when matching translatable text fields or file reference fields exist in TCA.
+
+### Fixes
+- Fixed additional relation table handling so existing localized child records are reused, re-linked to the localized parent record, and updated with their translation source fields instead of creating duplicate or orphaned relation records.
+- Fixed batch translation work detection to include nested relation tables, so parent records with translatable child content are no longer skipped when the parent itself has no text fields to translate.
+- Fixed text field filtering so only supported TCA `input` and `text` values are sent to DeepL, preventing numeric and non-text values from being translated accidentally.
+- Fixed site configuration defaults so configured relation tables do not require their own enable checkbox before their text and file reference fields can be used.
+- Fixed file reference field detection for modern TYPO3 `type=file` TCA fields on configured relation tables, so Content Blocks collection tables can expose and translate nested file reference fields such as image relations.
+
+### Upgrade Notes
+- No configuration key was renamed. The extension setting `additionalReferenceTables` remains compatible, but its visible label now says "Additional supported relation tables" because the setting covers inline/reference child tables, not only file references.
+- Existing site configurations should be reviewed if numeric fields were listed as translatable text fields; these values are now ignored intentionally.
+
+## [2.6.3] - 2026-07-06
+
+### Fixes
+- Deferred the DeepL API key usage check until a translation is actually attempted, while still validating the key before creating localized records. This avoids unnecessary usage endpoint calls for saves without translatable content and prevents empty localized records when the configured DeepL key is invalid or exhausted.
+- Fixed the CLI batch translation summary to report failed translations based on the number of processed queue items instead of the requested run limit, thanks to xerc ([Pull request #105](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/105)).
+
+## [2.6.2] - 2026-07-05
+
+### Fixes
+- Fixed slug generation to respect excluded slug fields and guard missing `eval` configuration, preventing PHP warnings during localization, thanks to xerc and magicsunday ([Issue #108](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/108) / [Pull request #112](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/112)).
+- Restored and stabilized recursive queue filtering in the batch translation module across TYPO3 v11, v12, and v13, including a dedicated recursion selector and clearer empty-state feedback when no queue entries exist for the selected page scope.
+
+## [2.6.1] - 2026-06-14
+
+### Fixes
+- Fixed a fatal error with `deepltranslate-core` 6.x by extending the XClass configuration to implement the additional `ConfigurationInterface` methods introduced in the newer core version. This restores compatibility with `deepltranslate-glossary` 6.x and prevents backend/frontend crashes on page load, thanks to Tobias Hein ([Pull request #133](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/133)).
+
+## [2.6.0] - 2026-05-31
+
+### Features
+- Added backend triggers for autotranslating a single record, including a TYPO3 list module action with target language selection in a modal dialog and context menu entries in backend record and page menus. The context menu integration is available in TYPO3 v12 and newer; TYPO3 v11 does not support it.
+
+### Fixes
+- Fixed batch translation handling for translated MM/select relations so localized records are linked correctly instead of keeping obsolete default-language references.
+- Fixed site configuration handling so disabled tables are no longer localized or remapped by accident during batch translation.
+- Fixed reference synchronization for localized relations to respect whether a table is enabled in the current site configuration.
+- Fixed an unnecessary flash message during page save when autotranslate is installed but no translation targets or languages are configured for the site.
+- Fixed DeepL rate-limit handling so temporary `429 Too many requests` responses are no longer reported as an invalid API key.
+- Cached DeepL API usage validation per request to avoid calling `getUsage()` for every translated record in a batch run.
+- Improved DeepL error messaging so temporary API overload is surfaced as a warning instead of stopping the translation flow with a misleading key validation error.
+
+### Stabilizations
+- Improved relation remapping for translated records with `MM` and `MM_opposite_field` usage in TYPO3 v12/v13 setups.
+- Added safer guards around translation of additional tables and their reference fields.
+
 ## [2.5.1] - 2026-02-08
 
 ### Fixes

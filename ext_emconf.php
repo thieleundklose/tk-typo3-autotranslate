@@ -8,7 +8,7 @@ $EM_CONF[$_EXTKEY] = [
     'author_company' => 'Thiele & Klose GmbH',
     'author_email' => 'typo3@thieleundklose.de',
     'state' => 'stable',
-    'version' => '2.5.1',
+    'version' => '2.7.2',
     'constraints' => [
         'depends' => [
             'typo3' => '11.5.0-13.9.99',
@@ -17,7 +17,7 @@ $EM_CONF[$_EXTKEY] = [
         'conflicts' => [],
         'suggests' => [
             'news' => '10.0.0-10.99.99',
-            'deepltranslate_glossary' => '5.0.0-5.0.0',
+            'deepltranslate_glossary' => '5.0.0-6.99.99',
         ],
     ],
     'autoload' => [

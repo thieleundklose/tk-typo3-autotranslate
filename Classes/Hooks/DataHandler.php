@@ -17,6 +17,7 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Hooks;
 
 use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
+use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -24,10 +25,28 @@ use ThieleUndKlose\Autotranslate\Utility\Translator;
 
 class DataHandler implements SingletonInterface
 {
+    private static int $suspensionLevel = 0;
+
     /**
      * @var bool Hook suspended state.
      */
     private bool $suspended = false;
+
+    /**
+     * @var array<string, array<int, array{pageId: int, changedFields: string[]|null}>>
+     */
+    private array $translationQueue = [];
+
+    public static function runWithSuspendedHook(callable $callback): mixed
+    {
+        self::$suspensionLevel++;
+
+        try {
+            return $callback();
+        } finally {
+            self::$suspensionLevel--;
+        }
+    }
 
     /**
      * Generate a different preview link
@@ -48,7 +67,7 @@ class DataHandler implements SingletonInterface
     {
 
         // Skip auto translation if hook is suspended. @see processCmdmap() for detailed description.
-        if ($this->suspended) {
+        if ($this->suspended || self::$suspensionLevel > 0) {
             return;
         }
 
@@ -80,21 +99,84 @@ class DataHandler implements SingletonInterface
             return;
         }
 
-        $translator = GeneralUtility::makeInstance(Translator::class, $pageId);
-
-        try {
-            if (in_array($table, TranslationHelper::tablesToTranslate())) {
-                $translator->translate($table, (int)$recordUid, $parentObject);
-            }
-        } catch (\Exception $e) {
-            FlashMessageUtility::addMessage(
-                'Error during translation: ' . $e->getMessage(),
-                'Translation Error',
-                FlashMessageUtility::MESSAGE_WARNING
-            );
+        $siteConfiguration = TranslationHelper::siteConfigurationValue((int)$pageId);
+        if (!is_array($siteConfiguration)) {
+            return;
         }
 
+        $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
+        if ($translationSettings === null) {
+            return;
+        }
+
+        $textFields = GeneralUtility::trimExplode(',', (string)($translationSettings['autotranslateTextfields'] ?? ''), true);
+        if (empty($textFields)) {
+            return;
+        }
+
+        $this->translationQueue[$table][(int)$recordUid] = [
+            'pageId' => (int)$pageId,
+            'changedFields' => TranslationHelper::extractChangedFieldsFromDatamap((string)$status, $fields),
+        ];
+
         return;
+    }
+
+    public function processDatamap_afterAllOperations(\TYPO3\CMS\Core\DataHandling\DataHandler $parentObject): void
+    {
+        if ($this->suspended || self::$suspensionLevel > 0 || $this->translationQueue === []) {
+            return;
+        }
+
+        $translationQueue = $this->translationQueue;
+        $this->translationQueue = [];
+
+        foreach ($translationQueue as $table => $records) {
+            if (!in_array($table, TranslationHelper::tablesToTranslate(), true)) {
+                continue;
+            }
+
+            foreach ($records as $recordUid => $queueItem) {
+                $pageId = (int)$queueItem['pageId'];
+                $changedFields = $queueItem['changedFields'];
+
+                $record = Records::getRecord($table, (int)$recordUid);
+                if ($record === null) {
+                    continue;
+                }
+
+                $targetLanguages = GeneralUtility::trimExplode(
+                    ',',
+                    (string)($record[Translator::AUTOTRANSLATE_LANGUAGES] ?? ''),
+                    true
+                );
+
+                if ($targetLanguages === []) {
+                    continue;
+                }
+
+                $translator = GeneralUtility::makeInstance(Translator::class, (int)$pageId);
+
+                try {
+                    self::runWithSuspendedHook(static function () use ($translator, $table, $recordUid, $parentObject, $targetLanguages, $changedFields): void {
+                        $translator->translate(
+                            $table,
+                            (int)$recordUid,
+                            $parentObject,
+                            implode(',', $targetLanguages),
+                            Translator::TRANSLATE_MODE_BOTH,
+                            $changedFields
+                        );
+                    });
+                } catch (\Exception $e) {
+                    FlashMessageUtility::addMessage(
+                        'Error during translation: ' . $e->getMessage(),
+                        'Translation Error',
+                        FlashMessageUtility::MESSAGE_WARNING
+                    );
+                }
+            }
+        }
     }
 
     /**

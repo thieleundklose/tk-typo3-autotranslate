@@ -42,7 +42,7 @@ class Tca {
             return;
         }
 
-        $languageId = $record['sys_language_uid'];
+        $languageId = (int)($record['sys_language_uid'] ?? 0);
         $translationTimestamp = $record['translate'];
         $translationDate = date('d-m-Y H:i', $translationTimestamp);
         if (!isset($parameters['row']['pid'])) {

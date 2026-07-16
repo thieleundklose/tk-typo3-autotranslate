@@ -21,12 +21,10 @@ use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Exception\SiteNotFoundException;
 use TYPO3\CMS\Core\Site\Entity\SiteLanguage;
-use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 
 class TranslationHelper
 {
@@ -47,6 +45,32 @@ class TranslationHelper
             self::COLUMN_TRANSLATEABLE_TABLES,
             self::additionalTables(),
         );
+    }
+
+    /**
+     * @return string[]|null Null means "new record" and keeps the full translation scope.
+     */
+    public static function extractChangedFieldsFromDatamap(string $status, array $datamap): ?array
+    {
+        if ($status === 'new') {
+            return null;
+        }
+
+        return array_keys($datamap);
+    }
+
+    /**
+     * @param string[] $translatableColumns
+     * @param string[]|null $changedFields
+     * @return string[]
+     */
+    public static function filterChangedTranslatableColumns(array $translatableColumns, ?array $changedFields): array
+    {
+        if ($changedFields === null) {
+            return array_values($translatableColumns);
+        }
+
+        return array_values(array_intersect($translatableColumns, $changedFields));
     }
 
     /**
@@ -82,23 +106,7 @@ class TranslationHelper
         }, ARRAY_FILTER_USE_BOTH);
 
         $fileReferenceColumns = array_filter($GLOBALS['TCA'][$table]['columns'], function ($v) {
-            $config = $v['config'];
-
-            if (!isset($config['type']) || !isset($config['foreign_table']) || $config['foreign_table'] != 'sys_file_reference') {
-                return false;
-            }
-
-            if (VersionNumberUtility::convertVersionStringToArray((new Typo3Version())->getVersion())['version_main'] > 11) {
-                if ($config['type'] != 'file') {
-                    return false;
-                }
-            } else {
-                if ($config['type'] != 'inline') {
-                    return false;
-                }
-            }
-
-            return true;
+            return self::isFileReferenceColumnConfig($v['config'] ?? []);
         });
 
         return [
@@ -194,7 +202,13 @@ class TranslationHelper
     {
         $fieldnameAutotranslateEnabled = self::configurationFieldname($table, 'enabled');
 
-        if ($table != 'sys_file_reference' && (!isset($siteConfiguration[$fieldnameAutotranslateEnabled]) || $siteConfiguration[$fieldnameAutotranslateEnabled] === FALSE)) {
+        $isAdditionalReferenceTable = in_array($table, self::additionalReferenceTables(), true);
+
+        if (
+            $table !== 'sys_file_reference'
+            && !$isAdditionalReferenceTable
+            && (!isset($siteConfiguration[$fieldnameAutotranslateEnabled]) || $siteConfiguration[$fieldnameAutotranslateEnabled] === false)
+        ) {
             return null;
         }
 
@@ -225,6 +239,9 @@ class TranslationHelper
 
         $siteConfiguration = self::siteConfigurationValue($pageId);
         $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
+        if ($translationSettings === null) {
+            return null;
+        }
         return GeneralUtility::trimExplode(',', $translationSettings['autotranslateTextfields'] ?? '', true);
     }
 
@@ -245,6 +262,9 @@ class TranslationHelper
 
         $siteConfiguration = self::siteConfigurationValue($pageId);
         $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
+        if ($translationSettings === null) {
+            return null;
+        }
         return GeneralUtility::trimExplode(',', $translationSettings['autotranslateFileReferences'] ?? '', true);
     }
 
@@ -308,7 +328,7 @@ class TranslationHelper
             }
 
             // 4. File references (TYPO3 v12+)
-            if (($config['type'] ?? '') === 'file' && $referenceTable === 'sys_file_reference') {
+            if ($referenceTable === 'sys_file_reference' && self::isFileReferenceColumnConfig($config)) {
                 $referenceColumns[] = $columnName;
                 continue;
             }
@@ -336,6 +356,16 @@ class TranslationHelper
 
         // Return null if no reference columns were found, otherwise return the array
         return empty($referenceColumns) ? null : $referenceColumns;
+    }
+
+    private static function isFileReferenceColumnConfig(array $config): bool
+    {
+        $type = $config['type'] ?? null;
+        if ($type === 'file') {
+            return true;
+        }
+
+        return $type === 'inline' && ($config['foreign_table'] ?? null) === 'sys_file_reference';
     }
 
     /**
