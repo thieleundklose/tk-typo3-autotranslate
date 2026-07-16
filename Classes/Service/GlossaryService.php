@@ -33,9 +33,16 @@ final class GlossaryService
         int $pageId,
         Translator $translator
     ): ?Glossary {
-        // get existend glossary ids
+        // Only consider glossary IDs that still exist in DeepL; local rows can outlive remote glossaries.
         $glossaries = $translator->listGlossaries();
-        $glossaryIds = array_map(fn($glossary) => $glossary->glossaryId, $glossaries);
+        $glossaryIds = array_values(array_filter(
+            array_map(static fn($glossary): string => (string)$glossary->glossaryId, $glossaries),
+            static fn(string $glossaryId): bool => $glossaryId !== ''
+        ));
+
+        if (empty($glossaryIds)) {
+            return null;
+        }
 
         $db = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('pages');
@@ -81,9 +88,13 @@ final class GlossaryService
 
         $pidConstraint = $db->expr()->in('pid', $ids);
 
+        // deepltranslate-glossary stores language codes as lowercase two-letter values.
+        $normalizedSourceLang = strtolower(substr($sourceLanguage, 0, 2));
+        $normalizedTargetLang = strtolower(substr($targetLanguage, 0, 2));
+
         $where = $db->expr()->and(
-            $db->expr()->eq('source_lang', $db->createNamedParameter($sourceLanguage)),
-            $db->expr()->eq('target_lang', $db->createNamedParameter($targetLanguage)),
+            $db->expr()->eq('source_lang', $db->createNamedParameter($normalizedSourceLang)),
+            $db->expr()->eq('target_lang', $db->createNamedParameter($normalizedTargetLang)),
             $db->expr()->in('glossary_id', $db->createNamedParameter($glossaryIds, Connection::PARAM_STR_ARRAY)),
             $pidConstraint
         );

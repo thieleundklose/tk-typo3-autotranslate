@@ -48,6 +48,32 @@ class TranslationHelper
     }
 
     /**
+     * @return string[]|null Null means "new record" and keeps the full translation scope.
+     */
+    public static function extractChangedFieldsFromDatamap(string $status, array $datamap): ?array
+    {
+        if ($status === 'new') {
+            return null;
+        }
+
+        return array_keys($datamap);
+    }
+
+    /**
+     * @param string[] $translatableColumns
+     * @param string[]|null $changedFields
+     * @return string[]
+     */
+    public static function filterChangedTranslatableColumns(array $translatableColumns, ?array $changedFields): array
+    {
+        if ($changedFields === null) {
+            return array_values($translatableColumns);
+        }
+
+        return array_values(array_intersect($translatableColumns, $changedFields));
+    }
+
+    /**
      * Collect translateable fields from TCA.
      *
      * @param string $table

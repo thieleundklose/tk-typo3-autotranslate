@@ -34,7 +34,7 @@ class DataHandler implements SingletonInterface
     private bool $suspended = false;
 
     /**
-     * @var array<string, array<int, int>>
+     * @var array<string, array<int, array{pageId: int, changedFields: string[]|null}>>
      */
     private array $translationQueue = [];
 
@@ -125,7 +125,10 @@ class DataHandler implements SingletonInterface
             return;
         }
 
-        $this->translationQueue[$table][(int)$recordUid] = (int)$pageId;
+        $this->translationQueue[$table][(int)$recordUid] = [
+            'pageId' => (int)$pageId,
+            'changedFields' => TranslationHelper::extractChangedFieldsFromDatamap((string)$status, $fields),
+        ];
 
         return;
     }
@@ -157,7 +160,10 @@ class DataHandler implements SingletonInterface
                 continue;
             }
 
-            foreach ($records as $recordUid => $pageId) {
+            foreach ($records as $recordUid => $queueItem) {
+                $pageId = (int)$queueItem['pageId'];
+                $changedFields = $queueItem['changedFields'];
+
                 $record = Records::getRecord($table, (int)$recordUid);
                 if ($record === null) {
                     continue;
@@ -176,8 +182,15 @@ class DataHandler implements SingletonInterface
                 $translator = GeneralUtility::makeInstance(Translator::class, (int)$pageId);
 
                 try {
-                    self::runWithSuspendedHook(static function () use ($translator, $table, $recordUid, $parentObject, $targetLanguages): void {
-                        $translator->translate($table, (int)$recordUid, $parentObject, implode(',', $targetLanguages));
+                    self::runWithSuspendedHook(static function () use ($translator, $table, $recordUid, $parentObject, $targetLanguages, $changedFields): void {
+                        $translator->translate(
+                            $table,
+                            (int)$recordUid,
+                            $parentObject,
+                            implode(',', $targetLanguages),
+                            Translator::TRANSLATE_MODE_BOTH,
+                            $changedFields
+                        );
                     });
                 } catch (\Throwable $e) {
                     FlashMessageUtility::addMessage(
