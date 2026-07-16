@@ -158,4 +158,4 @@ Support
 Bei Fragen oder Problemen wenden Sie sich bitte an:
 
 * E-Mail: typo3@thieleundklose.de
-* Website: https://www.thieleundklose.de 
+* Website: https://www.thieleundklose.de
