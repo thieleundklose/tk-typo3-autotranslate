@@ -604,6 +604,13 @@ class Translator implements LoggerAwareInterface
             $fields[$translationSourceField] = $referenceUid;
         }
 
+        $disabledField = $ctrl['enablecolumns']['disabled'] ?? 'hidden';
+        if (isset($GLOBALS['TCA'][$referenceTable]['columns'][$disabledField])) {
+            $fields[$disabledField] = (int)(
+                Records::getRecord($referenceTable, $referenceUid, $disabledField) ?? 0
+            );
+        }
+
         return $fields;
     }
 
