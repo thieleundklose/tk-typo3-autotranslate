@@ -1227,7 +1227,7 @@ class Translator implements LoggerAwareInterface
         }
 
         // check if the field is a richtext field
-        return isset($fieldConfig['enableRichtext']) && $fieldConfig['enableRichtext'] === true;
+        return isset($fieldConfig['enableRichtext']) && $fieldConfig['enableRichtext'];
     }
     /**
      * Replaces placeholders in the HTML with the translated attribute values.
