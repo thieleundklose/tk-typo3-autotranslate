@@ -54,7 +54,18 @@ class TranslationCacheService
         }
 
         $cached = $this->cache->get($cacheKey);
-        return $this->unserializeTextResults($cached);
+        if (!is_array($cached)) {
+            return null;
+        }
+
+        $results = $this->unserializeTextResults($cached);
+        foreach ($results as $result) {
+            if (!$result instanceof TextResult) {
+                return null;
+            }
+        }
+
+        return $results;
     }
 
     /**
@@ -154,7 +165,8 @@ class TranslationCacheService
                 $serialized[$index] = [
                     'text' => $result->text,
                     'detected_source_lang' => $result->detectedSourceLang ?? null,
-                    'billed_characters' => $result->billedCharacters ?? null
+                    'billed_characters' => $result->billedCharacters ?? null,
+                    'model_type_used' => $result->modelTypeUsed ?? null
                 ];
             } else {
                 // Preserve array structure - store null or invalid entries

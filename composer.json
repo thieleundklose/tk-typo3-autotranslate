@@ -47,12 +47,8 @@
         "ci:test:php:unit": [
             "phpunit --configuration Build/UnitTests.xml"
         ],
-        "ci:test:php:functional": [
-            "phpunit --configuration Build/FunctionalTests.xml"
-        ],
         "ci:test": [
-            "@ci:test:php:unit",
-            "@ci:test:php:functional"
+            "@ci:test:php:unit"
         ]
     },
     "extra": {

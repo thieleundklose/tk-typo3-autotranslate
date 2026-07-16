@@ -7,6 +7,7 @@ namespace ThieleUndKlose\Autotranslate\Tests\Unit\Service;
 use DeepL\TextResult;
 use PHPUnit\Framework\TestCase;
 use ThieleUndKlose\Autotranslate\Service\TranslationCacheService;
+use TYPO3\CMS\Core\Cache\Frontend\FrontendInterface;
 
 /**
  * Unit tests for TranslationCacheService serialization.
@@ -22,18 +23,19 @@ use ThieleUndKlose\Autotranslate\Service\TranslationCacheService;
 final class TranslationCacheServiceTest extends TestCase
 {
     private TranslationCacheService $service;
+    private \ReflectionClass $reflection;
     private \ReflectionMethod $serialize;
     private \ReflectionMethod $unserialize;
 
     protected function setUp(): void
     {
-        $reflection = new \ReflectionClass(TranslationCacheService::class);
-        $this->service = $reflection->newInstanceWithoutConstructor();
+        $this->reflection = new \ReflectionClass(TranslationCacheService::class);
+        $this->service = $this->reflection->newInstanceWithoutConstructor();
 
-        $this->serialize = $reflection->getMethod('serializeTextResults');
+        $this->serialize = $this->reflection->getMethod('serializeTextResults');
         $this->serialize->setAccessible(true);
 
-        $this->unserialize = $reflection->getMethod('unserializeTextResults');
+        $this->unserialize = $this->reflection->getMethod('unserializeTextResults');
         $this->unserialize->setAccessible(true);
     }
 
@@ -44,7 +46,7 @@ final class TranslationCacheServiceTest extends TestCase
     public function testSingleRoundtripPreservesData(): void
     {
         $original = [
-            new TextResult('Hallo Welt', 'de', 10),
+            new TextResult('Hallo Welt', 'de', 10, 'quality_optimized'),
             new TextResult('Bonjour le monde', 'fr', 16),
         ];
 
@@ -54,6 +56,7 @@ final class TranslationCacheServiceTest extends TestCase
         self::assertSame('Hallo Welt', $unserialized[0]->text);
         self::assertSame('de', $unserialized[0]->detectedSourceLang);
         self::assertSame(10, $unserialized[0]->billedCharacters);
+        self::assertSame('quality_optimized', $unserialized[0]->modelTypeUsed);
 
         self::assertSame('Bonjour le monde', $unserialized[1]->text);
         self::assertSame('fr', $unserialized[1]->detectedSourceLang);
@@ -130,5 +133,24 @@ final class TranslationCacheServiceTest extends TestCase
         $unserialized = $this->unserialize->invoke($this->service, $serialized);
 
         self::assertInstanceOf(TextResult::class, $unserialized[0]);
+    }
+
+    public function testMalformedCachedTranslationIsReturnedAsCacheMiss(): void
+    {
+        $cache = $this->createMock(FrontendInterface::class);
+        $cache->method('has')->with('cache-key')->willReturn(true);
+        $cache->method('get')->with('cache-key')->willReturn([
+            0 => [
+                'text' => 'Bonjour',
+                'detected_source_lang' => '',
+                'billed_characters' => 7,
+            ],
+        ]);
+
+        $cacheProperty = $this->reflection->getProperty('cache');
+        $cacheProperty->setAccessible(true);
+        $cacheProperty->setValue($this->service, $cache);
+
+        self::assertNull($this->service->getCachedTranslation('cache-key'));
     }
 }
