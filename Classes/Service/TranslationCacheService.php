@@ -54,7 +54,18 @@ class TranslationCacheService
         }
 
         $cached = $this->cache->get($cacheKey);
-        return $this->unserializeTextResults($cached);
+        if (!is_array($cached)) {
+            return null;
+        }
+
+        $results = $this->unserializeTextResults($cached);
+        foreach ($results as $result) {
+            if (!$result instanceof TextResult) {
+                return null;
+            }
+        }
+
+        return $results;
     }
 
     /**
@@ -154,7 +165,8 @@ class TranslationCacheService
                 $serialized[$index] = [
                     'text' => $result->text,
                     'detected_source_lang' => $result->detectedSourceLang ?? null,
-                    'billed_characters' => $result->billedCharacters ?? null
+                    'billed_characters' => $result->billedCharacters ?? null,
+                    'model_type_used' => $result->modelTypeUsed ?? null
                 ];
             } else {
                 // Preserve array structure - store null or invalid entries
@@ -177,19 +189,24 @@ class TranslationCacheService
                 continue;
             }
 
-            // Create TextResult-like object (since TextResult constructor is protected)
-            $result = new class($data['text'], $data['detected_source_lang']) {
-                public $text;
-                public $detectedSourceLang;
-                public $billedCharacters;
+            if (!is_array($data) || !isset($data['text']) || !is_string($data['text'])) {
+                $results[$index] = null;
+                continue;
+            }
 
-                public function __construct(string $text, ?string $detectedSourceLang) {
-                    $this->text = $text;
-                    $this->detectedSourceLang = $detectedSourceLang;
-                }
-            };
-            $result->billedCharacters = $data['billed_characters'];
-            $results[$index] = $result;
+            $detectedSourceLang = $data['detected_source_lang'] ?? null;
+            if (!is_string($detectedSourceLang) || trim($detectedSourceLang) === '') {
+                $results[$index] = null;
+                continue;
+            }
+
+            $modelTypeUsed = $data['model_type_used'] ?? null;
+            $results[$index] = new TextResult(
+                $data['text'],
+                $detectedSourceLang,
+                (int)($data['billed_characters'] ?? 0),
+                is_string($modelTypeUsed) && $modelTypeUsed !== '' ? $modelTypeUsed : null
+            );
         }
         return $results;
     }

@@ -1,8 +1,9 @@
 # Changelog
 
-## [3.1.2] - 2026-07-16
+## [3.2.0] - 2026-07-16
 
 ### Fixes
+- Fixed cached DeepL translation roundtrips so restored cache entries are real `TextResult` instances and are no longer serialized back to `null`, preventing cached translations from being lost, thanks to magicsunday ([Pull request #111](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/111)).
 - Preserved the disabled/hidden state when localized inline or file reference records are re-linked to translated parent records, so hidden source references no longer become visible in translations, thanks to magicsunday ([Pull request #121](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/121)).
 - Fixed a TYPO3 v13 translation error in localized reference lookup by removing an obsolete TYPO3 v11 query execution switch from the v3 code path.
 - Removed an unconditional CLI status line from the batch translation command to prevent cron jobs from sending unnecessary output mails, thanks to Johannes ([Pull request #117](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/117)).
