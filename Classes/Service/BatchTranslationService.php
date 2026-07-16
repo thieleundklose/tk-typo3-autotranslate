@@ -144,6 +144,10 @@ class BatchTranslationService implements LoggerAwareInterface
         foreach ($childElements as $childUid) {
             $record = Records::getRecord('tt_content', $childUid);
 
+            if ($record === null) {
+                continue;
+            }
+
             if ($record['CType'] === 'gridelements_pi1') {
                 // If it's a container, translate it and its children recursively
                 $this->translateContainerAndChildren($translator, $constraints, $childUid, $item, $changedFields);
@@ -168,6 +172,10 @@ class BatchTranslationService implements LoggerAwareInterface
 
         foreach ($records as $uid) {
             $record = Records::getRecord('tt_content', $uid);
+
+            if ($record === null) {
+                continue;
+            }
 
             // Skip if it's a Grid-Container or child element
             if ($this->isGridElementOrChild($record)) {
