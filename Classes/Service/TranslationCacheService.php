@@ -18,8 +18,6 @@ class TranslationCacheService
     {
         try {
             $caching = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('autotranslate', 'caching');
-            // echo $caching; die;
-
         } catch (\Exception $e) {
             $caching = false;
         }
@@ -178,7 +176,7 @@ class TranslationCacheService
                 $results[$index] = null;
                 continue;
             }
-            
+
             // Create TextResult-like object (since TextResult constructor is protected)
             $result = new class($data['text'], $data['detected_source_lang']) {
                 public $text;

@@ -110,8 +110,6 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         if (PHP_SAPI === 'cli') {
-            echo 'Running from CLI, setting application type to BE' . PHP_EOL;
-
             // https://docs.typo3.org/m/typo3/reference-coreapi/main/en-us/ApiOverview/DataHandler/UsingDataHandler/Index.html#dataHandler-cli-command
             Bootstrap::initializeBackendAuthentication();
 
