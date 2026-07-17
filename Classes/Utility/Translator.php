@@ -699,6 +699,13 @@ class Translator implements LoggerAwareInterface
         );
         $deeplSourceLang = $this->deeplSourceLanguage();
         $deeplTargetLang = $this->deeplTargetLanguage($targetLanguageUid);
+        if ($deeplTargetLang !== null) {
+            foreach ($toTranslateObject as $field => $value) {
+                if ($this->isEmptySupportedTextTranslationValue($table, (string)$field, $value)) {
+                    $translatedColumns[$field] = '';
+                }
+            }
+        }
 
         if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
             $this->ensureValidApiKey();
@@ -808,10 +815,24 @@ class Translator implements LoggerAwareInterface
 
     private function isSupportedTextTranslationValue(string $table, string $field, $value): bool
     {
+        if (!$this->isSupportedTextTranslationField($table, $field)) {
+            return false;
+        }
+
         if ($value === null || $value === '') {
             return false;
         }
 
+        return !is_numeric($value) || !is_scalar($value);
+    }
+
+    private function isEmptySupportedTextTranslationValue(string $table, string $field, $value): bool
+    {
+        return ($value === null || $value === '') && $this->isSupportedTextTranslationField($table, $field);
+    }
+
+    private function isSupportedTextTranslationField(string $table, string $field): bool
+    {
         $fieldConfiguration = $GLOBALS['TCA'][$table]['columns'][$field]['config'] ?? [];
         $fieldType = $fieldConfiguration['type'] ?? null;
         if (!in_array($fieldType, ['input', 'text'], true)) {
@@ -823,7 +844,7 @@ class Translator implements LoggerAwareInterface
             return false;
         }
 
-        return !is_numeric($value) || !is_scalar($value);
+        return true;
     }
 
     /**
