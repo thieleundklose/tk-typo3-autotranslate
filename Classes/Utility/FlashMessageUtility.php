@@ -53,7 +53,7 @@ final class FlashMessageUtility
      * @param int $severity The original severity level (FlashMessage constants)
      * @return int|ContextualFeedbackSeverity The adjusted severity level
      */
-    public static function adjustSeverityForTypo3Version(int $severity): int|ContextualFeedbackSeverity
+    public static function adjustSeverityForTypo3Version(int $severity)
     {
         $typo3Version = GeneralUtility::makeInstance(Typo3Version::class);
         $majorVersion = $typo3Version->getMajorVersion();
