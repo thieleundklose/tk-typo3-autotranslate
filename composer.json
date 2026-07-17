@@ -55,7 +55,7 @@
         ],
         "ci:test": [
             "@ci:test:php:unit",
-            "@ci:test:php:functional"
+            "@ci:test:php:functional",
             "@ci:lint:php"
         ]
     },
