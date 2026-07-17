@@ -616,6 +616,13 @@ class Translator implements LoggerAwareInterface
             $fields[$translationSourceField] = $referenceUid;
         }
 
+        $disabledField = $ctrl['enablecolumns']['disabled'] ?? 'hidden';
+        if (isset($GLOBALS['TCA'][$referenceTable]['columns'][$disabledField])) {
+            $fields[$disabledField] = (int)(
+                Records::getRecord($referenceTable, $referenceUid, $disabledField) ?? 0
+            );
+        }
+
         return $fields;
     }
 
@@ -1229,7 +1236,7 @@ class Translator implements LoggerAwareInterface
         }
 
         // check if the field is a richtext field
-        return isset($fieldConfig['enableRichtext']) && $fieldConfig['enableRichtext'] === true;
+        return isset($fieldConfig['enableRichtext']) && $fieldConfig['enableRichtext'];
     }
     /**
      * Replaces placeholders in the HTML with the translated attribute values.

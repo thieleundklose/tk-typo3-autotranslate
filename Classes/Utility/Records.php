@@ -153,12 +153,7 @@ class Records
             $query->addOrderBy($field, $direction);
         }
 
-        $versionInformation = GeneralUtility::makeInstance(Typo3Version::class);
-        if ($versionInformation->getMajorVersion() > 11) {
-            $res = $query->executeQuery()->fetchAssociative();
-        } else {
-            $res = $query->execute()->fetchAssociative();
-        }
+        $res = $query->executeQuery()->fetchAssociative();
 
         return $res === false ? null : $res;
     }

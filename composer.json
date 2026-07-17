@@ -44,6 +44,9 @@
         "post-autoload-dump": [
             "TYPO3\\TestingFramework\\Composer\\ExtensionTestEnvironment::prepare"
         ],
+        "ci:lint:php": [
+            "find . -path './.Build' -prune -o -path './Resources/Vendor' -prune -o -name '*.php' -print0 | xargs -0 -n1 php -l"
+        ],
         "ci:test:php:unit": [
             "phpunit --configuration Build/UnitTests.xml"
         ],
@@ -53,6 +56,7 @@
         "ci:test": [
             "@ci:test:php:unit",
             "@ci:test:php:functional"
+            "@ci:lint:php"
         ]
     },
     "extra": {
