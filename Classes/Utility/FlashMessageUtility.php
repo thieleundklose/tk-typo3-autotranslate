@@ -52,7 +52,7 @@ final class FlashMessageUtility
      * @param int $severity The original severity level (FlashMessage constants)
      * @return int|ContextualFeedbackSeverity The adjusted severity level
      */
-    public static function adjustSeverityForTypo3Version(int $severity)
+    public static function adjustSeverityForTypo3Version(int $severity): int|ContextualFeedbackSeverity
     {
         return self::mapSeverity($severity);
     }
