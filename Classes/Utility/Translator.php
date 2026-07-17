@@ -90,6 +90,15 @@ class Translator implements LoggerAwareInterface
 
         $record = Records::getRecord($table, $recordUid);
 
+        // exit if record does not exist (e.g. deleted between query and access)
+        if ($record === null) {
+            LogUtility::log($this->logger, 'Record {table}:{uid} not found, skipping translation.', [
+                'table' => $table,
+                'uid' => $recordUid,
+            ], LogUtility::MESSAGE_WARNING);
+            return;
+        }
+
         // exit if record is localized one
         $parentField = TranslationHelper::translationOrigPointerField($table);
         if ($parentField === null || $record[$parentField] > 0) {
