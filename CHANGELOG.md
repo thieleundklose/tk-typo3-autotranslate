@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.x] - 2026-07-18
+
+### Feature
+- Passed the TYPO3 HTTP proxy configuration to the DeepL API client so installations behind an outbound proxy can validate API keys, load languages, synchronize glossaries, and translate content, thanks to trokohl ([Issue #114](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/114)).
+
 ## [2.8.1] - 2026-07-17
 
 ### Fixes

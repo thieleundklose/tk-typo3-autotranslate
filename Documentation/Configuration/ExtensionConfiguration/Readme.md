@@ -40,6 +40,27 @@ pi_flexform, hidden
 
 Use this for fields that should stay synchronized but should not be translated, for example technical configuration fields or visibility flags.
 
+## HTTP proxy for DeepL requests
+
+AutoTranslate uses the TYPO3 HTTP proxy setting for DeepL API requests.
+
+Configure the proxy in `system/additional.php`:
+
+```php
+$GLOBALS['TYPO3_CONF_VARS']['HTTP']['proxy'] = 'https://user:pass@proxy.example.org:3128';
+```
+
+If the TYPO3 proxy setting is configured as an array, AutoTranslate uses the `https` proxy first and falls back to the `http` proxy:
+
+```php
+$GLOBALS['TYPO3_CONF_VARS']['HTTP']['proxy'] = [
+    'https' => 'https://user:pass@proxy.example.org:3128',
+    'http' => 'http://user:pass@proxy.example.org:3128',
+];
+```
+
+The proxy is used for API key validation, DeepL language loading, glossary access and translation requests.
+
 ### Important: TYPO3 v12 and older
 
 In older TYPO3 versions you have to provide the required fields for the 3rd party tables in your site package via ext_tables.sql.
