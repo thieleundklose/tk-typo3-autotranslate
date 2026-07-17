@@ -12,6 +12,34 @@ where the file relation columns can be selected, for example `level_three_image`
 
 ![DeepL](../../Images/ExtensionConfiguration.png)
 
+## Additional supported record tables
+
+Use **Additional supported record tables** for records that can be translated directly, for example `tx_news_domain_model_news`.
+
+These tables get the record-level AutoTranslate control fields:
+
+- `autotranslate_exclude`
+- `autotranslate_languages`
+- `autotranslate_last`
+
+## Additional supported relation tables
+
+Use **Additional supported relation tables** for inline/reference child tables, for example `sys_file_reference`, Mask item tables or generated Content Blocks collection tables.
+
+Relation tables are translated through their parent record. They only get `autotranslate_last`; record-level exclusion and language selection stay on the parent record.
+
+## Fields copied without translation
+
+The extension setting **Fields to be copied into translated records** copies configured field values from the source record to the localized record without sending them to DeepL.
+
+The default is:
+
+```text
+pi_flexform, hidden
+```
+
+Use this for fields that should stay synchronized but should not be translated, for example technical configuration fields or visibility flags.
+
 ### Important: TYPO3 v12 and older
 
 In older TYPO3 versions you have to provide the required fields for the 3rd party tables in your site package via ext_tables.sql.
@@ -21,10 +49,10 @@ In older TYPO3 versions you have to provide the required fields for the 3rd part
 Except for tx_news_domain_model_news, here we already provide the sql schema.
 
 ```
-CREATE TABLE tx_table_name_item (
+CREATE TABLE tx_table_name (
     autotranslate_exclude tinyint(4) DEFAULT '0' NOT NULL,
     autotranslate_languages varchar(255) DEFAULT NULL,
-    autotranslate_last int(11) DEFAULT '0' NOT NULL,
+    autotranslate_last int(11) DEFAULT '0' NOT NULL
 );
 ```
 
@@ -34,7 +62,7 @@ Except for sys_file_reference, here we already provide the sql schema.
 
 ```
 CREATE TABLE tx_table_name_item (
-    autotranslate_last int(11) DEFAULT '0' NOT NULL,
+    autotranslate_last int(11) DEFAULT '0' NOT NULL
 );
 ```
 

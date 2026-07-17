@@ -5,6 +5,9 @@
 ### Fixes
 - Cleared translated text fields when the corresponding source field is emptied, so removing content such as `bodytext` in the default language also removes the stale value from existing localized records, thanks to format-gmbh ([Issue #118](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/118)).
 
+### Documentation
+- Added documentation for excluding individual records from automatic translation, configuring additional record versus relation tables, copying fields without translation, and troubleshooting DeepL glossary synchronization including the `glossary_ready` database state.
+
 ## [2.8.0] - 2026-07-16
 
 ### Fixes
