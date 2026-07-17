@@ -41,7 +41,7 @@ class Loader
                     continue;
                 }
                 $event->addTsConfig('
-                    [traverse(page, "uid") == ' . $site->getRootPageId() . ' || ' . $site->getRootPageId() . '  in tree.rootLineParentIds]
+                    [site("rootPageId") == ' . $site->getRootPageId() . ']
                         TCAdefaults.' . $table . '.autotranslate_languages = ' . $settings['autotranslateLanguages'] . '
                     [end]
                 ');
