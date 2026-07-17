@@ -718,7 +718,7 @@ class Translator implements LoggerAwareInterface
             $glossary = null;
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
                 $toTranslate = $this->extractAndReplaceTranslatableHtmlAttributes($toTranslate);
-                $translator = new \DeepL\Translator($this->apiKey);
+                $translator = DeeplApiHelper::createTranslator($this->apiKey);
 
                 // get optional glossary from handled by 3rd party extension
                 if ($deeplSourceLang && $deeplTargetLang && TranslationHelper::glossaryEnabled($this->pageId)) {
@@ -1063,7 +1063,7 @@ class Translator implements LoggerAwareInterface
 
     private function translateItems(array $record, string $table, array $toTranslate, ?string $deeplSourceLang, string $deeplTargetLang, ?Glossary $glossary): array
     {
-        $translator = new \DeepL\Translator($this->apiKey);
+        $translator = DeeplApiHelper::createTranslator($this->apiKey);
         $baseOptions = [
             TranslateTextOptions::SPLIT_SENTENCES => true,
         ];
