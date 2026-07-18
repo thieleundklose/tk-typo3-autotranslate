@@ -734,17 +734,19 @@ class Translator implements LoggerAwareInterface
                     $xml = simplexml_load_string($record['pi_flexform']);
 
                     foreach ($xml->xpath('//field') as $field) {
+                        $fieldname = trim((string) (((array) $field)['@attributes']['index'] ?? ''));
                         $value = (string)$field->value;
                         if (!empty(trim($value))
                             && strpos($value, '<') === false
                             && is_string($value)
                             && !is_numeric($value)
                             && $value !== ''
+                            && str_starts_with($fieldname, 'settings.')
                         ) {
                             $translationResult = $this->translateItems(
                                 $record,
                                 $table,
-                                [$value],
+                                [$fieldname => $value],
                                 $deeplSourceLang,
                                 $deeplTargetLang,
                                 $glossary
