@@ -5,6 +5,7 @@
 ### Fixes
 - Cleared translated text fields when the corresponding source field is emptied, so removing content such as `bodytext` in the default language also removes the stale value from existing localized records, thanks to format-gmbh ([Issue #118](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/118)).
 - Removed a PHP 8 union return type from `FlashMessageUtility` to restore PHP 7.4 compatibility in the `2.x` release line, thanks to d-salerno ([Issue #115](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/115)).
+- Fixed experimental `pi_flexform` translation so translatable `settings.*` FlexForm values are passed to richtext detection with their string field index instead of a numeric array key, preventing a TypeError during translation, thanks to PeGuIwelt ([Pull request #141](https://github.com/thieleundklose/tk-typo3-autotranslate/pull/141)).
 
 ### Documentation
 - Added documentation for excluding individual records from automatic translation, configuring additional record versus relation tables, copying fields without translation, and troubleshooting DeepL glossary synchronization including the `glossary_ready` database state.
