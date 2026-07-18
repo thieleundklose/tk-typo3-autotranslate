@@ -37,12 +37,10 @@ class Loader
                 if (!$settings) {
                     continue;
                 }
-
                 $tsConfigBlocks[] = sprintf(
-                    '[traverse(page, "uid") == %d || %d in tree.rootLineParentIds]' . PHP_EOL
+                    '[site("rootPageId") == %d]' . PHP_EOL
                     . '    TCAdefaults.%s.autotranslate_languages = %s' . PHP_EOL
                     . '[END]',
-                    $rootPageId,
                     $rootPageId,
                     $table,
                     $settings['autotranslateLanguages']
