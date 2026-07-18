@@ -1389,7 +1389,7 @@ class Translator implements LoggerAwareInterface
     private function deeplSourceLanguage(): ?string
     {
         foreach ($this->siteLanguages as $language) {
-            if ($language['languageId'] === 0) {
+            if ((int)$language['languageId'] === 0) {
                 if (empty($language['deeplSourceLang'])) {
                     return null;
                 }
@@ -1407,7 +1407,7 @@ class Translator implements LoggerAwareInterface
     private function deeplTargetLanguage(int $languageId): ?string
     {
         foreach ($this->siteLanguages as $language) {
-            if ($language['languageId'] === $languageId) {
+            if ((int)$language['languageId'] === $languageId) {
                 return $language['deeplTargetLang'] ?? null;
             }
         }
