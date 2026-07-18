@@ -741,7 +741,7 @@ class Translator implements LoggerAwareInterface
                             && is_string($value)
                             && !is_numeric($value)
                             && $value !== ''
-                            && str_starts_with($fieldname, 'settings.')
+                            && strpos($fieldname, 'settings.') === 0
                         ) {
                             $translationResult = $this->translateItems(
                                 $record,
