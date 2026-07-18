@@ -490,6 +490,8 @@ class Translator implements LoggerAwareInterface
             );
         }
 
+        $isNewLocalization = empty($referenceTranslation);
+
         if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && empty($referenceTranslation)) {
             LogUtility::log($this->logger, 'No {referenceTable} {referenceUid} Translation of {table} with uid {uid} because mode "update only".', [
                 'referenceTable' => $referenceTable,
@@ -542,7 +544,8 @@ class Translator implements LoggerAwareInterface
                 $referenceTable,
                 $referenceUid,
                 $foreignField,
-                $localizedParentUid
+                $localizedParentUid,
+                $isNewLocalization
             )
         );
 
@@ -596,7 +599,8 @@ class Translator implements LoggerAwareInterface
         string $referenceTable,
         int $referenceUid,
         string $foreignField,
-        int $localizedParentUid
+        int $localizedParentUid,
+        bool $isNewLocalization
     ): array {
         $fields = [
             $foreignField => $localizedParentUid,
@@ -613,11 +617,14 @@ class Translator implements LoggerAwareInterface
             $fields[$translationSourceField] = $referenceUid;
         }
 
+        // Only mirror the source visibility onto a freshly created localization, and
+        // never force it visible when the source record has meanwhile disappeared.
         $disabledField = $ctrl['enablecolumns']['disabled'] ?? 'hidden';
-        if (isset($GLOBALS['TCA'][$referenceTable]['columns'][$disabledField])) {
-            $fields[$disabledField] = (int)(
-                Records::getRecord($referenceTable, $referenceUid, $disabledField) ?? 0
-            );
+        if ($isNewLocalization && isset($GLOBALS['TCA'][$referenceTable]['columns'][$disabledField])) {
+            $disabledValue = Records::getRecord($referenceTable, $referenceUid, $disabledField);
+            if ($disabledValue !== null) {
+                $fields[$disabledField] = (int)$disabledValue;
+            }
         }
 
         return $fields;
