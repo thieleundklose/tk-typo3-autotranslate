@@ -1070,7 +1070,181 @@ class Translator implements LoggerAwareInterface
         }
     }
 
-    private function translateItems(array $record, string $table, array $toTranslate, ?string $deeplSourceLang, string $deeplTargetLang, ?Glossary $glossary): array
+    private function translateFlexForm(
+        array $record,
+        string $table,
+        string $columnName,
+        ?string $deeplSourceLang,
+        string $deeplTargetLang,
+        ?Glossary $glossary
+    ): ?string {
+        if (empty($record[$columnName]) || !is_string($record[$columnName])) {
+            return null;
+        }
+
+        $xml = @simplexml_load_string($record[$columnName]);
+        if (!$xml instanceof \SimpleXMLElement) {
+            return null;
+        }
+
+        $fieldConfigs = $this->flexFormTranslationFieldConfigs($record, $table, $columnName);
+        if (empty($fieldConfigs)) {
+            return null;
+        }
+
+        $hasTranslatedValue = false;
+        foreach ($xml->xpath('//field') as $field) {
+            $fieldName = trim((string)(((array)$field)['@attributes']['index'] ?? ''));
+            if ($fieldName === '' || empty($fieldConfigs[$fieldName])) {
+                continue;
+            }
+
+            $value = (string)$field->value;
+            $isRichtext = (bool)($fieldConfigs[$fieldName]['richtext'] ?? false);
+            if (!$this->isSupportedFlexFormTranslationValue($value, $isRichtext)) {
+                continue;
+            }
+
+            $translationResult = $this->translateItems(
+                $record,
+                $table,
+                [$fieldName => $value],
+                $deeplSourceLang,
+                $deeplTargetLang,
+                $glossary,
+                [$fieldName => $isRichtext]
+            );
+            if (!empty($translationResult[0])) {
+                $field->value[0] = $translationResult[0]->text;
+                $hasTranslatedValue = true;
+            }
+        }
+
+        return $hasTranslatedValue ? $xml->asXML() : null;
+    }
+
+    private function flexFormTranslationFieldConfigs(array $record, string $table, string $columnName): array
+    {
+        $dataStructure = $this->resolveFlexFormDataStructure($record, $table, $columnName);
+        if (!$dataStructure instanceof \SimpleXMLElement) {
+            return [];
+        }
+
+        $fieldConfigs = [];
+        foreach ($dataStructure->xpath('//el/*') as $field) {
+            $fieldName = $field->getName();
+            $config = $field->config ?? $field->TCEforms->config ?? null;
+            if (!$config instanceof \SimpleXMLElement) {
+                continue;
+            }
+
+            $type = (string)($config->type ?? '');
+            if (!in_array($type, ['input', 'text'], true)) {
+                continue;
+            }
+
+            $renderType = (string)($config->renderType ?? '');
+            $softref = (string)($config->softref ?? '');
+            if ($renderType === 'inputLink' || strpos($softref, 'typolink') !== false) {
+                continue;
+            }
+
+            $evalList = GeneralUtility::trimExplode(',', (string)($config->eval ?? ''), true);
+            if (array_intersect($evalList, ['int', 'num', 'double2', 'date', 'datetime', 'time'])) {
+                continue;
+            }
+
+            $fieldConfigs[$fieldName] = [
+                'richtext' => !in_array(strtolower(trim((string)($config->enableRichtext ?? ''))), ['', '0', 'false'], true),
+            ];
+        }
+
+        return $fieldConfigs;
+    }
+
+    private function resolveFlexFormDataStructure(array $record, string $table, string $columnName): ?\SimpleXMLElement
+    {
+        $fieldConfig = $GLOBALS['TCA'][$table]['columns'][$columnName]['config'] ?? [];
+        $dataStructures = $fieldConfig['ds'] ?? [];
+        if (!is_array($dataStructures)) {
+            return null;
+        }
+
+        $key = $this->resolveFlexFormDataStructureKey($record, $fieldConfig, $dataStructures);
+        if ($key === null || empty($dataStructures[$key]) || !is_string($dataStructures[$key])) {
+            return null;
+        }
+
+        $dataStructure = $dataStructures[$key];
+        if (strpos($dataStructure, 'FILE:') === 0) {
+            $fileName = GeneralUtility::getFileAbsFileName(substr($dataStructure, 5));
+            if ($fileName === '' || !is_file($fileName)) {
+                return null;
+            }
+            $dataStructure = (string)file_get_contents($fileName);
+        }
+
+        $xml = @simplexml_load_string($dataStructure);
+        return $xml instanceof \SimpleXMLElement ? $xml : null;
+    }
+
+    private function resolveFlexFormDataStructureKey(array $record, array $fieldConfig, array $dataStructures): ?string
+    {
+        $pointerField = $fieldConfig['ds_pointerField'] ?? null;
+        if ($pointerField === null) {
+            return isset($dataStructures['default']) ? 'default' : null;
+        }
+
+        $pointerFields = GeneralUtility::trimExplode(',', (string)$pointerField, true);
+        if (count($pointerFields) === 1) {
+            $firstValue = (string)($record[$pointerFields[0]] ?? '');
+            return $this->firstExistingFlexFormDataStructureKey([$firstValue, 'default'], $dataStructures);
+        }
+
+        if (count($pointerFields) === 2) {
+            $firstValue = (string)($record[$pointerFields[0]] ?? '');
+            $secondValue = (string)($record[$pointerFields[1]] ?? '');
+            return $this->firstExistingFlexFormDataStructureKey([
+                $firstValue . ',' . $secondValue,
+                $firstValue . ',*',
+                '*,' . $secondValue,
+                $firstValue,
+                'default',
+            ], $dataStructures);
+        }
+
+        return null;
+    }
+
+    private function firstExistingFlexFormDataStructureKey(array $candidates, array $dataStructures): ?string
+    {
+        foreach ($candidates as $candidate) {
+            if ($candidate !== '' && isset($dataStructures[$candidate])) {
+                return $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private function isSupportedFlexFormTranslationValue(string $value, bool $isRichtext): bool
+    {
+        if (trim($value) === '' || is_numeric($value)) {
+            return false;
+        }
+
+        return $isRichtext || !$this->isHtml($value);
+    }
+
+    private function translateItems(
+        array $record,
+        string $table,
+        array $toTranslate,
+        ?string $deeplSourceLang,
+        string $deeplTargetLang,
+        ?Glossary $glossary,
+        ?array $richtextMap = null
+    ): array
     {
         $translator = new \DeepL\Translator($this->apiKey);
         $baseOptions = [
