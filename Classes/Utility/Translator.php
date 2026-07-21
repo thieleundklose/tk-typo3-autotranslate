@@ -724,7 +724,6 @@ class Translator implements LoggerAwareInterface
             $result = null;
             $glossary = null;
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
-                $toTranslate = $this->extractAndReplaceTranslatableHtmlAttributes($toTranslate);
                 $translator = new \DeepL\Translator($this->apiKey);
 
                 // get optional glossary from handled by 3rd party extension
@@ -732,39 +731,23 @@ class Translator implements LoggerAwareInterface
                     $glossary = $this->glossaryService->getGlossary($deeplSourceLang, $deeplTargetLang, $this->pageId, $translator);
                 }
 
-                // it is experimental to add flexform fields to translation
-                // TODO let define which fields in flexform should be translated to prevent translating settings
+                // Translate supported FlexForm input/text fields based on their data structure.
                 if (isset($toTranslate['pi_flexform'])) {
-                    $xml = simplexml_load_string($record['pi_flexform']);
-
-                    foreach ($xml->xpath('//field') as $field) {
-                        $fieldname = trim((string) (((array) $field)['@attributes']['index'] ?? ''));
-                        $value = (string)$field->value;
-                        if (!empty(trim($value))
-                            && strpos($value, '<') === false
-                            && is_string($value)
-                            && !is_numeric($value)
-                            && $value !== ''
-                            && strpos($fieldname, 'settings.') === 0
-                        ) {
-                            $translationResult = $this->translateItems(
-                                $record,
-                                $table,
-                                [$fieldname => $value],
-                                $deeplSourceLang,
-                                $deeplTargetLang,
-                                $glossary
-                            );
-                            if (!empty($translationResult)) {
-                                $field->value[0] = $translationResult[0]->text;
-                            }
-                        }
+                    $translatedFlexForm = $this->translateFlexForm(
+                        $record,
+                        $table,
+                        'pi_flexform',
+                        $deeplSourceLang,
+                        $deeplTargetLang,
+                        $glossary
+                    );
+                    if ($translatedFlexForm !== null) {
+                        $translatedColumns['pi_flexform'] = $translatedFlexForm;
                     }
-
-                    $translatedColumns['pi_flexform'] = $xml->asXML();
                     unset($toTranslate['pi_flexform']);
                 }
 
+                $toTranslate = $this->extractAndReplaceTranslatableHtmlAttributes($toTranslate);
                 $result = empty($toTranslate) ? [] : $this->translateItems($record, $table, $toTranslate, $deeplSourceLang, $deeplTargetLang, $glossary);
             }
 
@@ -844,6 +827,10 @@ class Translator implements LoggerAwareInterface
     {
         $fieldConfiguration = $GLOBALS['TCA'][$table]['columns'][$field]['config'] ?? [];
         $fieldType = $fieldConfiguration['type'] ?? null;
+        if ($field === 'pi_flexform' && $fieldType === 'flex') {
+            return true;
+        }
+
         if (!in_array($fieldType, ['input', 'text'], true)) {
             return false;
         }
@@ -1258,7 +1245,7 @@ class Translator implements LoggerAwareInterface
             TranslateTextOptions::TAG_HANDLING => 'html',
         ]);
 
-        $richtextMap = $this->mapRichtextFields($toTranslate, $table, $record);
+        $richtextMap = $richtextMap ?? $this->mapRichtextFields($toTranslate, $table, $record);
 
         $toTranslateText = [];
         $toTranslateHtml = [];
