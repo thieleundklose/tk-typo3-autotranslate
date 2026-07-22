@@ -839,7 +839,7 @@ class Translator implements LoggerAwareInterface
      */
     private function isSupportedTextTranslationField(string $table, string $field): bool
     {
-        $fieldConfiguration = $GLOBALS['TCA'][$table]['columns'][$field]['config'] ?? [];
+        $fieldConfiguration = $this->fieldConfigurationForRecord([], $table, $field);
         $fieldType = $fieldConfiguration['type'] ?? null;
         if ($this->isSupportedFlexFormTranslationField($table, $field)) {
             return true;
@@ -866,7 +866,7 @@ class Translator implements LoggerAwareInterface
      */
     private function isSupportedFlexFormTranslationField(string $table, string $field): bool
     {
-        return ($GLOBALS['TCA'][$table]['columns'][$field]['config']['type'] ?? null) === 'flex';
+        return ($this->fieldConfigurationForRecord([], $table, $field)['type'] ?? null) === 'flex';
     }
 
     /**
@@ -1220,14 +1220,17 @@ class Translator implements LoggerAwareInterface
     /**
      * Resolves and parses the FlexForm data structure for a concrete record.
      *
-     * Supports inline XML data structures and `FILE:` references. The selected
-     * data structure key is resolved from the configured `ds_pointerField`,
-     * matching TYPO3's usual exact and wildcard lookup order.
+     * Supports TYPO3 v14's direct string `ds` value as well as the older
+     * single or multi-entry `ds` array with optional `ds_pointerField`.
      */
     private function resolveFlexFormDataStructure(array $record, string $table, string $columnName): ?\SimpleXMLElement
     {
-        $fieldConfig = $GLOBALS['TCA'][$table]['columns'][$columnName]['config'] ?? [];
-        $dataStructures = $fieldConfig['ds'] ?? [];
+        $fieldConfig = $this->fieldConfigurationForRecord($record, $table, $columnName);
+        $dataStructures = $fieldConfig['ds'] ?? null;
+        if (is_string($dataStructures)) {
+            return $this->parseFlexFormDataStructure($dataStructures);
+        }
+
         if (!is_array($dataStructures)) {
             return null;
         }
@@ -1237,7 +1240,17 @@ class Translator implements LoggerAwareInterface
             return null;
         }
 
-        $dataStructure = $dataStructures[$key];
+        return $this->parseFlexFormDataStructure($dataStructures[$key]);
+    }
+
+    /**
+     * Parses a FlexForm data structure from inline XML or a FILE: reference.
+     *
+     * @param string $dataStructure Inline FlexForm XML or a TYPO3 FILE: reference.
+     * @return \SimpleXMLElement|null Parsed data structure or null if it cannot be resolved.
+     */
+    private function parseFlexFormDataStructure(string $dataStructure): ?\SimpleXMLElement
+    {
         if (strpos($dataStructure, 'FILE:') === 0) {
             $fileName = GeneralUtility::getFileAbsFileName(substr($dataStructure, 5));
             if ($fileName === '' || !is_file($fileName)) {
@@ -1248,6 +1261,43 @@ class Translator implements LoggerAwareInterface
 
         $xml = @simplexml_load_string($dataStructure);
         return $xml instanceof \SimpleXMLElement ? $xml : null;
+    }
+
+    /**
+     * Resolves the effective TCA field configuration for a concrete record.
+     *
+     * The base column configuration is merged with type-specific
+     * columnsOverrides, for example TYPO3 v14 FlexForm definitions configured
+     * below tt_content types.
+     *
+     * @param array $record Record values used to resolve the TCA type.
+     * @param string $table Table name of the configured field.
+     * @param string $columnName Column name of the configured field.
+     * @return array Effective TCA field config or an empty array if unavailable.
+     */
+    private function fieldConfigurationForRecord(array $record, string $table, string $columnName): array
+    {
+        $fieldConfig = $GLOBALS['TCA'][$table]['columns'][$columnName]['config'] ?? [];
+        if (!is_array($fieldConfig)) {
+            return [];
+        }
+
+        $typeField = $GLOBALS['TCA'][$table]['ctrl']['type'] ?? null;
+        if (!is_string($typeField) || $typeField === '') {
+            return $fieldConfig;
+        }
+
+        $typeValue = (string)($record[$typeField] ?? '');
+        if ($typeValue === '') {
+            return $fieldConfig;
+        }
+
+        $overrideConfig = $GLOBALS['TCA'][$table]['types'][$typeValue]['columnsOverrides'][$columnName]['config'] ?? null;
+        if (!is_array($overrideConfig)) {
+            return $fieldConfig;
+        }
+
+        return array_replace_recursive($fieldConfig, $overrideConfig);
     }
 
     /**
@@ -1510,15 +1560,9 @@ class Translator implements LoggerAwareInterface
     function isRichtextField(array $record, string $table, string $columnName): bool
     {
         // get tca configuration for the field
-        $fieldConfig = $GLOBALS['TCA'][$table]['columns'][$columnName]['config'] ?? null;
+        $fieldConfig = $this->fieldConfigurationForRecord($record, $table, $columnName);
         if (!$fieldConfig) {
             return false;
-        }
-
-        // check for CType specific configuration
-        $ctype = $record['CType'] ?? null;
-        if ($ctype && isset($GLOBALS['TCA'][$table]['types'][$ctype]['columnsOverrides'][$columnName]['config'])) {
-            $fieldConfig = $GLOBALS['TCA'][$table]['types'][$ctype]['columnsOverrides'][$columnName]['config'];
         }
 
         // check if the field is a richtext field
