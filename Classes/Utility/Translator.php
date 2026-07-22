@@ -826,6 +826,14 @@ class Translator implements LoggerAwareInterface
         return ($value === null || $value === '') && $this->isSupportedTextTranslationField($table, $field);
     }
 
+    /**
+     * Checks whether a configured field can enter the DeepL translation pipeline.
+     *
+     * Regular TCA text fields are limited to `input` and `text` fields without
+     * integer evaluation. TCA `type=flex` columns are accepted here as containers;
+     * their individual FlexForm child fields are filtered later from the resolved
+     * FlexForm data structure.
+     */
     private function isSupportedTextTranslationField(string $table, string $field): bool
     {
         $fieldConfiguration = $GLOBALS['TCA'][$table]['columns'][$field]['config'] ?? [];
@@ -846,6 +854,13 @@ class Translator implements LoggerAwareInterface
         return true;
     }
 
+    /**
+     * Checks whether a configured TCA column is a FlexForm container.
+     *
+     * This intentionally relies on the TCA field type instead of a fixed column
+     * name such as `pi_flexform`, so custom FlexForm columns can be translated
+     * when they are explicitly listed in the site configuration text fields.
+     */
     private function isSupportedFlexFormTranslationField(string $table, string $field): bool
     {
         return ($GLOBALS['TCA'][$table]['columns'][$field]['config']['type'] ?? null) === 'flex';
@@ -1065,6 +1080,17 @@ class Translator implements LoggerAwareInterface
         }
     }
 
+    /**
+     * Translates supported child values inside one FlexForm XML column.
+     *
+     * Only child fields allowed by the resolved FlexForm data structure are sent
+     * to DeepL. Plain `input` and `text` values are translated as text, while
+     * richtext-enabled `text` values are translated with HTML handling via the
+     * explicit richtext map passed to translateItems().
+     *
+     * Returns null when the column is empty, invalid, has no supported child
+     * fields, or no child value was translated.
+     */
     private function translateFlexForm(
         array $record,
         string $table,
@@ -1118,6 +1144,16 @@ class Translator implements LoggerAwareInterface
         return $hasTranslatedValue ? $xml->asXML() : null;
     }
 
+    /**
+     * Builds translation metadata for supported child fields of a FlexForm column.
+     *
+     * Supported child field configs are `type=input` and `type=text`. Richtext is
+     * detected from `enableRichtext`. Non-text controls, link fields
+     * (`renderType=inputLink` or `softref=typolink`) and numeric/date/time fields
+     * are deliberately skipped.
+     *
+     * @return array<string, array{richtext: bool}>
+     */
     private function flexFormTranslationFieldConfigs(array $record, string $table, string $columnName): array
     {
         $dataStructure = $this->resolveFlexFormDataStructure($record, $table, $columnName);
@@ -1157,6 +1193,13 @@ class Translator implements LoggerAwareInterface
         return $fieldConfigs;
     }
 
+    /**
+     * Resolves and parses the FlexForm data structure for a concrete record.
+     *
+     * Supports inline XML data structures and `FILE:` references. The selected
+     * data structure key is resolved from the configured `ds_pointerField`,
+     * matching TYPO3's usual exact and wildcard lookup order.
+     */
     private function resolveFlexFormDataStructure(array $record, string $table, string $columnName): ?\SimpleXMLElement
     {
         $fieldConfig = $GLOBALS['TCA'][$table]['columns'][$columnName]['config'] ?? [];
@@ -1183,6 +1226,12 @@ class Translator implements LoggerAwareInterface
         return $xml instanceof \SimpleXMLElement ? $xml : null;
     }
 
+    /**
+     * Resolves the FlexForm data structure key for the current record values.
+     *
+     * Handles both single pointer fields and combined pointer fields such as
+     * `list_type,CType`, including TYPO3-style wildcard fallbacks.
+     */
     private function resolveFlexFormDataStructureKey(array $record, array $fieldConfig, array $dataStructures): ?string
     {
         $pointerField = $fieldConfig['ds_pointerField'] ?? null;
@@ -1211,6 +1260,9 @@ class Translator implements LoggerAwareInterface
         return null;
     }
 
+    /**
+     * Returns the first candidate key that exists in the configured data structures.
+     */
     private function firstExistingFlexFormDataStructureKey(array $candidates, array $dataStructures): ?string
     {
         foreach ($candidates as $candidate) {
@@ -1222,6 +1274,13 @@ class Translator implements LoggerAwareInterface
         return null;
     }
 
+    /**
+     * Checks whether a FlexForm child value should be sent to DeepL.
+     *
+     * Empty and numeric scalar values are skipped. HTML-like values are only
+     * accepted for richtext-enabled child fields so non-richtext configuration
+     * snippets or technical markup are not translated accidentally.
+     */
     private function isSupportedFlexFormTranslationValue(string $value, bool $isRichtext): bool
     {
         if (trim($value) === '' || is_numeric($value)) {
@@ -1231,6 +1290,13 @@ class Translator implements LoggerAwareInterface
         return $isRichtext || !$this->isHtml($value);
     }
 
+    /**
+     * Translates a batch of text values while preserving the original field order.
+     *
+     * Richtext fields are translated separately with DeepL HTML handling. The
+     * optional richtext map is used for virtual FlexForm child field names that
+     * do not exist as real TCA columns.
+     */
     private function translateItems(
         array $record,
         string $table,
