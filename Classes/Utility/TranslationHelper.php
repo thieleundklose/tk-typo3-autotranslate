@@ -29,7 +29,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 class TranslationHelper
 {
     const COLUMN_TRANSLATEABLE_TABLES = ['pages', 'tt_content'];
-    const COLUMN_TRANSLATEABLE_TYPES = ['text', 'input'];
+    const COLUMN_TRANSLATEABLE_TYPES = ['text', 'input', 'flex'];
     const COLUMN_TRANSLATEABLE_EXCLUDE_EVALS = ['int'];
     const COLUMNS_TRANSLATEABLE_GROUP_TEXTFIELD = 1;
     const COLUMNS_TRANSLATEABLE_GROUP_FILEREFERENCE = 2;
