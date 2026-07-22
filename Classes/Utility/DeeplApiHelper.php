@@ -7,9 +7,9 @@ use DeepL\Translator;
 use DeepL\AuthorizationException;
 use DeepL\DeepLException;
 use DeepL\TooManyRequestsException;
+use DeepL\TranslatorOptions;
 use TYPO3\CMS\Core\Cache\CacheManager;
 use TYPO3\CMS\Core\Cache\Exception\NoSuchCacheException;
-use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class DeeplApiHelper
@@ -20,6 +20,11 @@ class DeeplApiHelper
      * @var array<string,array>
      */
     private static array $apiKeyCheckCache = [];
+
+    public static function createTranslator(string $apiKey): Translator
+    {
+        return new Translator($apiKey, self::translatorOptions());
+    }
 
     /**
      * Prüft, ob der DeepL API-Key gültig ist und gibt optional die Usage zurück.
@@ -44,7 +49,7 @@ class DeeplApiHelper
         }
 
         try {
-            $translator = new Translator($apiKey);
+            $translator = self::createTranslator($apiKey);
             $usage = $translator->getUsage();
             $charactersLeft = null;
             if (is_object($usage) && isset($usage->character)) {
@@ -126,7 +131,7 @@ class DeeplApiHelper
 
         // Not in cache: fetch from DeepL
         try {
-            $translator = new \DeepL\Translator($apiKey);
+            $translator = self::createTranslator($apiKey);
             if ($type === 'source') {
                 $languages = $translator->getSourceLanguages();
             } else {
@@ -143,5 +148,40 @@ class DeeplApiHelper
         } catch (\Exception $e) {
             return [];
         }
+    }
+
+    private static function translatorOptions(): array
+    {
+        $proxy = self::resolveProxy();
+        if ($proxy === null) {
+            return [];
+        }
+
+        return [
+            TranslatorOptions::PROXY => $proxy,
+        ];
+    }
+
+    private static function resolveProxy(): ?string
+    {
+        $proxy = $GLOBALS['TYPO3_CONF_VARS']['HTTP']['proxy'] ?? null;
+
+        if (is_string($proxy)) {
+            $proxy = trim($proxy);
+            return $proxy !== '' ? $proxy : null;
+        }
+
+        if (is_array($proxy)) {
+            foreach (['https', 'http'] as $scheme) {
+                if (isset($proxy[$scheme]) && is_string($proxy[$scheme])) {
+                    $schemeProxy = trim($proxy[$scheme]);
+                    if ($schemeProxy !== '') {
+                        return $schemeProxy;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 }

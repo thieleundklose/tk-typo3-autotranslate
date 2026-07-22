@@ -724,7 +724,7 @@ class Translator implements LoggerAwareInterface
             $result = null;
             $glossary = null;
             if (count($toTranslate) > 0 && $deeplTargetLang !== null) {
-                $translator = new \DeepL\Translator($this->apiKey);
+                $translator = DeeplApiHelper::createTranslator($this->apiKey);
 
                 // get optional glossary from handled by 3rd party extension
                 if ($deeplSourceLang && $deeplTargetLang && TranslationHelper::glossaryEnabled($this->pageId)) {
@@ -1126,17 +1126,38 @@ class Translator implements LoggerAwareInterface
                 continue;
             }
 
+            $translationInput = [$fieldName => $value];
+            if ($isRichtext) {
+                $translationInput = $this->extractAndReplaceTranslatableHtmlAttributes($translationInput);
+            }
+
             $translationResult = $this->translateItems(
                 $record,
                 $table,
-                [$fieldName => $value],
+                $translationInput,
                 $deeplSourceLang,
                 $deeplTargetLang,
                 $glossary,
                 [$fieldName => $isRichtext]
             );
             if (!empty($translationResult[0])) {
-                $field->value[0] = $translationResult[0]->text;
+                $translatedValue = $translationResult[0]->text;
+                if ($isRichtext) {
+                    $translatedAttributes = [];
+                    $translationKeys = array_keys($translationInput);
+                    foreach ($translationResult as $resultIndex => $resultItem) {
+                        if ($resultItem === null) {
+                            continue;
+                        }
+
+                        $translationKey = $translationKeys[$resultIndex] ?? '';
+                        if (strpos($translationKey, '__ATTR__') === 0) {
+                            $translatedAttributes[$translationKey] = $resultItem->text;
+                        }
+                    }
+                    $translatedValue = $this->restoreTranslatedHtmlAttributes($translatedValue, $translatedAttributes);
+                }
+                $field->value[0] = $translatedValue;
                 $hasTranslatedValue = true;
             }
         }
@@ -1307,7 +1328,7 @@ class Translator implements LoggerAwareInterface
         ?array $richtextMap = null
     ): array
     {
-        $translator = new \DeepL\Translator($this->apiKey);
+        $translator = DeeplApiHelper::createTranslator($this->apiKey);
         $baseOptions = [
             TranslateTextOptions::SPLIT_SENTENCES => true,
         ];

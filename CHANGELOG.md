@@ -2,6 +2,9 @@
 
 ## [2.8.2] - 2026-07-22
 
+### Feature
+- Passed the TYPO3 HTTP proxy configuration to the DeepL API client so installations behind an outbound proxy can validate API keys, load languages, synchronize glossaries, and translate content, thanks to trokohl ([Issue #114](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/114)).
+
 ### Fixes
 - Fixed FlexForm translation for configured TCA `type=flex` fields, including custom flex columns beyond `pi_flexform`; FlexForm child fields with TCA `input` and `text` configs are translated, richtext-enabled `text` fields are sent as HTML, while link, check and other non-text fields are skipped, thanks to Thomas Rokohl / trokohl ([Issue #148](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/148)).
 
