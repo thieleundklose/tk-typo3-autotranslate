@@ -731,20 +731,23 @@ class Translator implements LoggerAwareInterface
                     $glossary = $this->glossaryService->getGlossary($deeplSourceLang, $deeplTargetLang, $this->pageId, $translator);
                 }
 
-                // Translate supported FlexForm input/text fields based on their data structure.
-                if (isset($toTranslate['pi_flexform'])) {
+                foreach (array_keys($toTranslate) as $field) {
+                    if (!$this->isSupportedFlexFormTranslationField($table, (string)$field)) {
+                        continue;
+                    }
+
                     $translatedFlexForm = $this->translateFlexForm(
                         $record,
                         $table,
-                        'pi_flexform',
+                        (string)$field,
                         $deeplSourceLang,
                         $deeplTargetLang,
                         $glossary
                     );
                     if ($translatedFlexForm !== null) {
-                        $translatedColumns['pi_flexform'] = $translatedFlexForm;
+                        $translatedColumns[$field] = $translatedFlexForm;
                     }
-                    unset($toTranslate['pi_flexform']);
+                    unset($toTranslate[$field]);
                 }
 
                 $toTranslate = $this->extractAndReplaceTranslatableHtmlAttributes($toTranslate);
@@ -827,7 +830,7 @@ class Translator implements LoggerAwareInterface
     {
         $fieldConfiguration = $GLOBALS['TCA'][$table]['columns'][$field]['config'] ?? [];
         $fieldType = $fieldConfiguration['type'] ?? null;
-        if ($field === 'pi_flexform' && $fieldType === 'flex') {
+        if ($this->isSupportedFlexFormTranslationField($table, $field)) {
             return true;
         }
 
@@ -841,6 +844,11 @@ class Translator implements LoggerAwareInterface
         }
 
         return true;
+    }
+
+    private function isSupportedFlexFormTranslationField(string $table, string $field): bool
+    {
+        return ($GLOBALS['TCA'][$table]['columns'][$field]['config']['type'] ?? null) === 'flex';
     }
 
     /**

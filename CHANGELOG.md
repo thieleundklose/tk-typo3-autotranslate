@@ -1,5 +1,10 @@
 # Changelog
 
+## [2.8.2] - 2026-07-22
+
+### Fixes
+- Fixed FlexForm translation for configured TCA `type=flex` fields, including custom flex columns beyond `pi_flexform`; FlexForm child fields with TCA `input` and `text` configs are translated, richtext-enabled `text` fields are sent as HTML, while link, check and other non-text fields are skipped, thanks to Thomas Rokohl / trokohl ([Issue #148](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/148)).
+
 ## [2.8.1] - 2026-07-17
 
 ### Fixes
