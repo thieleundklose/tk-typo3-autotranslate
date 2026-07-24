@@ -37,6 +37,15 @@ CREATE TABLE sys_file_reference (
     autotranslate_last int(11) DEFAULT '0' NOT NULL,
 );
 
+#
+# Table structure for extending table 'sys_file_metadata'
+#
+CREATE TABLE sys_file_metadata (
+    autotranslate_exclude tinyint(4) DEFAULT '0' NOT NULL,
+    autotranslate_languages varchar(255) DEFAULT NULL,
+    autotranslate_last int(11) DEFAULT '0' NOT NULL,
+);
+
 CREATE TABLE tx_autotranslate_batch_item (
     sys_language_uid int(11) DEFAULT '0' NOT NULL,
     priority varchar(255) DEFAULT '' NOT NULL,

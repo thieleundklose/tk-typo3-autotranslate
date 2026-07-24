@@ -10,6 +10,18 @@ apiKey =
 # cat=general/O; type=string; label=Fields to be copied into translated records: Comma separated list of fields
 fieldsToCopy = pi_flexform, hidden
 
+# cat=fileMetadata; type=boolean; label=Enable file metadata translation: Enables automatic translation for global FAL metadata records in sys_file_metadata. Requires a DeepL API key and a file metadata language mapping. Only default-language metadata records trigger translation.
+enableFileMetadataTranslation = 0
+
+# cat=fileMetadata; type=string; label=File metadata default target languages: Comma separated TYPO3 language UIDs preselected in the metadata edit form for new default-language sys_file_metadata records, for example 1,2. Language UID 0 is ignored as a target.
+fileMetadataDefaultLanguages =
+
+# cat=fileMetadata; type=string; label=File metadata fields to translate: Comma separated sys_file_metadata column names that should be sent to DeepL, for example alternative,title,description. Only existing TCA fields with type input or text are translated.
+fileMetadataFields = alternative,title,description
+
+# cat=fileMetadata; type=string; label=File metadata DeepL language mapping: Required comma separated mapping from TYPO3 sys_language_uid to DeepL language code, including source language UID 0 and all selectable target languages, for example 0=DE,1=EN-US,2=FR. Regional source codes such as 0=EN-US are normalized to the DeepL source code EN automatically. This mapping is required because FAL metadata is not bound to a site.
+fileMetadataLanguageMapping =
+
 # cat=general; type=boolean; label=Enable debug mode for Autotranslate: You can see logs in the backend module
 debug = 0
 
