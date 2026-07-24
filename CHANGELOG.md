@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Feature
+- Added optional global `sys_file_metadata` translation for configured FAL metadata fields such as `alternative`, `title` and `description`, using an explicit TYPO3 language UID to DeepL language code mapping because file metadata is not bound to a single site ([Issue #73](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/73)).
+
 ## [2.8.2] - 2026-07-22
 
 ### Feature

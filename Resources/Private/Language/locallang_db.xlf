@@ -15,6 +15,18 @@
 			<trans-unit id="autotranslate_last" xml:space="preserve">
 				<source>Last execution of autotranslation</source>
 			</trans-unit>
+			<trans-unit id="file_metadata.autotranslate_exclude" xml:space="preserve">
+				<source>Exclude file metadata from autotranslation</source>
+			</trans-unit>
+			<trans-unit id="file_metadata.autotranslate_languages" xml:space="preserve">
+				<source>Translate file metadata automatically to selected languages</source>
+			</trans-unit>
+			<trans-unit id="file_metadata.autotranslate_languages.description" xml:space="preserve">
+				<source>Languages are loaded from the AutoTranslate extension setting "File metadata DeepL language mapping". Configure the source language as 0=CODE and target languages as languageUid=CODE.</source>
+			</trans-unit>
+			<trans-unit id="file_metadata.autotranslate_last" xml:space="preserve">
+				<source>Last execution of file metadata autotranslation</source>
+			</trans-unit>
 			<trans-unit id="autotranslate_batch" xml:space="preserve">
 				<source>Batch Translation</source>
 			</trans-unit>
