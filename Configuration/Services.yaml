@@ -8,7 +8,7 @@ services:
     resource: '../Classes/*'
     exclude:
       - '../Classes/Backend/ContextMenu/*'
-	  - '../Classes/Event/*'
+      - '../Classes/Event/*'
 
   ThieleUndKlose\Autotranslate\Command\BatchTranslation:
     tags:
