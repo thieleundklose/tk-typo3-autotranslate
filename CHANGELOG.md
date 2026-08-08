@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Feature
+- Added a PSR-14 `AfterTranslateEvent` that allows projects to post-process translated record columns before AutoTranslate persists them, enabling custom cleanup such as normalizing translated table separator characters, thanks to saneinsane ([Issue #95](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/95)).
+
 ## [3.2.2] - 2026-07-22
 
 ### Feature

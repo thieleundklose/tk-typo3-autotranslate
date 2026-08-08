@@ -24,6 +24,8 @@ use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use ThieleUndKlose\Autotranslate\Event\AfterTranslateEvent;
 use ThieleUndKlose\Autotranslate\Service\GlossaryService;
 use ThieleUndKlose\Autotranslate\Service\TranslationCacheService;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
@@ -46,6 +48,7 @@ class Translator implements LoggerAwareInterface
     protected $apiKey = null;
     protected $pageId = null;
     protected $glossaryService = null;
+    private EventDispatcherInterface $eventDispatcher;
 
     /**
      * Cached DeepL checkApiKey() result for this Translator instance.
@@ -60,11 +63,12 @@ class Translator implements LoggerAwareInterface
      * @param int $pageId
      * @return void
      */
-    function __construct(int $pageId) {
+    function __construct(int $pageId, ?EventDispatcherInterface $eventDispatcher = null) {
         $this->pageId = $pageId;
         list('key' => $this->apiKey) = TranslationHelper::apiKey($this->pageId);
         $this->siteLanguages = TranslationHelper::siteConfigurationValue($this->pageId, ['languages']);
         $this->glossaryService = GeneralUtility::makeInstance(GlossaryService::class);
+        $this->eventDispatcher = $eventDispatcher ?? GeneralUtility::makeInstance(EventDispatcherInterface::class);
     }
 
     /**
@@ -797,6 +801,18 @@ class Translator implements LoggerAwareInterface
             }
 
             if (!empty($translatedColumns)) {
+                $translatedColumns = $this->dispatchAfterTranslateEvent(
+                    $translatedColumns,
+                    $record,
+                    $targetLanguageUid,
+                    $table,
+                    $localizedUid,
+                    $deeplSourceLang,
+                    $deeplTargetLang
+                );
+            }
+
+            if (!empty($translatedColumns)) {
                 $translatedColumns['l10n_state'] = $this->buildL10nState($table, $targetLanguageUid, array_keys($translatedColumns), $localizedUid);
             }
 
@@ -809,6 +825,37 @@ class Translator implements LoggerAwareInterface
         }
 
         return $translatedColumns;
+    }
+
+    /**
+     * Dispatches the PSR-14 post-processing event for translated columns.
+     *
+     * Listeners receive the translated values before AutoTranslate adds internal
+     * bookkeeping fields, so they can safely normalize or replace only real
+     * translated record columns.
+     */
+    private function dispatchAfterTranslateEvent(
+        array $translatedColumns,
+        array $record,
+        int $targetLanguageUid,
+        string $table,
+        int $localizedUid,
+        ?string $deeplSourceLang,
+        ?string $deeplTargetLang
+    ): array {
+        $event = new AfterTranslateEvent(
+            $translatedColumns,
+            $record,
+            $targetLanguageUid,
+            $table,
+            $localizedUid,
+            $deeplSourceLang,
+            $deeplTargetLang
+        );
+
+        $this->eventDispatcher->dispatch($event);
+
+        return $event->getTranslatedColumns();
     }
 
     private function isSupportedTextTranslationValue(string $table, string $field, $value): bool
