@@ -9,10 +9,17 @@ $extKey = 'autotranslate';
 $llPath = 'LLL:EXT:' . $extKey . '/Resources/Private/Language/locallang_db.xlf:';
 
 try {
+    $enableFileMetadataTranslation = (bool)GeneralUtility::makeInstance(ExtensionConfiguration::class)
+        ->get($extKey, 'enableFileMetadataTranslation');
     $defaultLanguages = (string)GeneralUtility::makeInstance(ExtensionConfiguration::class)
         ->get($extKey, 'fileMetadataDefaultLanguages');
 } catch (\Exception $e) {
+    $enableFileMetadataTranslation = false;
     $defaultLanguages = '';
+}
+
+if (!$enableFileMetadataTranslation) {
+    return;
 }
 
 $tempColumns = [
