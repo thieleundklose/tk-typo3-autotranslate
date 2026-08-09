@@ -22,6 +22,7 @@ use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use ThieleUndKlose\Autotranslate\Service\FileMetadataTranslationService;
 use TYPO3\CMS\Core\SingletonInterface;
+use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
 
@@ -99,7 +100,7 @@ class DataHandler implements SingletonInterface
         }
 
         if ($table === 'sys_file_metadata') {
-            $this->queueFileMetadataTranslation((int)$recordUid, $languageUid, (string)$status, $fields, $parentObject);
+            $this->queueFileMetadataTranslation((int)$recordUid, $languageUid, (string)$status, $fields);
             return;
         }
 
@@ -246,8 +247,7 @@ class DataHandler implements SingletonInterface
         int $recordUid,
         ?int $languageUid,
         string $status,
-        array $fields,
-        \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject
+        array $fields
     ): void {
         if (!isset($GLOBALS['TCA']['sys_file_metadata']['columns']['autotranslate_languages'])) {
             return;
@@ -259,7 +259,13 @@ class DataHandler implements SingletonInterface
         }
 
         if ($languageUid !== null && $languageUid > 0) {
-            $parentObject->updateDB('sys_file_metadata', $recordUid, ['autotranslate_languages' => null]);
+            $connection = GeneralUtility::makeInstance(ConnectionPool::class)
+                ->getConnectionForTable('sys_file_metadata');
+            $connection->update(
+                'sys_file_metadata',
+                ['autotranslate_languages' => null],
+                ['uid' => $recordUid]
+            );
             return;
         }
 
