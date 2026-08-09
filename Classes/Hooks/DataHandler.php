@@ -20,6 +20,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
 use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
+use ThieleUndKlose\Autotranslate\Service\FileMetadataTranslationService;
 use TYPO3\CMS\Core\SingletonInterface;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
@@ -37,6 +38,11 @@ class DataHandler implements SingletonInterface
      * @var array<string, array<int, array{pageId: int, changedFields: string[]|null}>>
      */
     private array $translationQueue = [];
+
+    /**
+     * @var array<int, string[]|null>
+     */
+    private array $fileMetadataTranslationQueue = [];
 
     public static function runWithSuspendedHook(callable $callback): mixed
     {
@@ -90,6 +96,11 @@ class DataHandler implements SingletonInterface
             if (is_array($record) && isset($record[$languageField])) {
                 $languageUid = (int)$record[$languageField];
             }
+        }
+
+        if ($table === 'sys_file_metadata') {
+            $this->queueFileMetadataTranslation((int)$recordUid, $languageUid, (string)$status, $fields, $parentObject);
+            return;
         }
 
         if (!isset($GLOBALS['TCA'][$table]['columns']['autotranslate_languages'])) {
@@ -148,7 +159,29 @@ class DataHandler implements SingletonInterface
 
     public function processDatamap_afterAllOperations(\TYPO3\CMS\Core\DataHandling\DataHandler $parentObject): void
     {
-        if ($this->suspended || self::$suspensionLevel > 0 || $this->translationQueue === []) {
+        if ($this->suspended || self::$suspensionLevel > 0) {
+            return;
+        }
+
+        $fileMetadataTranslationQueue = $this->fileMetadataTranslationQueue;
+        $this->fileMetadataTranslationQueue = [];
+
+        if ($fileMetadataTranslationQueue !== []) {
+            $fileMetadataTranslationService = GeneralUtility::makeInstance(FileMetadataTranslationService::class);
+            foreach ($fileMetadataTranslationQueue as $metadataUid => $changedFields) {
+                try {
+                    $fileMetadataTranslationService->translate((int)$metadataUid, $changedFields);
+                } catch (\Exception $e) {
+                    FlashMessageUtility::addMessage(
+                        'Error during file metadata translation: ' . $e->getMessage(),
+                        'File Metadata Translation Error',
+                        FlashMessageUtility::MESSAGE_WARNING
+                    );
+                }
+            }
+        }
+
+        if ($this->translationQueue === []) {
             return;
         }
 
@@ -201,6 +234,36 @@ class DataHandler implements SingletonInterface
                 }
             }
         }
+    }
+
+    /**
+     * Queue global FAL metadata records for translation after all DataHandler operations.
+     *
+     * sys_file_metadata has no stable page/site context, so it is handled
+     * separately from the regular page-tree based translation queue.
+     */
+    private function queueFileMetadataTranslation(
+        int $recordUid,
+        ?int $languageUid,
+        string $status,
+        array $fields,
+        \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject
+    ): void {
+        if (!isset($GLOBALS['TCA']['sys_file_metadata']['columns']['autotranslate_languages'])) {
+            return;
+        }
+
+        if ($languageUid === null) {
+            $record = Records::getRecord('sys_file_metadata', $recordUid);
+            $languageUid = is_array($record) ? (int)($record['sys_language_uid'] ?? 0) : null;
+        }
+
+        if ($languageUid !== null && $languageUid > 0) {
+            $parentObject->updateDB('sys_file_metadata', $recordUid, ['autotranslate_languages' => null]);
+            return;
+        }
+
+        $this->fileMetadataTranslationQueue[$recordUid] = TranslationHelper::extractChangedFieldsFromDatamap($status, $fields);
     }
 
     /**
