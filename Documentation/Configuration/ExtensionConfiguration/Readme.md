@@ -69,7 +69,7 @@ This is intentionally configured in the extension settings instead of the site c
 
 ### Enable file metadata translation
 
-Enable **Enable file metadata translation** to allow automatic translation of default-language `sys_file_metadata` records.
+Enable **Enable file metadata translation** to allow automatic translation of default-language `sys_file_metadata` records. Clear the TYPO3 system cache after changing this setting so the autotranslate fields are updated in the metadata edit form.
 
 Only records with `sys_language_uid = 0` trigger automatic translation. Localized metadata records keep their own values and do not trigger another translation run.
 
