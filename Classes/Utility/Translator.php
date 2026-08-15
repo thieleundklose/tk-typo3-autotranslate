@@ -1108,7 +1108,7 @@ class Translator implements LoggerAwareInterface
         if ($details['error']) {
             LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
                 'error' => $details['error']
-            ]);
+            ], LogUtility::MESSAGE_ERROR);
             throw new \RuntimeException('DeepL API Key is not valid: ' . $details['error']);
         }
         if (!empty($details['warning'])) {
@@ -1119,13 +1119,13 @@ class Translator implements LoggerAwareInterface
         if (!$details['isValid']) {
             LogUtility::log($this->logger, 'DeepL API Key is not valid: {error}', [
                 'error' => 'No API Key given.'
-            ]);
+            ], LogUtility::MESSAGE_ERROR);
             throw new \RuntimeException('DeepL API Key is not valid: No API Key given.');
         }
         if ($details['charactersLeft'] !== null && $details['charactersLeft'] <= 0) {
             LogUtility::log($this->logger, 'DeepL API Key has no characters left: {charactersLeft}', [
                 'charactersLeft' => $details['charactersLeft']
-            ]);
+            ], LogUtility::MESSAGE_ERROR);
             throw new \RuntimeException('DeepL API Key has no characters left: ' . $details['charactersLeft']);
         }
     }

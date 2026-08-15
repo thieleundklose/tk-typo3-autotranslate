@@ -38,7 +38,9 @@ class LogUtility
     public static function log(LoggerInterface $logger, string $message, array $data = [], int $type = self::MESSAGE_INFO): void
     {
         $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('autotranslate');
-        if (!($extensionConfiguration['debug'] ?? null)) {
+        // Keep regular translation details behind the debug switch, but never
+        // suppress warnings and errors required to diagnose failed runs.
+        if ($type === self::MESSAGE_INFO && !($extensionConfiguration['debug'] ?? null)) {
             return;
         }
 

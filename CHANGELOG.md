@@ -2,6 +2,11 @@
 
 ## [3.3.0] - 2026-08-09
 
+### Fixes
+- Fixed warning and error log messages being suppressed when debug mode is disabled. DeepL API key and quota failures are now logged with the correct error level ([Issue #157](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/157)).
+
+## [2.9.0] - 2026-08-09
+
 ### Feature
 - Added a PSR-14 `AfterTranslateEvent` that allows projects to post-process translated record columns before AutoTranslate persists them, enabling custom cleanup such as normalizing translated table separator characters, thanks to saneinsane ([Issue #95](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/95)).
 - Added optional global `sys_file_metadata` translation for configured FAL metadata fields such as `alternative`, `title` and `description`, using an explicit TYPO3 language UID to DeepL language code mapping because file metadata is not bound to a single site ([Issue #73](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/73)).
