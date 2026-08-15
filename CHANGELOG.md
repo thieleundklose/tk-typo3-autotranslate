@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixes
+- Fixed warning and error log messages being suppressed when debug mode is disabled. DeepL API key and quota failures are now logged with the correct error level ([Issue #157](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/157)).
+
 ## [2.9.0] - 2026-08-09
 
 ### Feature
