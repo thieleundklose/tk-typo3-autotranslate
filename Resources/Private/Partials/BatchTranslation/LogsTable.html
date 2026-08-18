@@ -183,10 +183,23 @@
 
                                     <f:for each="{group}" as="record">
                                         <tr
-                                            class="{f:if(condition:record.error, then:'danger')}"
+                                            class="{record.levelRowClass}"
                                         >
                                             <td colspan="{f:if(condition:'{tk:typo3Version() > 11}', then:3, else:2)}">
-                                                <f:if condition="{record.dataDecoded->f:count()}"><f:then><f:debug inline="1" title="{record.time_seconds -> f:format.date(format: 'Y-m-d H:i:s')}: {record.parsed_message}">{record.dataDecoded}</f:debug></f:then><f:else>&mdash;</f:else></f:if>
+                                                <div class="autotranslate-log-header">
+                                                    <span class="badge {record.levelBadgeClass}">{record.levelLabel}</span>
+                                                    <span>{record.formattedDate}</span>
+                                                    <f:if condition="{record.component}">
+                                                        <code>{record.component}</code>
+                                                    </f:if>
+                                                </div>
+                                                <div class="autotranslate-log-message">{record.parsed_message}</div>
+                                                <f:if condition="{record.dataDecoded->f:count()}">
+                                                    <details class="autotranslate-log-context">
+                                                        <summary>Context / debug data</summary>
+                                                        <f:debug inline="1" title="{record.levelLabel} context">{record.dataDecoded}</f:debug>
+                                                    </details>
+                                                </f:if>
                                             </td>
 
                                         </tr>

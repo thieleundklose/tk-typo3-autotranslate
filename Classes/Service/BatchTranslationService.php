@@ -8,6 +8,7 @@ use ThieleUndKlose\Autotranslate\Utility\LogUtility;
 use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
+use ThieleUndKlose\Autotranslate\ValueObject\TranslationResult;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -24,16 +25,14 @@ class BatchTranslationService implements LoggerAwareInterface
      */
     public function translate(BatchItem $item): bool
     {
+        $item->setError('');
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
         try {
             $siteConfiguration = $siteFinder->getSiteByPageId($item->getPid());
         } catch (\Exception $e) {
             $message = sprintf('No site configuration found for pid %s.', $item->getPid());
 
-            LogUtility::log($this->logger, $message, [], LogUtility::MESSAGE_ERROR);
-            $item->setError(LogUtility::interpolate($message, []));
-
-            return false;
+            return $this->fail($item, $message);
         }
 
         $defaultLanguage = TranslationHelper::defaultLanguageFromSiteConfiguration($siteConfiguration);
@@ -47,50 +46,83 @@ class BatchTranslationService implements LoggerAwareInterface
                 'siteLanguages' => implode(',', array_keys($languages)),
             ];
 
-            LogUtility::log($this->logger, $message, $messageData, LogUtility::MESSAGE_ERROR);
-            $item->setError(LogUtility::interpolate($message, $messageData));
+            return $this->fail($item, $message, $messageData);
+        }
 
-            return false;
+        $targetLanguageConfiguration = $this->findTargetLanguageConfiguration(
+            $siteConfiguration->getConfiguration()['languages'] ?? [],
+            $item->getSysLanguageUid()
+        );
+        if (trim((string)($targetLanguageConfiguration['deeplTargetLang'] ?? '')) === '') {
+            return $this->fail(
+                $item,
+                'No DeepL target language is configured for site language {targetLanguage}.',
+                ['targetLanguage' => $item->getSysLanguageUid()]
+            );
         }
 
         // check if page exists
         $pageRecord = Records::getRecord('pages', $item->getPid());
         if ($pageRecord === null) {
-            LogUtility::log($this->logger, 'No page found ({pid}).', ['pid' => $item->getPid()], LogUtility::MESSAGE_WARNING);
-            return false;
+            return $this->fail($item, 'No page found for pid {pid}.', ['pid' => $item->getPid()]);
         }
 
         // init translation service
         $translator = GeneralUtility::makeInstance(Translator::class, $item->getPid());
         $changedFields = null; // Batch jobs are explicit full translations, independent of DataHandler changes.
         $tablesToTranslate = TranslationHelper::tablesToTranslate();
-        foreach ($tablesToTranslate as $table) {
-
-            if ($table === 'pages') {
-                // translate page
-                $translator->translate($table, $item->getPid(), null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields);
-            } else {
-                $constraints = [
-                    "pid = " . $item->getPid(),
-                    "sys_language_uid = " . $defaultLanguage->getLanguageId(),
-                ];
-
-                // if record has column for exclude deleted
-                if (isset($GLOBALS['TCA'][$table]['ctrl']['delete'])) {
-                    $constraints[] = $GLOBALS['TCA'][$table]['ctrl']['delete'] . ' = 0';
-                }
-
-                if ($table === 'tt_content') {
-                    $this->translateGridElements($translator, $constraints, $item, $changedFields);
-                    $this->translateRegularContent($translator, $constraints, $item, $changedFields);
+        $translationResult = new TranslationResult();
+        try {
+            foreach ($tablesToTranslate as $table) {
+                if ($table === 'pages') {
+                    // translate page
+                    $translationResult->merge(
+                        $translator->translate($table, $item->getPid(), null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields)
+                    );
                 } else {
-                    $records = Records::getRecords($table, 'uid', $constraints);
-                    foreach ($records as $uid) {
-                        $translator->translate($table, $uid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields);
+                    $constraints = [
+                        "pid = " . $item->getPid(),
+                        "sys_language_uid = " . $defaultLanguage->getLanguageId(),
+                    ];
+
+                    // if record has column for exclude deleted
+                    if (isset($GLOBALS['TCA'][$table]['ctrl']['delete'])) {
+                        $constraints[] = $GLOBALS['TCA'][$table]['ctrl']['delete'] . ' = 0';
+                    }
+
+                    if ($table === 'tt_content') {
+                        $translationResult->merge($this->translateGridElements($translator, $constraints, $item, $changedFields));
+                        $translationResult->merge($this->translateRegularContent($translator, $constraints, $item, $changedFields));
+                    } else {
+                        $records = Records::getRecords($table, 'uid', $constraints);
+                        foreach ($records as $uid) {
+                            $translationResult->merge(
+                                $translator->translate($table, $uid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields)
+                            );
+                        }
                     }
                 }
             }
+        } catch (\Throwable $e) {
+            return $this->fail(
+                $item,
+                'Translation failed: {error}',
+                ['error' => $e->getMessage()]
+            );
         }
+
+        if (!$translationResult->hasTranslations()) {
+            $message = 'No fields were translated for target language {targetLanguage}.';
+            $messageData = ['targetLanguage' => $item->getSysLanguageUid()];
+            if ($translationResult->getSkippedReasonSummary() !== '') {
+                $message .= ' {reasons}';
+                $messageData['reasons'] = $translationResult->getSkippedReasonSummary();
+            }
+
+            return $this->fail($item, $message, $messageData);
+        }
+
+        $item->setError('');
         return true;
     }
 
@@ -100,12 +132,13 @@ class BatchTranslationService implements LoggerAwareInterface
      * @param Translator $translator
      * @param array $constraints
      * @param BatchItem $item
-     * @return void
+     * @return TranslationResult
      */
-    private function translateGridElements(Translator $translator, array $constraints, BatchItem $item, ?array $changedFields = null): void
+    private function translateGridElements(Translator $translator, array $constraints, BatchItem $item, ?array $changedFields = null): TranslationResult
     {
+        $translationResult = new TranslationResult();
         if (!ExtensionManagementUtility::isLoaded('gridelements')) {
-            return;
+            return $translationResult;
         }
 
         // Find only top-level containers first
@@ -117,8 +150,12 @@ class BatchTranslationService implements LoggerAwareInterface
 
         foreach ($topLevelContainers as $containerUid) {
             // Translate container and its children recursively
-            $this->translateContainerAndChildren($translator, $constraints, $containerUid, $item, $changedFields);
+            $translationResult->merge(
+                $this->translateContainerAndChildren($translator, $constraints, $containerUid, $item, $changedFields)
+            );
         }
+
+        return $translationResult;
     }
 
     /**
@@ -128,12 +165,15 @@ class BatchTranslationService implements LoggerAwareInterface
      * @param array $constraints
      * @param int $containerUid
      * @param BatchItem $item
-     * @return void
+     * @return TranslationResult
      */
-    private function translateContainerAndChildren(Translator $translator, array $constraints, int $containerUid, BatchItem $item, ?array $changedFields = null): void
+    private function translateContainerAndChildren(Translator $translator, array $constraints, int $containerUid, BatchItem $item, ?array $changedFields = null): TranslationResult
     {
+        $translationResult = new TranslationResult();
         // First translate the container itself
-        $translator->translate('tt_content', $containerUid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields);
+        $translationResult->merge(
+            $translator->translate('tt_content', $containerUid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields)
+        );
 
         // Get all direct children
         $childConstraints = array_merge($constraints, [
@@ -150,12 +190,18 @@ class BatchTranslationService implements LoggerAwareInterface
 
             if ($record['CType'] === 'gridelements_pi1') {
                 // If it's a container, translate it and its children recursively
-                $this->translateContainerAndChildren($translator, $constraints, $childUid, $item, $changedFields);
+                $translationResult->merge(
+                    $this->translateContainerAndChildren($translator, $constraints, $childUid, $item, $changedFields)
+                );
             } else {
                 // If it's a regular content element, translate it
-                $translator->translate('tt_content', $childUid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields);
+                $translationResult->merge(
+                    $translator->translate('tt_content', $childUid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields)
+                );
             }
         }
+
+        return $translationResult;
     }
 
     /**
@@ -164,10 +210,11 @@ class BatchTranslationService implements LoggerAwareInterface
      * @param Translator $translator
      * @param array $constraints
      * @param BatchItem $item
-     * @return void
+     * @return TranslationResult
      */
-    private function translateRegularContent(Translator $translator, array $constraints, BatchItem $item, ?array $changedFields = null): void
+    private function translateRegularContent(Translator $translator, array $constraints, BatchItem $item, ?array $changedFields = null): TranslationResult
     {
+        $translationResult = new TranslationResult();
         $records = Records::getRecords('tt_content', 'uid', $constraints);
 
         foreach ($records as $uid) {
@@ -182,8 +229,32 @@ class BatchTranslationService implements LoggerAwareInterface
                 continue;
             }
 
-            $translator->translate('tt_content', $uid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields);
+            $translationResult->merge(
+                $translator->translate('tt_content', $uid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields)
+            );
         }
+
+        return $translationResult;
+    }
+
+    private function fail(BatchItem $item, string $message, array $messageData = []): bool
+    {
+        $interpolatedMessage = LogUtility::interpolate($message, $messageData);
+        LogUtility::log($this->logger, $message, $messageData, LogUtility::MESSAGE_ERROR);
+        $item->setError($interpolatedMessage);
+
+        return false;
+    }
+
+    private function findTargetLanguageConfiguration(array $languages, int $targetLanguageUid): ?array
+    {
+        foreach ($languages as $language) {
+            if ((int)($language['languageId'] ?? -1) === $targetLanguageUid) {
+                return $language;
+            }
+        }
+
+        return null;
     }
 
     /**

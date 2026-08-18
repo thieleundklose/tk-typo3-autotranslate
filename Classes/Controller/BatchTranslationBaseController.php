@@ -20,6 +20,7 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Localization\LanguageService;
+use TYPO3\CMS\Core\Log\LogLevel;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Site\SiteFinder;
@@ -241,6 +242,7 @@ class BatchTranslationBaseController extends ActionController
 
             // Interpolate message placeholders
             $log['parsed_message'] = LogUtility::interpolate($log['message'], $log['dataDecoded']);
+            $this->addLogLevelPresentation($log);
 
             if (isset($log['time_micro'])) {
                 $dt = \DateTime::createFromFormat('U.u', sprintf('%.6f', $log['time_micro']));
@@ -258,6 +260,24 @@ class BatchTranslationBaseController extends ActionController
         $data['logsGroupedByRequestId'] = $logsGroupedByRequestId;
 
         return $data;
+    }
+
+    private function addLogLevelPresentation(array &$log): void
+    {
+        $level = (int)($log['level'] ?? LogLevel::normalizeLevel(LogLevel::INFO));
+        $log['levelLabel'] = LogLevel::isValidLevel($level) ? LogLevel::getName($level) : 'UNKNOWN';
+        $log['levelBadgeClass'] = 'badge-info';
+        $log['levelRowClass'] = '';
+
+        if ($level <= LogLevel::normalizeLevel(LogLevel::ERROR)) {
+            $log['levelBadgeClass'] = 'badge-danger';
+            $log['levelRowClass'] = 'danger';
+        } elseif ($level === LogLevel::normalizeLevel(LogLevel::WARNING)) {
+            $log['levelBadgeClass'] = 'badge-warning';
+            $log['levelRowClass'] = 'warning';
+        } elseif ($level === LogLevel::normalizeLevel(LogLevel::DEBUG)) {
+            $log['levelBadgeClass'] = 'badge-secondary';
+        }
     }
 
     /**
@@ -640,7 +660,11 @@ class BatchTranslationBaseController extends ActionController
                     } else {
                         $this->addFlashMessage(
                             'Error while translating',
-                            sprintf('Item with uid %s could not be translated.', $item->getUid()),
+                            sprintf(
+                                'Item with uid %s could not be translated: %s',
+                                $item->getUid(),
+                                $item->getError()
+                            ),
                             FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_ERROR)
                         );
                     }

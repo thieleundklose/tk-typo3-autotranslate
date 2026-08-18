@@ -129,15 +129,43 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
 
         try {
             foreach ($batchItemsToRun as $item) {
+                $logContext = [
+                    'itemUid' => $item->getUid(),
+                    'pid' => $item->getPid(),
+                    'targetLanguage' => $item->getSysLanguageUid(),
+                    'mode' => $item->getMode(),
+                ];
+                $this->logger->info(
+                    'Processing batch translation item {itemUid} for page {pid}, target language {targetLanguage}, mode {mode}.',
+                    $logContext
+                );
+
                 $res = $this->batchTranslationService->translate($item);
                 if ($res === true) {
                     $successfulTranslations++;
                     $item->markAsTranslated();
-                    $this->updateBatchItem($item);
+                    $this->logger->info(
+                        'Batch translation item {itemUid} for page {pid} and target language {targetLanguage} completed successfully.',
+                        $logContext
+                    );
+                } else {
+                    $logContext['error'] = $item->getError();
+                    LogUtility::log(
+                        $this->logger,
+                        'Batch translation item {itemUid} for page {pid}, target language {targetLanguage}, mode {mode} failed: {error}',
+                        $logContext,
+                        LogUtility::MESSAGE_ERROR
+                    );
+                    $output->writeln(sprintf(
+                        'Translation item %d failed: %s',
+                        $item->getUid(),
+                        $item->getError()
+                    ));
                 }
+                $this->updateBatchItem($item);
             }
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             LogUtility::log($this->logger, 'Error during batch translation: {error}', ['error' => $e->getMessage()], LogUtility::MESSAGE_ERROR);
             $output->writeln('Error initializing translation service: ' . $e->getMessage());
             return Command::FAILURE;
