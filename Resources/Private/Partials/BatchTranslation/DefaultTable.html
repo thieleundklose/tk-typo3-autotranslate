@@ -286,7 +286,7 @@
                                     </tr>
                                     <f:if condition="{record.error}">
                                         <tr class="danger autotranslate-batch-error-row">
-                                            <td colspan="{f:if(condition:'{tk:typo3Version() > 11}', then:11, else:10)}">
+                                            <td colspan="11">
                                                 <div class="autotranslate-batch-error-message">
                                                     <strong><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.error"/>:</strong>
                                                     <span>{record.error}</span>
