@@ -24,6 +24,40 @@
     cursor: pointer;
 }
 
+.autotranslate-batch-state {
+    vertical-align: middle;
+}
+
+.badge.autotranslate-badge-recurring {
+    --bs-badge-color: #fff;
+    --bs-badge-bg: #455a64;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    background-color: #455a64 !important;
+    color: #fff !important;
+}
+
+.autotranslate-batch-error-row > td {
+    padding-top: 0.5rem;
+    padding-bottom: 0.75rem;
+}
+
+.autotranslate-batch-error-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    max-width: 100%;
+    white-space: normal;
+}
+
+.autotranslate-batch-error-message strong {
+    flex: 0 0 auto;
+}
+
+.autotranslate-batch-error-message span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
 .autotranslate-toolbar {
     display: flex;
     justify-content: flex-end;

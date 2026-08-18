@@ -3,7 +3,7 @@
 ## [3.3.0] - 2026-08-09
 
 ### Fixes
-- Fixed batch translations being marked as done when DeepL translated no fields. Batch runs now preserve actionable error details, log the context and result of every item processed by the CLI command, validate the configured DeepL target language before creating localized records, and only set `autotranslate_last` after a successful field translation ([Issue #156](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/156)).
+- Fixed batch translations being marked as done when DeepL translated no fields. Batch runs now preserve actionable error details, display the complete error below the affected backend table entry, keep successfully processed recurring entries highlighted until their next execution is due, render recurring status badges consistently across table backgrounds and TYPO3 versions, log the context and result of every item processed by the CLI command, validate the configured DeepL target language before creating localized records, and only set `autotranslate_last` after a successful field translation ([Issue #156](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/156)).
 - Fixed warning and error log messages being suppressed when debug mode is disabled. DeepL API key and quota failures are now logged with the correct error level, while detailed translation traces use the debug level and the backend log view visually distinguishes debug, info, warning, and error entries ([Issue #157](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/157)).
 
 ## [2.9.0] - 2026-08-09
