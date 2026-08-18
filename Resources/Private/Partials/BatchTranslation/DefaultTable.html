@@ -224,7 +224,7 @@
                                         </f:else>
                                     </f:if>
                                     <tr
-                                        class="{record.class} {f:if(condition:record.hidden, then:'t3-form-field-container-inline-hidden')} {f:if(condition:record.waitingForRun, then:'warning')} {f:if(condition:record.finishedRun, then:'success')} {f:if(condition:record.error, then:'danger')}"
+                                        class="{record.class} {f:if(condition:record.hidden, then:'t3-form-field-container-inline-hidden')} {f:if(condition:record.waitingForRun, then:'warning')} {f:if(condition:record.finishedRun, then:'success')} {f:if(condition:record.successfulRecurringRun, then:'success')} {f:if(condition:record.error, then:'danger')}"
                                         title="id={record.uid}"
                                         data-multi-record-selection-element="true"
                                         data-uid="{record.uid}"
@@ -250,11 +250,10 @@
                                         </td>
                                         <td class="col-state" title="{rcord.frequencyDateInterval}"><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.frequency.{record.frequency}"/></td>
                                         <td class="col-state"><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.mode.{record.mode}"/></td>
-                                        <td class="col-min">
+                                        <td class="col-min autotranslate-batch-state">
                                             <f:if condition="{record.error}">
                                                 <f:then>
-                                                    <p><span class="badge badge-danger" title=""><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.status.error"/></span></p>
-                                                    <p>{record.error -> f:format.crop(maxCharacters: 10)}</p>
+                                                    <span class="badge badge-danger" title="{record.error}"><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.status.error"/></span>
                                                 </f:then>
                                                 <f:else>
                                                     <f:if condition="{record.finishedRun}">
@@ -264,7 +263,7 @@
                                                         <span class="badge badge-warning" title=""><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.status.pending"/></span>
                                                     </f:if>
                                                     <f:if condition="{record.recurring}">
-                                                        <span class="badge badge-secondary" title=""><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.status.recurring"/></span>
+                                                        <span class="badge autotranslate-badge-recurring" title=""><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.status.recurring"/></span>
                                                     </f:if>
                                                 </f:else>
                                             </f:if>
@@ -324,6 +323,16 @@
                                             </div>
                                         </td>
                                     </tr>
+                                    <f:if condition="{record.error}">
+                                        <tr class="danger autotranslate-batch-error-row">
+                                            <td colspan="{f:if(condition:'{tk:typo3Version() > 11}', then:11, else:10)}">
+                                                <div class="autotranslate-batch-error-message">
+                                                    <strong><f:translate key="LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.error"/>:</strong>
+                                                    <span>{record.error}</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </f:if>
                                 </f:for>
                             </tbody>
                             <tfoot>
