@@ -46,7 +46,10 @@ class LogUtility
 
         switch ($type) {
             case self::MESSAGE_INFO:
-                    $logger->log(LogLevel::INFO, $message, $data);
+                    // Detailed translation traces are debug information. The
+                    // extension configuration gate above controls whether they
+                    // are emitted at all.
+                    $logger->debug($message, $data);
                 break;
             case self::MESSAGE_WARNING:
                     $logger->log(LogLevel::WARNING, $message, $data);

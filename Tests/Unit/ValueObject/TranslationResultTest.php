@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+namespace ThieleUndKlose\Autotranslate\Tests\Unit\ValueObject;
+
+use PHPUnit\Framework\TestCase;
+use ThieleUndKlose\Autotranslate\ValueObject\TranslationResult;
+
+final class TranslationResultTest extends TestCase
+{
+    public function testMergeAggregatesTranslatedFieldsAndUniqueSkippedReasons(): void
+    {
+        $result = TranslationResult::skipped('No translatable fields found.');
+        $translatedResult = new TranslationResult();
+        $translatedResult->addTranslatedFields(2);
+        $translatedResult->addSkippedReason('No translatable fields found.');
+        $translatedResult->addSkippedReason('Record is excluded from automatic translation.');
+
+        $result->merge($translatedResult);
+
+        self::assertTrue($result->hasTranslations());
+        self::assertSame(2, $result->getTranslatedFieldCount());
+        self::assertSame(
+            ['No translatable fields found.', 'Record is excluded from automatic translation.'],
+            $result->getSkippedReasons()
+        );
+    }
+
+    public function testSkippedResultHasNoTranslationsAndProvidesSummary(): void
+    {
+        $result = TranslationResult::skipped('No translatable fields found.');
+
+        self::assertFalse($result->hasTranslations());
+        self::assertSame(0, $result->getTranslatedFieldCount());
+        self::assertSame('No translatable fields found.', $result->getSkippedReasonSummary());
+    }
+}
