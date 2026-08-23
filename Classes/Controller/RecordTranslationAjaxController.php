@@ -130,13 +130,21 @@ class RecordTranslationAjaxController
                 $configuration['pageId']
             );
             $changedFields = null; // Manual record translations are explicit full translations.
-            AutotranslateDataHandlerHook::runWithSuspendedHook(static function () use ($translator, $table, $uid, $languageIds, $changedFields): void {
-                $translator->translate($table, $uid, null, implode(',', $languageIds), Translator::TRANSLATE_MODE_BOTH, $changedFields);
+            $translationResult = AutotranslateDataHandlerHook::runWithSuspendedHook(static function () use ($translator, $table, $uid, $languageIds, $changedFields) {
+                return $translator->translateWithResult($table, $uid, null, implode(',', $languageIds), Translator::TRANSLATE_MODE_BOTH, $changedFields);
             });
         } catch (\Throwable $exception) {
             return new JsonResponse([
                 'success' => false,
                 'message' => $exception->getMessage(),
+            ]);
+        }
+
+        if ($translationResult->hasErrors()) {
+            return new JsonResponse([
+                'success' => $translationResult->hasTranslations(),
+                'warning' => $translationResult->hasTranslations(),
+                'message' => 'Translation completed with errors: ' . $translationResult->getErrorSummary(),
             ]);
         }
 

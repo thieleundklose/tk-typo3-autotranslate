@@ -77,7 +77,7 @@ class BatchTranslationService implements LoggerAwareInterface
                 if ($table === 'pages') {
                     // translate page
                     $translationResult->merge(
-                        $translator->translate($table, $item->getPid(), null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields)
+                        $translator->translateWithResult($table, $item->getPid(), null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields)
                     );
                 } else {
                     $constraints = [
@@ -97,7 +97,7 @@ class BatchTranslationService implements LoggerAwareInterface
                         $records = Records::getRecords($table, 'uid', $constraints);
                         foreach ($records as $uid) {
                             $translationResult->merge(
-                                $translator->translate($table, $uid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields)
+                                $translator->translateWithResult($table, $uid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields)
                             );
                         }
                     }
@@ -108,6 +108,14 @@ class BatchTranslationService implements LoggerAwareInterface
                 $item,
                 'Translation failed: {error}',
                 ['error' => $e->getMessage()]
+            );
+        }
+
+        if ($translationResult->hasErrors()) {
+            return $this->fail(
+                $item,
+                'Translation completed with errors: {errors}',
+                ['errors' => $translationResult->getErrorSummary()]
             );
         }
 
@@ -172,7 +180,7 @@ class BatchTranslationService implements LoggerAwareInterface
         $translationResult = new TranslationResult();
         // First translate the container itself
         $translationResult->merge(
-            $translator->translate('tt_content', $containerUid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields)
+            $translator->translateWithResult('tt_content', $containerUid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields)
         );
 
         // Get all direct children
@@ -196,7 +204,7 @@ class BatchTranslationService implements LoggerAwareInterface
             } else {
                 // If it's a regular content element, translate it
                 $translationResult->merge(
-                    $translator->translate('tt_content', $childUid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields)
+                    $translator->translateWithResult('tt_content', $childUid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields)
                 );
             }
         }
@@ -230,7 +238,7 @@ class BatchTranslationService implements LoggerAwareInterface
             }
 
             $translationResult->merge(
-                $translator->translate('tt_content', $uid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields)
+                $translator->translateWithResult('tt_content', $uid, null, (string)$item->getSysLanguageUid(), $item->getMode(), $changedFields)
             );
         }
 

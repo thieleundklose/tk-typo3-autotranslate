@@ -192,8 +192,8 @@ class DataHandler implements SingletonInterface
                 $translator = GeneralUtility::makeInstance(Translator::class, (int)$pageId);
 
                 try {
-                    self::runWithSuspendedHook(static function () use ($translator, $table, $recordUid, $parentObject, $targetLanguages, $changedFields): void {
-                        $translator->translate(
+                    $translationResult = self::runWithSuspendedHook(static function () use ($translator, $table, $recordUid, $parentObject, $targetLanguages, $changedFields) {
+                        return $translator->translateWithResult(
                             $table,
                             (int)$recordUid,
                             $parentObject,
@@ -202,6 +202,13 @@ class DataHandler implements SingletonInterface
                             $changedFields
                         );
                     });
+                    if ($translationResult->hasErrors()) {
+                        FlashMessageUtility::addMessage(
+                            'Translation completed with errors: ' . $translationResult->getErrorSummary(),
+                            'Translation incomplete',
+                            FlashMessageUtility::MESSAGE_WARNING
+                        );
+                    }
                 } catch (\Exception $e) {
                     FlashMessageUtility::addMessage(
                         'Error during translation: ' . $e->getMessage(),

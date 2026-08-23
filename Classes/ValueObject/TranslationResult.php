@@ -19,6 +19,9 @@ final class TranslationResult
     /** @var string[] */
     private array $skippedReasons = [];
 
+    /** @var string[] */
+    private array $errors = [];
+
     public static function skipped(string $reason): self
     {
         $result = new self();
@@ -40,11 +43,23 @@ final class TranslationResult
         }
     }
 
+    public function addError(string $error): void
+    {
+        $error = trim($error);
+        if ($error !== '' && !in_array($error, $this->errors, true)) {
+            $this->errors[] = $error;
+        }
+        $this->addSkippedReason($error);
+    }
+
     public function merge(self $result): void
     {
         $this->addTranslatedFields($result->getTranslatedFieldCount());
         foreach ($result->getSkippedReasons() as $reason) {
             $this->addSkippedReason($reason);
+        }
+        foreach ($result->getErrors() as $error) {
+            $this->addError($error);
         }
     }
 
@@ -67,5 +82,21 @@ final class TranslationResult
     public function getSkippedReasonSummary(): string
     {
         return implode('; ', $this->skippedReasons);
+    }
+
+    public function hasErrors(): bool
+    {
+        return $this->errors !== [];
+    }
+
+    /** @return string[] */
+    public function getErrors(): array
+    {
+        return $this->errors;
+    }
+
+    public function getErrorSummary(): string
+    {
+        return implode('; ', $this->errors);
     }
 }

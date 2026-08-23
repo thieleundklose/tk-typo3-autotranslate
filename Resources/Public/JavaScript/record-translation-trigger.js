@@ -108,7 +108,11 @@ class RecordTranslationTrigger {
                         return;
                     }
 
-                    Notification.success(translatePayload.message || 'Translation started.');
+                    if (translatePayload.warning) {
+                        Notification.warning(translatePayload.message || 'Translation completed with warnings.');
+                    } else {
+                        Notification.success(translatePayload.message || 'Translation started.');
+                    }
                     this.setButtonLoading(button, false);
                     modal.hideModal();
                     window.location.reload();
