@@ -22,6 +22,8 @@ final class TranslationResult
     /** @var string[] */
     private array $errors = [];
 
+    private bool $assumedSuccessful = false;
+
     public static function skipped(string $reason): self
     {
         $result = new self();
@@ -33,6 +35,11 @@ final class TranslationResult
     public function addTranslatedFields(int $count): void
     {
         $this->translatedFieldCount += max(0, $count);
+    }
+
+    public function markAsAssumedSuccessful(): void
+    {
+        $this->assumedSuccessful = true;
     }
 
     public function addSkippedReason(string $reason): void
@@ -61,6 +68,9 @@ final class TranslationResult
         foreach ($result->getErrors() as $error) {
             $this->addError($error);
         }
+        if ($result->isAssumedSuccessful()) {
+            $this->markAsAssumedSuccessful();
+        }
     }
 
     public function getTranslatedFieldCount(): int
@@ -70,7 +80,12 @@ final class TranslationResult
 
     public function hasTranslations(): bool
     {
-        return $this->translatedFieldCount > 0;
+        return $this->translatedFieldCount > 0 || $this->assumedSuccessful;
+    }
+
+    public function isAssumedSuccessful(): bool
+    {
+        return $this->assumedSuccessful;
     }
 
     /** @return string[] */

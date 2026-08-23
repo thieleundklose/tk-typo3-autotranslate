@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ThieleUndKlose\Autotranslate\Hooks\DataHandler as AutotranslateDataHandlerHook;
 use ThieleUndKlose\Autotranslate\Service\RecordTranslationConfigurationService;
+use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
 use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
 use TYPO3\CMS\Backend\Attribute\AsController;
@@ -141,16 +142,49 @@ class RecordTranslationAjaxController
         }
 
         if ($translationResult->hasErrors()) {
-            return new JsonResponse([
-                'success' => $translationResult->hasTranslations(),
-                'warning' => $translationResult->hasTranslations(),
-                'message' => 'Translation completed with errors: ' . $translationResult->getErrorSummary(),
-            ]);
+            $hasTranslations = $translationResult->hasTranslations();
+            return $this->createTranslationFeedbackResponse(
+                'Translation completed with errors: ' . $translationResult->getErrorSummary(),
+                $hasTranslations ? 'Translation incomplete' : 'Translation failed',
+                $hasTranslations ? FlashMessageUtility::MESSAGE_WARNING : FlashMessageUtility::MESSAGE_ERROR,
+                $hasTranslations,
+                $hasTranslations
+            );
+        }
+
+        if (!$translationResult->hasTranslations()) {
+            $reason = $translationResult->getSkippedReasonSummary();
+            return $this->createTranslationFeedbackResponse(
+                $reason !== ''
+                    ? 'No fields were translated: ' . $reason
+                    : 'No fields were translated.',
+                'Translation skipped',
+                FlashMessageUtility::MESSAGE_WARNING,
+                false,
+                true
+            );
         }
 
         return new JsonResponse([
             'success' => true,
             'message' => $this->translateLabel('record_translation.success'),
+        ]);
+    }
+
+    private function createTranslationFeedbackResponse(
+        string $message,
+        string $title,
+        int $severity,
+        bool $success,
+        bool $warning
+    ): JsonResponse {
+        FlashMessageUtility::addMessage($message, $title, $severity);
+
+        return new JsonResponse([
+            'success' => $success,
+            'warning' => $warning,
+            'flashMessage' => true,
+            'message' => $message,
         ]);
     }
 

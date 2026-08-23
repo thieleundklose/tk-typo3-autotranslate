@@ -60,6 +60,8 @@ class Translator implements LoggerAwareInterface
 
     private int $translatedFieldCount = 0;
 
+    private ?TranslationResult $lastTranslationResult = null;
+
     /**
      * object constructor
      *
@@ -84,6 +86,7 @@ class Translator implements LoggerAwareInterface
      * @param string $translateMode
      * @param string[]|null $changedFields Datamap fields for the current save; null keeps full translation.
      * @return void
+     * @throws \Throwable If translation cannot be processed outside an individual target-language operation.
      */
     public function translate(
         string $table,
@@ -93,25 +96,14 @@ class Translator implements LoggerAwareInterface
         string $translateMode = self::TRANSLATE_MODE_BOTH,
         ?array $changedFields = null
     ): void {
-        try {
-            $this->translateWithResult(
-                $table,
-                $recordUid,
-                $parentObject,
-                $languagesToTranslate,
-                $translateMode,
-                $changedFields
-            );
-        } catch (\Exception $e) {
-            // Preserve the established non-batch behaviour: translation errors
-            // are logged but do not interrupt DataHandler or AJAX processing.
-            LogUtility::log(
-                $this->logger,
-                'Translation Error: {error}.',
-                ['error' => $e->getMessage()],
-                LogUtility::MESSAGE_ERROR
-            );
-        }
+        $this->lastTranslationResult = $this->performTranslation(
+            $table,
+            $recordUid,
+            $parentObject,
+            $languagesToTranslate,
+            $translateMode,
+            $changedFields
+        );
     }
 
     /**
@@ -126,6 +118,39 @@ class Translator implements LoggerAwareInterface
      * @throws \Throwable If target configuration, localization or DeepL translation fails.
      */
     public function translateWithResult(
+        string $table,
+        int $recordUid,
+        ?DataHandler $parentObject = null,
+        ?string $languagesToTranslate = null,
+        string $translateMode = self::TRANSLATE_MODE_BOTH,
+        ?array $changedFields = null
+    ): TranslationResult {
+        $this->lastTranslationResult = null;
+        $this->translate(
+            $table,
+            $recordUid,
+            $parentObject,
+            $languagesToTranslate,
+            $translateMode,
+            $changedFields
+        );
+
+        if ($this->lastTranslationResult === null) {
+            // A legacy XCLASS may override translate() without knowing about
+            // structured results. It was invoked, so retain its former success
+            // semantics instead of silently bypassing the override.
+            $result = new TranslationResult();
+            $result->markAsAssumedSuccessful();
+            return $result;
+        }
+
+        return $this->lastTranslationResult;
+    }
+
+    /**
+     * Standard result-aware translation implementation.
+     */
+    protected function performTranslation(
         string $table,
         int $recordUid,
         ?DataHandler $parentObject = null,
