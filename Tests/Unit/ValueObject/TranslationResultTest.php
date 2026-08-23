@@ -35,4 +35,20 @@ final class TranslationResultTest extends TestCase
         self::assertSame(0, $result->getTranslatedFieldCount());
         self::assertSame('No translatable fields found.', $result->getSkippedReasonSummary());
     }
+
+    public function testErrorIsAvailableAsErrorAndSkippedReason(): void
+    {
+        $result = new TranslationResult();
+        $result->addError('Site language 2 failed: Missing target language.');
+
+        self::assertTrue($result->hasErrors());
+        self::assertSame(
+            'Site language 2 failed: Missing target language.',
+            $result->getErrorSummary()
+        );
+        self::assertSame(
+            'Site language 2 failed: Missing target language.',
+            $result->getSkippedReasonSummary()
+        );
+    }
 }
