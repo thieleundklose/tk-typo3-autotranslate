@@ -20,9 +20,16 @@ class BatchTranslationService implements LoggerAwareInterface
 
     private ?string $lastWarning = null;
 
+    private ?string $lastNotice = null;
+
     public function getLastWarning(): ?string
     {
         return $this->lastWarning;
+    }
+
+    public function getLastNotice(): ?string
+    {
+        return $this->lastNotice;
     }
 
     /**
@@ -33,6 +40,7 @@ class BatchTranslationService implements LoggerAwareInterface
     public function translate(BatchItem $item): bool
     {
         $this->lastWarning = null;
+        $this->lastNotice = null;
         $item->setError('');
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
         try {
@@ -54,7 +62,7 @@ class BatchTranslationService implements LoggerAwareInterface
                 'siteLanguages' => implode(',', array_keys($languages)),
             ];
 
-            return $this->completeWithWarning($item, $message, $messageData);
+            return $this->fail($item, $message, $messageData);
         }
 
         $targetLanguageConfiguration = $this->findTargetLanguageConfiguration(
@@ -135,7 +143,11 @@ class BatchTranslationService implements LoggerAwareInterface
                 $messageData['reasons'] = $translationResult->getSkippedReasonSummary();
             }
 
-            return $this->fail($item, $message, $messageData);
+            if ($translationResult->hasWarnings()) {
+                return $this->completeWithWarning($item, $message, $messageData);
+            }
+
+            return $this->completeWithNotice($item, $message, $messageData);
         }
 
         $item->setError('');
@@ -266,6 +278,15 @@ class BatchTranslationService implements LoggerAwareInterface
     {
         $this->lastWarning = LogUtility::interpolate($message, $messageData);
         LogUtility::log($this->logger, $message, $messageData, LogUtility::MESSAGE_WARNING);
+        $item->setError('');
+
+        return true;
+    }
+
+    private function completeWithNotice(BatchItem $item, string $message, array $messageData = []): bool
+    {
+        $this->lastNotice = LogUtility::interpolate($message, $messageData);
+        LogUtility::log($this->logger, $message, $messageData, LogUtility::MESSAGE_NOTICE);
         $item->setError('');
 
         return true;

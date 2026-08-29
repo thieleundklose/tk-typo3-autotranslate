@@ -660,6 +660,12 @@ class BatchTranslationBaseController extends ActionController
                                 sprintf('Item with uid %s: %s', $item->getUid(), $warning),
                                 FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_WARNING)
                             );
+                        } elseif (($notice = $this->batchTranslationService->getLastNotice()) !== null) {
+                            $this->addFlashMessage(
+                                'Translation completed with notice',
+                                sprintf('Item with uid %s: %s', $item->getUid(), $notice),
+                                FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_NOTICE)
+                            );
                         } else {
                             $this->addFlashMessage(
                                 'Successfully translated',

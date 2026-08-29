@@ -52,6 +52,21 @@ final class TranslationResultTest extends TestCase
         );
     }
 
+    public function testWarningIsAvailableAsSkippedReasonAndSurvivesMerge(): void
+    {
+        $warningResult = new TranslationResult();
+        $warningResult->addWarning('No translatable fields are configured.');
+        $result = new TranslationResult();
+
+        $result->merge($warningResult);
+
+        self::assertTrue($result->hasWarnings());
+        self::assertSame(
+            'No translatable fields are configured.',
+            $result->getSkippedReasonSummary()
+        );
+    }
+
     public function testAssumedSuccessfulResultSurvivesMerge(): void
     {
         $legacyResult = new TranslationResult();

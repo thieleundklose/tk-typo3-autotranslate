@@ -26,6 +26,7 @@ class LogUtility
     public const MESSAGE_INFO = 0;
     public const MESSAGE_WARNING = 1;
     public const MESSAGE_ERROR = 2;
+    public const MESSAGE_NOTICE = 3;
 
     /**
      * Write a log message.
@@ -37,9 +38,10 @@ class LogUtility
     public static function log(LoggerInterface $logger, string $message, array $data = [], int $type = self::MESSAGE_INFO): void
     {
         $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class)->get('autotranslate');
-        // Keep regular translation details behind the debug switch, but never
-        // suppress warnings and errors required to diagnose failed runs.
-        if ($type === self::MESSAGE_INFO && !($extensionConfiguration['debug'] ?? null)) {
+        // Detailed information and warnings are only written when debug logging
+        // is enabled. Errors must always remain available for diagnosing failed
+        // translation runs.
+        if ($type !== self::MESSAGE_ERROR && !($extensionConfiguration['debug'] ?? null)) {
             return;
         }
 
@@ -52,6 +54,9 @@ class LogUtility
                 break;
             case self::MESSAGE_WARNING:
                     $logger->warning($message, $data);
+                break;
+            case self::MESSAGE_NOTICE:
+                    $logger->notice($message, $data);
                 break;
             case self::MESSAGE_ERROR:
                     $logger->error($message, $data);

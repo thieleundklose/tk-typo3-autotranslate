@@ -288,7 +288,38 @@ class Translator implements LoggerAwareInterface
                 if ($translatedFieldsForLanguage > 0) {
                     $translationResult->addTranslatedFields($translatedFieldsForLanguage);
                 } else {
-                    $translationResult->addSkippedReason('No non-empty field values were translated by DeepL.');
+                    if ($columns === [] && $changedFields === []) {
+                        $skippedReason = sprintf(
+                            'No record fields were changed and no translatable fields are configured for table %s.',
+                            $table
+                        );
+                    } elseif ($columns === []) {
+                        $skippedReason = sprintf('No translatable fields are configured for table %s.', $table);
+                    } elseif ($mainRecordColumns === []) {
+                        $skippedReason = sprintf('No configured translatable fields were changed for table %s.', $table);
+                    } else {
+                        $skippedReason = 'No non-empty field values were translated by DeepL.';
+                    }
+
+                    $logType = $columns === []
+                        ? LogUtility::MESSAGE_WARNING
+                        : LogUtility::MESSAGE_NOTICE;
+                    if ($logType === LogUtility::MESSAGE_WARNING) {
+                        $translationResult->addWarning($skippedReason);
+                    } else {
+                        $translationResult->addSkippedReason($skippedReason);
+                    }
+                    LogUtility::log(
+                        $this->logger,
+                        'Translation of {table}:{uid} to site language {targetLanguage} was skipped: {reason}',
+                        [
+                            'table' => $table,
+                            'uid' => $recordUid,
+                            'targetLanguage' => (int)$languageId,
+                            'reason' => $skippedReason,
+                        ],
+                        $logType
+                    );
                 }
             } catch (\Exception $e) {
                 $messageData = [

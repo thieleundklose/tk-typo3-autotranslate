@@ -22,6 +22,8 @@ final class TranslationResult
     /** @var string[] */
     private array $errors = [];
 
+    private bool $hasWarnings = false;
+
     private bool $assumedSuccessful = false;
 
     public static function skipped(string $reason): self
@@ -50,6 +52,12 @@ final class TranslationResult
         }
     }
 
+    public function addWarning(string $reason): void
+    {
+        $this->hasWarnings = true;
+        $this->addSkippedReason($reason);
+    }
+
     public function addError(string $error): void
     {
         $error = trim($error);
@@ -67,6 +75,9 @@ final class TranslationResult
         }
         foreach ($result->getErrors() as $error) {
             $this->addError($error);
+        }
+        if ($result->hasWarnings()) {
+            $this->hasWarnings = true;
         }
         if ($result->isAssumedSuccessful()) {
             $this->markAsAssumedSuccessful();
@@ -102,6 +113,11 @@ final class TranslationResult
     public function hasErrors(): bool
     {
         return $this->errors !== [];
+    }
+
+    public function hasWarnings(): bool
+    {
+        return $this->hasWarnings;
     }
 
     /** @return string[] */

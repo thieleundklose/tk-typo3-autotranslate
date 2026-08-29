@@ -159,9 +159,11 @@ class RecordTranslationAjaxController
                     ? 'No fields were translated: ' . $reason
                     : 'No fields were translated.',
                 'Translation skipped',
-                FlashMessageUtility::MESSAGE_WARNING,
+                $translationResult->hasWarnings()
+                    ? FlashMessageUtility::MESSAGE_WARNING
+                    : FlashMessageUtility::MESSAGE_NOTICE,
                 false,
-                true
+                $translationResult->hasWarnings()
             );
         }
 
