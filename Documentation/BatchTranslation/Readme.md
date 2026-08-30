@@ -34,7 +34,7 @@ AutoTranslate distinguishes expected no-op results, configuration warnings and a
 | --- | --- | --- |
 | Notice | No configured translatable field was changed, or all relevant source values are empty | Completed; the item is not marked as failed |
 | Warning | Target languages are selected, but no translatable fields are configured for the table | Completed with warning; the item is not marked as failed |
-| Warning | A manual or automatic multi-language translation translated at least one language while another language failed | The successful language is kept and the editor is informed about the partial result |
+| Error | A manual or automatic multi-language translation translated at least one language while another language failed | The successful language is kept, while the failed language and its reason are reported as an error |
 | Error | Missing DeepL target-language mapping, invalid API key, exhausted quota, API failure or localization failure | The batch item fails and keeps the error details |
 
 Typical messages include:

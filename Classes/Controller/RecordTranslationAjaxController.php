@@ -146,9 +146,9 @@ class RecordTranslationAjaxController
             return $this->createTranslationFeedbackResponse(
                 'Translation completed with errors: ' . $translationResult->getErrorSummary(),
                 $hasTranslations ? 'Translation incomplete' : 'Translation failed',
-                $hasTranslations ? FlashMessageUtility::MESSAGE_WARNING : FlashMessageUtility::MESSAGE_ERROR,
+                FlashMessageUtility::MESSAGE_ERROR,
                 $hasTranslations,
-                $hasTranslations
+                false
             );
         }
 

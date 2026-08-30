@@ -24,7 +24,7 @@ The setting controls log persistence, not editor feedback:
 | Warning | Not written to the AutoTranslate log | Written to the AutoTranslate log | Shown when applicable |
 | Error | Always written | Always written | Shown when triggered from an interactive backend action |
 
-Notices describe expected no-op situations, for example saving a record without changing a configured translation field. Warnings indicate a configuration or partial-result condition that may need attention, for example selecting target languages while no translatable fields are configured. Errors indicate an actual failed translation, such as an invalid API key, missing DeepL target-language mapping or API failure.
+Notices describe expected no-op situations, for example saving a record without changing a configured translation field. Warnings indicate a configuration condition that may need attention, for example selecting target languages while no translatable fields are configured. Errors indicate an actual failed translation, such as an invalid API key, missing DeepL target-language mapping or API failure. This also applies to partial multi-language results: successful target languages are kept, but every failed target language is reported as an error.
 
 Regular CLI item-processing status may still be written independently of detailed translation logging. Flash messages are never suppressed by the debug setting.
 

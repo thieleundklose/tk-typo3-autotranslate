@@ -201,7 +201,7 @@ class DataHandler implements SingletonInterface
                     FlashMessageUtility::addMessage(
                         'Error during file metadata translation: ' . $e->getMessage(),
                         'File Metadata Translation Error',
-                        FlashMessageUtility::MESSAGE_WARNING
+                        FlashMessageUtility::MESSAGE_ERROR
                     );
                 }
             }
@@ -252,10 +252,11 @@ class DataHandler implements SingletonInterface
                         );
                     });
                     if ($translationResult->hasErrors()) {
+                        $hasTranslations = $translationResult->hasTranslations();
                         FlashMessageUtility::addMessage(
                             'Translation completed with errors: ' . $translationResult->getErrorSummary(),
-                            'Translation incomplete',
-                            FlashMessageUtility::MESSAGE_WARNING
+                            $hasTranslations ? 'Translation incomplete' : 'Translation failed',
+                            FlashMessageUtility::MESSAGE_ERROR
                         );
                     } elseif (!$translationResult->hasTranslations()) {
                         $reason = $translationResult->getSkippedReasonSummary();
@@ -273,7 +274,7 @@ class DataHandler implements SingletonInterface
                     FlashMessageUtility::addMessage(
                         'Error during translation: ' . $e->getMessage(),
                         'Translation Error',
-                        FlashMessageUtility::MESSAGE_WARNING
+                        FlashMessageUtility::MESSAGE_ERROR
                     );
                 }
             }
