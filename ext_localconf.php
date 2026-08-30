@@ -13,13 +13,27 @@ $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Command']
     ],
 ];
 $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Utility']['LogUtility']['writerConfiguration'] = [
-    \Psr\Log\LogLevel::INFO => [
+    \Psr\Log\LogLevel::DEBUG => [
         \TYPO3\CMS\Core\Log\Writer\DatabaseWriter::class => [
             'logTable' => 'tx_autotranslate_log',
         ],
     ],
 ];
 $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Utility']['Translator']['writerConfiguration'] = [
+    \Psr\Log\LogLevel::DEBUG => [
+        \TYPO3\CMS\Core\Log\Writer\DatabaseWriter::class => [
+            'logTable' => 'tx_autotranslate_log',
+        ],
+    ],
+];
+$GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Service']['BatchTranslationService']['writerConfiguration'] = [
+    \Psr\Log\LogLevel::INFO => [
+        \TYPO3\CMS\Core\Log\Writer\DatabaseWriter::class => [
+            'logTable' => 'tx_autotranslate_log',
+        ],
+    ],
+];
+$GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Service']['FileMetadataTranslationService']['writerConfiguration'] = [
     \Psr\Log\LogLevel::INFO => [
         \TYPO3\CMS\Core\Log\Writer\DatabaseWriter::class => [
             'logTable' => 'tx_autotranslate_log',

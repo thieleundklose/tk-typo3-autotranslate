@@ -43,6 +43,13 @@ class DataHandler implements SingletonInterface
      */
     private array $fileMetadataTranslationQueue = [];
 
+    /**
+     * Original records captured before DataHandler writes submitted values.
+     *
+     * @var array<string, array<string, array>>
+     */
+    private array $originalRecords = [];
+
     public static function runWithSuspendedHook(callable $callback): mixed
     {
         self::$suspensionLevel++;
@@ -51,6 +58,34 @@ class DataHandler implements SingletonInterface
             return $callback();
         } finally {
             self::$suspensionLevel--;
+        }
+    }
+
+    public function processDatamap_preProcessFieldArray(
+        &$incomingFieldArray,
+        $table,
+        $recordUid,
+        \TYPO3\CMS\Core\DataHandling\DataHandler $parentObject
+    ): void {
+        if ($this->suspended || self::$suspensionLevel > 0) {
+            return;
+        }
+
+        if (
+            !isset($GLOBALS['TCA'][$table]['columns']['autotranslate_languages'])
+            || !is_numeric($recordUid)
+        ) {
+            return;
+        }
+
+        $recordKey = (string)$recordUid;
+        if (isset($this->originalRecords[$table][$recordKey])) {
+            return;
+        }
+
+        $record = Records::getRecord((string)$table, (int)$recordUid);
+        if ($record !== null) {
+            $this->originalRecords[(string)$table][$recordKey] = $record;
         }
     }
 
@@ -72,13 +107,28 @@ class DataHandler implements SingletonInterface
     )
     {
 
+        $originalRecordKey = (string)$recordUid;
+        $originalRecord = $this->originalRecords[$table][$originalRecordKey] ?? null;
+        unset($this->originalRecords[$table][$originalRecordKey]);
+
         // Skip auto translation if hook is suspended. @see processCmdmap() for detailed description.
         if ($this->suspended || self::$suspensionLevel > 0) {
             return;
         }
 
         $languageField = $GLOBALS['TCA'][$table]['ctrl']['languageField'] ?? 'sys_language_uid';
-        $languageUid = isset($parentObject->datamap[$table][$recordUid][$languageField]) ? (int)$parentObject->datamap[$table][$recordUid][$languageField] : null;
+        if (isset($parentObject->datamap[$table][$recordUid][$languageField])) {
+            $languageUid = (int)$parentObject->datamap[$table][$recordUid][$languageField];
+        } elseif (is_array($originalRecord) && array_key_exists($languageField, $originalRecord)) {
+            $languageUid = (int)$originalRecord[$languageField];
+        } else {
+            $currentRecord = is_numeric($recordUid)
+                ? Records::getRecord((string)$table, (int)$recordUid)
+                : null;
+            $languageUid = is_array($currentRecord) && array_key_exists($languageField, $currentRecord)
+                ? (int)$currentRecord[$languageField]
+                : null;
+        }
 
         // Skip auto translation if page created on root level.
         if ($table == 'pages' && $status == 'new' && $fields['pid'] === 0) {
@@ -121,14 +171,13 @@ class DataHandler implements SingletonInterface
             return;
         }
 
-        $textFields = GeneralUtility::trimExplode(',', (string)($translationSettings['autotranslateTextfields'] ?? ''), true);
-        if (empty($textFields)) {
-            return;
-        }
-
         $this->translationQueue[$table][(int)$recordUid] = [
             'pageId' => (int)$pageId,
-            'changedFields' => TranslationHelper::extractChangedFieldsFromDatamap((string)$status, $fields),
+            'changedFields' => TranslationHelper::extractChangedFieldsFromDatamap(
+                (string)$status,
+                $fields,
+                $originalRecord
+            ),
         ];
 
         return;
@@ -152,7 +201,7 @@ class DataHandler implements SingletonInterface
                     FlashMessageUtility::addMessage(
                         'Error during file metadata translation: ' . $e->getMessage(),
                         'File Metadata Translation Error',
-                        FlashMessageUtility::MESSAGE_WARNING
+                        FlashMessageUtility::MESSAGE_ERROR
                     );
                 }
             }
@@ -192,8 +241,8 @@ class DataHandler implements SingletonInterface
                 $translator = GeneralUtility::makeInstance(Translator::class, (int)$pageId);
 
                 try {
-                    self::runWithSuspendedHook(static function () use ($translator, $table, $recordUid, $parentObject, $targetLanguages, $changedFields): void {
-                        $translator->translate(
+                    $translationResult = self::runWithSuspendedHook(static function () use ($translator, $table, $recordUid, $parentObject, $targetLanguages, $changedFields) {
+                        return $translator->translateWithResult(
                             $table,
                             (int)$recordUid,
                             $parentObject,
@@ -202,11 +251,30 @@ class DataHandler implements SingletonInterface
                             $changedFields
                         );
                     });
+                    if ($translationResult->hasErrors()) {
+                        $hasTranslations = $translationResult->hasTranslations();
+                        FlashMessageUtility::addMessage(
+                            'Translation completed with errors: ' . $translationResult->getErrorSummary(),
+                            $hasTranslations ? 'Translation incomplete' : 'Translation failed',
+                            FlashMessageUtility::MESSAGE_ERROR
+                        );
+                    } elseif (!$translationResult->hasTranslations()) {
+                        $reason = $translationResult->getSkippedReasonSummary();
+                        FlashMessageUtility::addMessage(
+                            $reason !== ''
+                                ? 'No translation was performed: ' . $reason
+                                : 'No translation was performed because there was no translation work for this record.',
+                            'Translation skipped',
+                            $translationResult->hasWarnings()
+                                ? FlashMessageUtility::MESSAGE_WARNING
+                                : FlashMessageUtility::MESSAGE_NOTICE
+                        );
+                    }
                 } catch (\Exception $e) {
                     FlashMessageUtility::addMessage(
                         'Error during translation: ' . $e->getMessage(),
                         'Translation Error',
-                        FlashMessageUtility::MESSAGE_WARNING
+                        FlashMessageUtility::MESSAGE_ERROR
                     );
                 }
             }

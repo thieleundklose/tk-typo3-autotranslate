@@ -28,6 +28,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 use ThieleUndKlose\Autotranslate\Event\AfterTranslateEvent;
 use ThieleUndKlose\Autotranslate\Service\GlossaryService;
 use ThieleUndKlose\Autotranslate\Service\TranslationCacheService;
+use ThieleUndKlose\Autotranslate\ValueObject\TranslationResult;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use WebVision\Deepltranslate\Glossary\Domain\Dto\Glossary;
 
@@ -57,6 +58,10 @@ class Translator implements LoggerAwareInterface
      */
     private ?array $deeplApiKeyDetails = null;
 
+    private int $translatedFieldCount = 0;
+
+    private ?TranslationResult $lastTranslationResult = null;
+
     /**
      * object constructor
      *
@@ -81,7 +86,7 @@ class Translator implements LoggerAwareInterface
      * @param string $translateMode
      * @param string[]|null $changedFields Datamap fields for the current save; null keeps full translation.
      * @return void
-     * @throws \Doctrine\DBAL\Driver\Exception
+     * @throws \Throwable If translation cannot be processed outside an individual target-language operation.
      */
     public function translate(
         string $table,
@@ -91,6 +96,68 @@ class Translator implements LoggerAwareInterface
         string $translateMode = self::TRANSLATE_MODE_BOTH,
         ?array $changedFields = null
     ): void {
+        $this->lastTranslationResult = $this->performTranslation(
+            $table,
+            $recordUid,
+            $parentObject,
+            $languagesToTranslate,
+            $translateMode,
+            $changedFields
+        );
+    }
+
+    /**
+     * Translate the loaded record and report the number of translated fields.
+     *
+     * Batch processing uses this method to distinguish successful translations
+     * from records that were skipped or produced no DeepL result. The existing
+     * translate() method intentionally remains void for backwards compatibility.
+     *
+     * @param string[]|null $changedFields
+     * @return TranslationResult
+     * @throws \Throwable If target configuration, localization or DeepL translation fails.
+     */
+    public function translateWithResult(
+        string $table,
+        int $recordUid,
+        ?DataHandler $parentObject = null,
+        ?string $languagesToTranslate = null,
+        string $translateMode = self::TRANSLATE_MODE_BOTH,
+        ?array $changedFields = null
+    ): TranslationResult {
+        $this->lastTranslationResult = null;
+        $this->translate(
+            $table,
+            $recordUid,
+            $parentObject,
+            $languagesToTranslate,
+            $translateMode,
+            $changedFields
+        );
+
+        if ($this->lastTranslationResult === null) {
+            // A legacy XCLASS may override translate() without knowing about
+            // structured results. It was invoked, so retain its former success
+            // semantics instead of silently bypassing the override.
+            $result = new TranslationResult();
+            $result->markAsAssumedSuccessful();
+            return $result;
+        }
+
+        return $this->lastTranslationResult;
+    }
+
+    /**
+     * Standard result-aware translation implementation.
+     */
+    protected function performTranslation(
+        string $table,
+        int $recordUid,
+        ?DataHandler $parentObject = null,
+        ?string $languagesToTranslate = null,
+        string $translateMode = self::TRANSLATE_MODE_BOTH,
+        ?array $changedFields = null
+    ): TranslationResult {
 
         $record = Records::getRecord($table, $recordUid);
 
@@ -100,24 +167,24 @@ class Translator implements LoggerAwareInterface
                 'table' => $table,
                 'uid' => $recordUid,
             ], LogUtility::MESSAGE_WARNING);
-            return;
+            return TranslationResult::skipped(sprintf('Record %s:%d no longer exists.', $table, $recordUid));
         }
 
         // exit if record is localized one
         $parentField = TranslationHelper::translationOrigPointerField($table);
         if ($parentField === null || $record[$parentField] > 0) {
-            return;
+            return TranslationResult::skipped(sprintf('Record %s:%d is not a translatable source record.', $table, $recordUid));
         }
 
         // exit if record is marked for exclude
         if ($record[self::AUTOTRANSLATE_EXCLUDE] === 1) {
-            return;
+            return TranslationResult::skipped(sprintf('Record %s:%d is excluded from automatic translation.', $table, $recordUid));
         }
 
         // load translation columns for table
         $columns = TranslationHelper::translationTextfields($this->pageId, $table);
         if ($columns === null) {
-            return;
+            return TranslationResult::skipped(sprintf('No translatable fields are configured for table %s.', $table));
         }
 
         // set target languages by record if null is given
@@ -125,86 +192,163 @@ class Translator implements LoggerAwareInterface
             $languagesToTranslate = $record[self::AUTOTRANSLATE_LANGUAGES] ?? '';
         }
 
+        $translationResult = new TranslationResult();
         $localizedContents = [];
         // loop over all target languages
         $languageIds = GeneralUtility::trimExplode(',', $languagesToTranslate, true);
+        if ($languageIds === []) {
+            return TranslationResult::skipped('No target language was selected for translation.');
+        }
         foreach ($languageIds as $languageId) {
             $localizedContents[$languageId] = [];
 
             // Skip translation if language matches original record
             if ((int)$languageId === $record['sys_language_uid']) {
+                $translationResult->addSkippedReason(sprintf('Language %d is already the source language.', (int)$languageId));
                 continue;
             }
 
-            $existingTranslation = Records::getRecordTranslation($table, $recordUid, (int)$languageId);
-            $mainRecordColumns = $existingTranslation
-                ? TranslationHelper::filterChangedTranslatableColumns($columns, $changedFields)
-                : $columns;
-            $referenceChangedFields = $existingTranslation ? $changedFields : null;
+            try {
+                $existingTranslation = Records::getRecordTranslation($table, $recordUid, (int)$languageId);
+                $mainRecordColumns = $existingTranslation
+                    ? TranslationHelper::filterChangedTranslatableColumns($columns, $changedFields)
+                    : $columns;
+                $referenceChangedFields = $existingTranslation ? $changedFields : null;
 
-            if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && !$existingTranslation) {
-                LogUtility::log($this->logger, 'No Translation of {table} with uid {uid} because mode "update only".', [
+                if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && !$existingTranslation) {
+                    LogUtility::log($this->logger, 'No Translation of {table} with uid {uid} because mode "update only".', [
+                        'table' => $table,
+                        'uid' => $recordUid
+                    ]);
+                    $translationResult->addSkippedReason('No existing target-language record was found in update-only mode.');
+                    continue;
+                }
+
+                $deeplTargetLanguage = $this->deeplTargetLanguage((int)$languageId);
+                if ($deeplTargetLanguage === null || trim($deeplTargetLanguage) === '') {
+                    throw new \RuntimeException(sprintf(
+                        'No DeepL target language is configured for site language %d.',
+                        (int)$languageId
+                    ));
+                }
+
+                if ($this->hasDeepLTranslationWork($record, $table, (int)$languageId, $mainRecordColumns, $parentObject, $translateMode, $referenceChangedFields)) {
+                    $this->ensureValidApiKey();
+                }
+
+                $translatedFieldsBefore = $this->translatedFieldCount;
+
+                if (!$existingTranslation) {
+                    $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+                    $dataHandler->start([], []);
+                    $localizedUid = $dataHandler->localize($table, $recordUid, $languageId);
+                } else {
+                    $localizedUid = $existingTranslation['uid'];
+                }
+
+                if ($localizedUid === null || $localizedUid === false) {
+                    throw new \RuntimeException(sprintf(
+                        'TYPO3 could not create or resolve the target-language record for %s:%d.',
+                        $table,
+                        $recordUid
+                    ));
+                }
+
+                $localizedContents[$languageId][$recordUid] = $localizedUid;
+                $this->translateAdditionalReferences(
+                    $table,
+                    $recordUid,
+                    (int)$localizedContents[$languageId][$recordUid],
+                    (int)$languageId,
+                    $parentObject,
+                    $translateMode,
+                    $referenceChangedFields
+                );
+
+                $this->synchronizeLocalizedRelations(
+                    $table,
+                    $record,
+                    $localizedUid,
+                    (int)$languageId,
+                    $translateMode
+                );
+
+                // Translate properties with given service
+                $translatedColumns = $this->translateRecordProperties($record, (int)$languageId, $mainRecordColumns, $table, $localizedUid);
+
+                if (count($translatedColumns) > 0) {
+                    Records::updateRecord($table, $localizedUid, $translatedColumns);
+                }
+
+                if (!$existingTranslation) {
+                    $this->generateSlugs($table, $localizedUid);
+                }
+
+                $translatedFieldsForLanguage = $this->translatedFieldCount - $translatedFieldsBefore;
+                if ($translatedFieldsForLanguage > 0) {
+                    $translationResult->addTranslatedFields($translatedFieldsForLanguage);
+                } else {
+                    if ($columns === [] && $changedFields === []) {
+                        $skippedReason = sprintf(
+                            'No record fields were changed and no translatable fields are configured for table %s.',
+                            $table
+                        );
+                    } elseif ($columns === []) {
+                        $skippedReason = sprintf('No translatable fields are configured for table %s.', $table);
+                    } elseif ($mainRecordColumns === []) {
+                        $skippedReason = sprintf('No configured translatable fields were changed for table %s.', $table);
+                    } else {
+                        $skippedReason = 'No non-empty field values were translated by DeepL.';
+                    }
+
+                    $logType = $columns === []
+                        ? LogUtility::MESSAGE_WARNING
+                        : LogUtility::MESSAGE_NOTICE;
+                    if ($logType === LogUtility::MESSAGE_WARNING) {
+                        $translationResult->addWarning($skippedReason);
+                    } else {
+                        $translationResult->addSkippedReason($skippedReason);
+                    }
+                    LogUtility::log(
+                        $this->logger,
+                        'Translation of {table}:{uid} to site language {targetLanguage} was skipped: {reason}',
+                        [
+                            'table' => $table,
+                            'uid' => $recordUid,
+                            'targetLanguage' => (int)$languageId,
+                            'reason' => $skippedReason,
+                        ],
+                        $logType
+                    );
+                }
+            } catch (\Exception $e) {
+                $messageData = [
                     'table' => $table,
-                    'uid' => $recordUid
-                ]);
-                continue;
-            }
-
-            if ($this->hasDeepLTranslationWork($record, $table, (int)$languageId, $mainRecordColumns, $parentObject, $translateMode, $referenceChangedFields)) {
-                $this->ensureValidApiKey();
-            }
-
-            if (!$existingTranslation) {
-                $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
-                $dataHandler->start([], []);
-                $localizedUid = $dataHandler->localize($table, $recordUid, $languageId);
-            } else {
-                $localizedUid = $existingTranslation['uid'];
-            }
-
-            if ($localizedUid === null || $localizedUid === false) {
-                LogUtility::log($this->logger, 'No Translation of {table} with uid {uid} because DataHandler localize failed.', [
-                    'table' => $table,
-                    'uid' => $recordUid
-                ]);
-                continue;
-            }
-
-            $localizedContents[$languageId][$recordUid] = $localizedUid;
-            $this->translateAdditionalReferences(
-                $table,
-                $recordUid,
-                (int)$localizedContents[$languageId][$recordUid],
-                (int)$languageId,
-                $parentObject,
-                $translateMode,
-                $referenceChangedFields
-            );
-
-            $this->synchronizeLocalizedRelations(
-                $table,
-                $record,
-                $localizedUid,
-                (int)$languageId,
-                $translateMode
-            );
-
-            // Translate properties with given service
-            $translatedColumns = $this->translateRecordProperties($record, (int)$languageId, $mainRecordColumns, $table, $localizedUid);
-
-            if (count($translatedColumns) > 0) {
-                Records::updateRecord($table, $localizedUid, $translatedColumns);
-            }
-
-            if (!$existingTranslation) {
-                $this->generateSlugs($table, $localizedUid);
+                    'uid' => $recordUid,
+                    'targetLanguage' => (int)$languageId,
+                    'error' => $e->getMessage(),
+                ];
+                LogUtility::log(
+                    $this->logger,
+                    'Translation of {table}:{uid} to site language {targetLanguage} failed: {error}',
+                    $messageData,
+                    LogUtility::MESSAGE_ERROR
+                );
+                $translationResult->addError(sprintf(
+                    'Site language %d failed: %s',
+                    (int)$languageId,
+                    $e->getMessage()
+                ));
             }
         }
 
-        Records::updateRecord($table, $recordUid, [
-            self::AUTOTRANSLATE_LAST => time()
-        ]);
+        if ($translationResult->hasTranslations()) {
+            Records::updateRecord($table, $recordUid, [
+                self::AUTOTRANSLATE_LAST => time()
+            ]);
+        }
 
+        return $translationResult;
     }
 
     private function translateAdditionalReferences(
@@ -701,6 +845,7 @@ class Translator implements LoggerAwareInterface
     {
         // create translation array from source record by keys from fielmap
         $translatedColumns = [];
+        $deepLTranslatedFields = [];
 
         $toTranslateObject = array_intersect_key($record, array_flip($columns));
         $toTranslate = array_filter(
@@ -750,6 +895,7 @@ class Translator implements LoggerAwareInterface
                     );
                     if ($translatedFlexForm !== null) {
                         $translatedColumns[$field] = $translatedFlexForm;
+                        $deepLTranslatedFields[$field] = true;
                     }
                     unset($toTranslate[$field]);
                 }
@@ -785,6 +931,7 @@ class Translator implements LoggerAwareInterface
                     }
                     $translatedValue = $this->restoreTranslatedHtmlAttributes($v->text, $translatedAttributes);
                     $translatedColumns[$field] = $translatedValue;
+                    $deepLTranslatedFields[$field] = true;
                 }
             }
 
@@ -813,12 +960,22 @@ class Translator implements LoggerAwareInterface
                 $translatedColumns['l10n_state'] = $this->buildL10nState($table, $targetLanguageUid, array_keys($translatedColumns), $localizedUid);
             }
 
-            // set date and time of translation
-            $translatedColumns[self::AUTOTRANSLATE_LAST] = time();
+            $translatedFieldCount = count(array_intersect_key($translatedColumns, $deepLTranslatedFields));
+            if ($translatedFieldCount > 0) {
+                // Only stamp records for which DeepL produced at least one translated value.
+                $translatedColumns[self::AUTOTRANSLATE_LAST] = time();
+                $this->translatedFieldCount += $translatedFieldCount;
 
-            LogUtility::log($this->logger, 'Successful translated to target language {deeplTargetLang}.', ['deeplTargetLang' => $deeplTargetLang, 'toTranslate' => $toTranslate, 'result' => $result, 'translatedColumns' => $translatedColumns]);
-        } catch (\Exception $e) {
-            LogUtility::log($this->logger, 'Translation Error: {error}.', ['error' => $e->getMessage()], LogUtility::MESSAGE_ERROR);
+                LogUtility::log($this->logger, 'Successfully translated {fieldCount} field(s) to target language {deeplTargetLang}.', [
+                    'fieldCount' => $translatedFieldCount,
+                    'deeplTargetLang' => $deeplTargetLang,
+                    'toTranslate' => $toTranslate,
+                    'result' => $result,
+                    'translatedColumns' => $translatedColumns,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            throw $e;
         }
 
         return $translatedColumns;

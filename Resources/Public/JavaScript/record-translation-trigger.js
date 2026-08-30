@@ -98,8 +98,25 @@ class RecordTranslationTrigger {
                             table,
                             uid,
                             languages: languageIds,
-                        });
+                    });
                     const translatePayload = await translateResponse.resolve();
+
+                    if (translatePayload.flashMessage) {
+                        this.setButtonLoading(button, false);
+                        modal.hideModal();
+                        window.location.reload();
+                        return;
+                    }
+
+                    if (translatePayload.warning) {
+                        Notification.warning(translatePayload.message || 'Translation completed with warnings.');
+                        this.setButtonLoading(button, false);
+                        modal.hideModal();
+                        if (translatePayload.success) {
+                            window.location.reload();
+                        }
+                        return;
+                    }
 
                     if (!translatePayload.success) {
                         Notification.error(translatePayload.message || 'Translation failed.');
