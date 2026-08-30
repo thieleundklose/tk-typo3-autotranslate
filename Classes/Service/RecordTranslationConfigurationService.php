@@ -12,9 +12,12 @@ use TYPO3\CMS\Core\Site\SiteFinder;
 
 class RecordTranslationConfigurationService
 {
-    public function __construct(
-        private readonly SiteFinder $siteFinder,
-    ) {}
+    private SiteFinder $siteFinder;
+
+    public function __construct(SiteFinder $siteFinder)
+    {
+        $this->siteFinder = $siteFinder;
+    }
 
     public function getConfiguration(string $table, array $record): ?array
     {
@@ -78,7 +81,10 @@ class RecordTranslationConfigurationService
     /**
      * @return int[]
      */
-    public function sanitizeRequestedLanguageIds(array $availableLanguages, mixed $requestedLanguages): array
+    /**
+     * @param mixed $requestedLanguages
+     */
+    public function sanitizeRequestedLanguageIds(array $availableLanguages, $requestedLanguages): array
     {
         if (!is_array($requestedLanguages)) {
             return [];

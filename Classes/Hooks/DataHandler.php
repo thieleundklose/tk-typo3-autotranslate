@@ -50,7 +50,10 @@ class DataHandler implements SingletonInterface
      */
     private array $originalRecords = [];
 
-    public static function runWithSuspendedHook(callable $callback): mixed
+    /**
+     * @return mixed
+     */
+    public static function runWithSuspendedHook(callable $callback)
     {
         self::$suspensionLevel++;
 

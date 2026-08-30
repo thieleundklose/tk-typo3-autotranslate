@@ -13,11 +13,21 @@ use TYPO3\CMS\Core\Page\PageRenderer;
 
 class RecordTranslationActionListener
 {
+    private IconFactory $iconFactory;
+
+    private RecordTranslationConfigurationService $recordTranslationConfigurationService;
+
+    private PageRenderer $pageRenderer;
+
     public function __construct(
-        private readonly IconFactory $iconFactory,
-        private readonly RecordTranslationConfigurationService $recordTranslationConfigurationService,
-        private readonly PageRenderer $pageRenderer,
-    ) {}
+        IconFactory $iconFactory,
+        RecordTranslationConfigurationService $recordTranslationConfigurationService,
+        PageRenderer $pageRenderer
+    ) {
+        $this->iconFactory = $iconFactory;
+        $this->recordTranslationConfigurationService = $recordTranslationConfigurationService;
+        $this->pageRenderer = $pageRenderer;
+    }
 
     public function __invoke(ModifyRecordListRecordActionsEvent $event): void
     {
@@ -26,7 +36,7 @@ class RecordTranslationActionListener
                 $event->getTable(),
                 $event->getRecord()
             );
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
             $configuration = null;
         }
         if ($configuration === null) {

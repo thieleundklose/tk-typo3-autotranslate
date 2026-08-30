@@ -11,9 +11,11 @@ use TYPO3\CMS\Core\Utility\PathUtility;
 
 class PageTranslationContextMenuProvider extends PageProvider
 {
-    public function __construct(
-        private readonly RecordTranslationConfigurationService $recordTranslationConfigurationService,
-    ) {
+    private RecordTranslationConfigurationService $recordTranslationConfigurationService;
+
+    public function __construct(RecordTranslationConfigurationService $recordTranslationConfigurationService)
+    {
+        $this->recordTranslationConfigurationService = $recordTranslationConfigurationService;
         parent::__construct();
     }
 
@@ -35,7 +37,7 @@ class PageTranslationContextMenuProvider extends PageProvider
 
         try {
             $configuration = $this->recordTranslationConfigurationService->getConfiguration('pages', $this->record);
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
             $configuration = null;
         }
 

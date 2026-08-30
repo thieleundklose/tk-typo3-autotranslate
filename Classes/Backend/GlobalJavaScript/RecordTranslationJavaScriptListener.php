@@ -9,9 +9,12 @@ use TYPO3\CMS\Core\Page\PageRenderer;
 
 class RecordTranslationJavaScriptListener
 {
-    public function __construct(
-        private readonly PageRenderer $pageRenderer,
-    ) {}
+    private PageRenderer $pageRenderer;
+
+    public function __construct(PageRenderer $pageRenderer)
+    {
+        $this->pageRenderer = $pageRenderer;
+    }
 
     public function __invoke(AfterBackendPageRenderEvent $event): void
     {

@@ -20,9 +20,12 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 #[AsController]
 class RecordTranslationAjaxController
 {
-    public function __construct(
-        private readonly RecordTranslationConfigurationService $recordTranslationConfigurationService,
-    ) {}
+    private RecordTranslationConfigurationService $recordTranslationConfigurationService;
+
+    public function __construct(RecordTranslationConfigurationService $recordTranslationConfigurationService)
+    {
+        $this->recordTranslationConfigurationService = $recordTranslationConfigurationService;
+    }
 
     public function languages(ServerRequestInterface $request): ResponseInterface
     {
