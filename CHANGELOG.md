@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Compatibility
+- Modernized extension-owned TCA definitions to use associative item arrays and the dedicated `datetime` type, removing the corresponding TYPO3 v13 and v14 deprecations without changing the stored data or backend behavior.
+- Replaced the deprecated custom `logTable` option of TYPO3's `DatabaseWriter` with an extension-specific writer that continues to persist AutoTranslate records in `tx_autotranslate_log` across TYPO3 v12-v14.
+- Added repeatable compatibility-matrix coverage for TYPO3 12.4 on PHP 8.1-8.4 and TYPO3 13.4 and 14.3 on PHP 8.2-8.5, including unit tests, functional tests and PHP linting.
+- Excluded generated runtime files from PHP linting so repeated matrix runs inspect only extension source and test files.
+
 ## [3.4.0] - 2026-08-30
 
 ### Feature

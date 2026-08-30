@@ -16,9 +16,8 @@ $tempColumns = [
             'default' => 0,
             'items' => [
                 [
-                    0 => '',
-                    1 => '',
-                ]
+                    'label' => '',
+                ],
             ],
         ],
     ],
@@ -37,12 +36,10 @@ $tempColumns = [
         'label' => $llPath . 'autotranslate_last',
         'displayCond' => 'FIELD:' . $languageField . ':>:0',
         'config' => [
-            'type' => 'input',
-            'renderType' => 'inputDateTime',
+            'type' => 'datetime',
             'size' => 13,
             'readOnly' => true,
-            'eval' => 'datetime,int',
-            'default' => 0
+            'default' => 0,
         ],
     ],
 ];

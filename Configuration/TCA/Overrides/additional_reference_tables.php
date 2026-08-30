@@ -13,12 +13,10 @@ foreach (TranslationHelper::additionalReferenceTables() as $table) {
             'label' => $llPath . 'autotranslate_last',
             'displayCond' => 'FIELD:' . $languageField . ':>:0',
             'config' => [
-                'type' => 'input',
-                'renderType' => 'inputDateTime',
+                'type' => 'datetime',
                 'size' => 13,
                 'readOnly' => true,
-                'eval' => 'datetime,int',
-                'default' => 0
+                'default' => 0,
             ],
         ],
     ];

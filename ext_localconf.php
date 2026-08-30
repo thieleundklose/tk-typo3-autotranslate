@@ -7,37 +7,27 @@ $GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['t3lib/class.t3lib_tcemain.php']['proc
     \ThieleUndKlose\Autotranslate\Hooks\DataHandler::class;
 $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Command']['BatchTranslation']['writerConfiguration'] = [
     \Psr\Log\LogLevel::INFO => [
-        \TYPO3\CMS\Core\Log\Writer\DatabaseWriter::class => [
-            'logTable' => 'tx_autotranslate_log',
-        ],
+        \ThieleUndKlose\Autotranslate\Log\Writer\AutotranslateDatabaseWriter::class => [],
     ],
 ];
 $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Utility']['LogUtility']['writerConfiguration'] = [
     \Psr\Log\LogLevel::DEBUG => [
-        \TYPO3\CMS\Core\Log\Writer\DatabaseWriter::class => [
-            'logTable' => 'tx_autotranslate_log',
-        ],
+        \ThieleUndKlose\Autotranslate\Log\Writer\AutotranslateDatabaseWriter::class => [],
     ],
 ];
 $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Utility']['Translator']['writerConfiguration'] = [
     \Psr\Log\LogLevel::DEBUG => [
-        \TYPO3\CMS\Core\Log\Writer\DatabaseWriter::class => [
-            'logTable' => 'tx_autotranslate_log',
-        ],
+        \ThieleUndKlose\Autotranslate\Log\Writer\AutotranslateDatabaseWriter::class => [],
     ],
 ];
 $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Service']['BatchTranslationService']['writerConfiguration'] = [
     \Psr\Log\LogLevel::INFO => [
-        \TYPO3\CMS\Core\Log\Writer\DatabaseWriter::class => [
-            'logTable' => 'tx_autotranslate_log',
-        ],
+        \ThieleUndKlose\Autotranslate\Log\Writer\AutotranslateDatabaseWriter::class => [],
     ],
 ];
 $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Service']['FileMetadataTranslationService']['writerConfiguration'] = [
     \Psr\Log\LogLevel::INFO => [
-        \TYPO3\CMS\Core\Log\Writer\DatabaseWriter::class => [
-            'logTable' => 'tx_autotranslate_log',
-        ],
+        \ThieleUndKlose\Autotranslate\Log\Writer\AutotranslateDatabaseWriter::class => [],
     ],
 ];
 
