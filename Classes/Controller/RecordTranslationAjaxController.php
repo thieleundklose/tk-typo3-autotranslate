@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ThieleUndKlose\Autotranslate\Hooks\DataHandler as AutotranslateDataHandlerHook;
 use ThieleUndKlose\Autotranslate\Service\RecordTranslationConfigurationService;
+use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
 use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\Translator;
 use TYPO3\CMS\Backend\Attribute\AsController;
@@ -130,8 +131,8 @@ class RecordTranslationAjaxController
                 $configuration['pageId']
             );
             $changedFields = null; // Manual record translations are explicit full translations.
-            AutotranslateDataHandlerHook::runWithSuspendedHook(static function () use ($translator, $table, $uid, $languageIds, $changedFields): void {
-                $translator->translate($table, $uid, null, implode(',', $languageIds), Translator::TRANSLATE_MODE_BOTH, $changedFields);
+            $translationResult = AutotranslateDataHandlerHook::runWithSuspendedHook(static function () use ($translator, $table, $uid, $languageIds, $changedFields) {
+                return $translator->translateWithResult($table, $uid, null, implode(',', $languageIds), Translator::TRANSLATE_MODE_BOTH, $changedFields);
             });
         } catch (\Throwable $exception) {
             return new JsonResponse([
@@ -140,9 +141,52 @@ class RecordTranslationAjaxController
             ]);
         }
 
+        if ($translationResult->hasErrors()) {
+            $hasTranslations = $translationResult->hasTranslations();
+            return $this->createTranslationFeedbackResponse(
+                'Translation completed with errors: ' . $translationResult->getErrorSummary(),
+                $hasTranslations ? 'Translation incomplete' : 'Translation failed',
+                FlashMessageUtility::MESSAGE_ERROR,
+                $hasTranslations,
+                false
+            );
+        }
+
+        if (!$translationResult->hasTranslations()) {
+            $reason = $translationResult->getSkippedReasonSummary();
+            return $this->createTranslationFeedbackResponse(
+                $reason !== ''
+                    ? 'No fields were translated: ' . $reason
+                    : 'No fields were translated.',
+                'Translation skipped',
+                $translationResult->hasWarnings()
+                    ? FlashMessageUtility::MESSAGE_WARNING
+                    : FlashMessageUtility::MESSAGE_NOTICE,
+                false,
+                $translationResult->hasWarnings()
+            );
+        }
+
         return new JsonResponse([
             'success' => true,
             'message' => $this->translateLabel('record_translation.success'),
+        ]);
+    }
+
+    private function createTranslationFeedbackResponse(
+        string $message,
+        string $title,
+        int $severity,
+        bool $success,
+        bool $warning
+    ): JsonResponse {
+        FlashMessageUtility::addMessage($message, $title, $severity);
+
+        return new JsonResponse([
+            'success' => $success,
+            'warning' => $warning,
+            'flashMessage' => true,
+            'message' => $message,
         ]);
     }
 

@@ -361,6 +361,17 @@ class BatchItem extends AbstractEntity
     }
 
     /**
+     * A recurring item has completed its last run successfully and is waiting
+     * for its next scheduled execution.
+     */
+    public function isSuccessfulRecurringRun(): bool
+    {
+        return $this->getError() === ''
+            && $this->getTranslated() !== null
+            && $this->isRecurring();
+    }
+
+    /**
      * Set the value of translated
      *
      * @return void
