@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Compatibility
+- Restored PHP 7.4 compatibility in the `2.x` release line by replacing PHP 8-only constructor property promotion, `readonly` properties, `mixed` type declarations and catch blocks without an exception variable while preserving the existing behavior.
+- Updated the unit tests for Reflection changes and stricter PHPUnit mock verification, avoiding test-suite deprecations on newer PHP and PHPUnit versions.
+- Added repeatable compatibility-matrix coverage for TYPO3 11.5 on PHP 7.4-8.3, TYPO3 12.4 on PHP 8.1-8.4 and TYPO3 13.4 on PHP 8.2-8.4, plus a PHP 8.5 forward-compatibility probe for the `2.x` codebase.
+
 ## [2.10.0] - 2026-08-30
 
 ### Feature
