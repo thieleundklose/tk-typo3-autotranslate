@@ -18,6 +18,20 @@ class BatchTranslationService implements LoggerAwareInterface
 
     use LoggerAwareTrait;
 
+    private ?string $lastWarning = null;
+
+    private ?string $lastNotice = null;
+
+    public function getLastWarning(): ?string
+    {
+        return $this->lastWarning;
+    }
+
+    public function getLastNotice(): ?string
+    {
+        return $this->lastNotice;
+    }
+
     /**
      * Translate the given item.
      * @param BatchItem $item
@@ -25,6 +39,8 @@ class BatchTranslationService implements LoggerAwareInterface
      */
     public function translate(BatchItem $item): bool
     {
+        $this->lastWarning = null;
+        $this->lastNotice = null;
         $item->setError('');
         $siteFinder = GeneralUtility::makeInstance(SiteFinder::class);
         try {
@@ -127,7 +143,11 @@ class BatchTranslationService implements LoggerAwareInterface
                 $messageData['reasons'] = $translationResult->getSkippedReasonSummary();
             }
 
-            return $this->fail($item, $message, $messageData);
+            if ($translationResult->hasWarnings()) {
+                return $this->completeWithWarning($item, $message, $messageData);
+            }
+
+            return $this->completeWithNotice($item, $message, $messageData);
         }
 
         $item->setError('');
@@ -252,6 +272,24 @@ class BatchTranslationService implements LoggerAwareInterface
         $item->setError($interpolatedMessage);
 
         return false;
+    }
+
+    private function completeWithWarning(BatchItem $item, string $message, array $messageData = []): bool
+    {
+        $this->lastWarning = LogUtility::interpolate($message, $messageData);
+        LogUtility::log($this->logger, $message, $messageData, LogUtility::MESSAGE_WARNING);
+        $item->setError('');
+
+        return true;
+    }
+
+    private function completeWithNotice(BatchItem $item, string $message, array $messageData = []): bool
+    {
+        $this->lastNotice = LogUtility::interpolate($message, $messageData);
+        LogUtility::log($this->logger, $message, $messageData, LogUtility::MESSAGE_NOTICE);
+        $item->setError('');
+
+        return true;
     }
 
     private function findTargetLanguageConfiguration(array $languages, int $targetLanguageUid): ?array

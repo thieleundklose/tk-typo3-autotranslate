@@ -678,10 +678,25 @@ class BatchTranslationBaseController extends ActionController
                     $res = $this->batchTranslationService->translate($item);
                     if ($res === true) {
                         $item->markAsTranslated();
-                        $this->addFlashMessage(
-                            'Successfully translated',
-                            sprintf('Item with uid %s was translated.', $item->getUid()),
-                        );
+                        $warning = $this->batchTranslationService->getLastWarning();
+                        if ($warning !== null) {
+                            $this->addFlashMessage(
+                                'Translation completed with warning',
+                                sprintf('Item with uid %s: %s', $item->getUid(), $warning),
+                                FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_WARNING)
+                            );
+                        } elseif (($notice = $this->batchTranslationService->getLastNotice()) !== null) {
+                            $this->addFlashMessage(
+                                'Translation completed with notice',
+                                sprintf('Item with uid %s: %s', $item->getUid(), $notice),
+                                FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_NOTICE)
+                            );
+                        } else {
+                            $this->addFlashMessage(
+                                'Successfully translated',
+                                sprintf('Item with uid %s was translated.', $item->getUid()),
+                            );
+                        }
                     } else {
                         $this->addFlashMessage(
                             'Error while translating',

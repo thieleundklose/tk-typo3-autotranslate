@@ -50,10 +50,32 @@ class TranslationHelper
     /**
      * @return string[]|null Null means "new record" and keeps the full translation scope.
      */
-    public static function extractChangedFieldsFromDatamap(string $status, array $datamap): ?array
+    public static function extractChangedFieldsFromDatamap(string $status, array $datamap, ?array $originalRecord = null): ?array
     {
         if ($status === 'new') {
             return null;
+        }
+
+        if ($originalRecord !== null) {
+            return array_values(array_filter(
+                array_keys($datamap),
+                static function (string $field) use ($datamap, $originalRecord): bool {
+                    if (!array_key_exists($field, $originalRecord)) {
+                        return true;
+                    }
+
+                    $submittedValue = $datamap[$field];
+                    $originalValue = $originalRecord[$field];
+                    if (
+                        (is_scalar($submittedValue) || $submittedValue === null)
+                        && (is_scalar($originalValue) || $originalValue === null)
+                    ) {
+                        return (string)($submittedValue ?? '') !== (string)($originalValue ?? '');
+                    }
+
+                    return $submittedValue != $originalValue;
+                }
+            ));
         }
 
         return array_keys($datamap);

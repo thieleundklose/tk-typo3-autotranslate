@@ -33,6 +33,30 @@ final class TranslationHelperTest extends TestCase
         self::assertSame([], TranslationHelper::extractChangedFieldsFromDatamap('update', []));
     }
 
+    public function testExtractChangedFieldsIgnoresSubmittedValuesThatDidNotChange(): void
+    {
+        self::assertSame(
+            [],
+            TranslationHelper::extractChangedFieldsFromDatamap(
+                'update',
+                ['header' => 'Unchanged headline', 'hidden' => 0],
+                ['header' => 'Unchanged headline', 'hidden' => '0']
+            )
+        );
+    }
+
+    public function testExtractChangedFieldsReturnsOnlyValuesThatActuallyChanged(): void
+    {
+        self::assertSame(
+            ['header'],
+            TranslationHelper::extractChangedFieldsFromDatamap(
+                'update',
+                ['header' => 'New headline', 'bodytext' => 'Unchanged body'],
+                ['header' => 'Old headline', 'bodytext' => 'Unchanged body']
+            )
+        );
+    }
+
     public function testFilterChangedTranslatableColumnsReturnsAllColumnsWhenChangedFieldsAreNull(): void
     {
         self::assertSame(

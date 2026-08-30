@@ -144,10 +144,39 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
                 if ($res === true) {
                     $successfulTranslations++;
                     $item->markAsTranslated();
-                    $this->logger->info(
-                        'Batch translation item {itemUid} for page {pid} and target language {targetLanguage} completed successfully.',
-                        $logContext
-                    );
+                    $warning = $this->batchTranslationService->getLastWarning();
+                    if ($warning !== null) {
+                        $logContext['warning'] = $warning;
+                        LogUtility::log(
+                            $this->logger,
+                            'Batch translation item {itemUid} for page {pid} and target language {targetLanguage} completed with warning: {warning}',
+                            $logContext,
+                            LogUtility::MESSAGE_WARNING
+                        );
+                        $output->writeln(sprintf(
+                            'Translation item %d completed with warning: %s',
+                            $item->getUid(),
+                            $warning
+                        ));
+                    } elseif (($notice = $this->batchTranslationService->getLastNotice()) !== null) {
+                        $logContext['notice'] = $notice;
+                        LogUtility::log(
+                            $this->logger,
+                            'Batch translation item {itemUid} for page {pid} and target language {targetLanguage} completed with notice: {notice}',
+                            $logContext,
+                            LogUtility::MESSAGE_NOTICE
+                        );
+                        $output->writeln(sprintf(
+                            'Translation item %d completed with notice: %s',
+                            $item->getUid(),
+                            $notice
+                        ));
+                    } else {
+                        $this->logger->info(
+                            'Batch translation item {itemUid} for page {pid} and target language {targetLanguage} completed successfully.',
+                            $logContext
+                        );
+                    }
                 } else {
                     $logContext['error'] = $item->getError();
                     LogUtility::log(
@@ -174,7 +203,7 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
         $softFailedTranslations = count($batchItemsToRun) - $successfulTranslations;
         $this->logTranslationStats($successfulTranslations, $softFailedTranslations);
 
-        $output->writeln($successfulTranslations . ' translation(s) completed successfully!');
+        $output->writeln($successfulTranslations . ' translation(s) completed.');
         $output->writeln($softFailedTranslations . ' translation(s) failed.');
         return Command::SUCCESS;
     }
