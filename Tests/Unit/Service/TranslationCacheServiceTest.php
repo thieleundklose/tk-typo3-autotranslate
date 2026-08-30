@@ -33,10 +33,8 @@ final class TranslationCacheServiceTest extends TestCase
         $this->service = $this->reflection->newInstanceWithoutConstructor();
 
         $this->serialize = $this->reflection->getMethod('serializeTextResults');
-        $this->serialize->setAccessible(true);
 
         $this->unserialize = $this->reflection->getMethod('unserializeTextResults');
-        $this->unserialize->setAccessible(true);
     }
 
     /**
@@ -138,8 +136,8 @@ final class TranslationCacheServiceTest extends TestCase
     public function testMalformedCachedTranslationIsReturnedAsCacheMiss(): void
     {
         $cache = $this->createMock(FrontendInterface::class);
-        $cache->method('has')->with('cache-key')->willReturn(true);
-        $cache->method('get')->with('cache-key')->willReturn([
+        $cache->expects(self::once())->method('has')->with('cache-key')->willReturn(true);
+        $cache->expects(self::once())->method('get')->with('cache-key')->willReturn([
             0 => [
                 'text' => 'Bonjour',
                 'detected_source_lang' => '',
@@ -148,7 +146,6 @@ final class TranslationCacheServiceTest extends TestCase
         ]);
 
         $cacheProperty = $this->reflection->getProperty('cache');
-        $cacheProperty->setAccessible(true);
         $cacheProperty->setValue($this->service, $cache);
 
         self::assertNull($this->service->getCachedTranslation('cache-key'));
