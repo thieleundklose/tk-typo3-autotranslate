@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixes
+- Preserved existing `l10n_state` entries when automatic translations update localized records, so fields manually switched to "Custom value" remain decoupled and are not overwritten by subsequent source-record saves, thanks to febuchner ([Issue #158](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/158)).
+
 ### Compatibility
 - Restored PHP 7.4 compatibility in the `2.x` release line by replacing PHP 8-only constructor property promotion, `readonly` properties, `mixed` type declarations and catch blocks without an exception variable while preserving the existing behavior.
 - Updated the unit tests for Reflection changes and stricter PHPUnit mock verification, avoiding test-suite deprecations on newer PHP and PHPUnit versions.
