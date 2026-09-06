@@ -21,6 +21,7 @@ use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Database\RelationHandler;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
+use TYPO3\CMS\Core\DataHandling\Localization\State;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
@@ -960,7 +961,10 @@ class Translator implements LoggerAwareInterface
             }
 
             if (!empty($translatedColumns)) {
-                $translatedColumns['l10n_state'] = $this->buildL10nState($table, $targetLanguageUid, array_keys($translatedColumns), $localizedUid);
+                $l10nState = $this->buildL10nState($table, array_keys($translatedColumns), $localizedUid);
+                if ($l10nState !== null) {
+                    $translatedColumns['l10n_state'] = $l10nState;
+                }
             }
 
             $translatedFieldCount = count(array_intersect_key($translatedColumns, $deepLTranslatedFields));
@@ -1077,41 +1081,46 @@ class Translator implements LoggerAwareInterface
      * Builds l10n_state array for translated fields
      *
      * @param string $table
-     * @param int $targetLanguageUid
      * @param array $translatedFields
      * @param int $localizedUid
-     * @return string JSON encoded l10n_state
+     * @return string|null JSON encoded l10n_state, or null when it must not be updated
      */
-    private function buildL10nState(string $table, int $targetLanguageUid, array $translatedFields, int $localizedUid): string
+    private function buildL10nState(string $table, array $translatedFields, int $localizedUid): ?string
     {
-        // check if table supports l10n_state
-        if (!isset($GLOBALS['TCA'][$table]['ctrl']['transOrigDiffSourceField'])) {
-            return '{}';
+        if (!State::isApplicable($table)) {
+            return null;
         }
 
         try {
-            // load existing translation if available
-            $existingTranslation = Records::getRecordTranslation($table, $localizedUid, $targetLanguageUid);
-
-            $l10nState = [];
-            if ($existingTranslation && !empty($existingTranslation['l10n_state'])) {
-                $l10nState = json_decode($existingTranslation['l10n_state'], true) ?: [];
+            $existingL10nState = Records::getRecord($table, $localizedUid, 'l10n_state');
+            if ($existingL10nState !== null && $existingL10nState !== '') {
+                $decodedState = json_decode((string)$existingL10nState, true);
+                if (!is_array($decodedState)) {
+                    throw new \UnexpectedValueException('Existing l10n_state is not a valid JSON object.');
+                }
             }
 
-            // set all translated fields to "custom"
-            foreach ($translatedFields as $field) {
-                $l10nState[$field] = 'custom';
+            $state = State::fromJSON(
+                $table,
+                $existingL10nState === null ? null : (string)$existingL10nState
+            );
+            if ($state === null) {
+                return null;
             }
 
-            return json_encode($l10nState);
+            $state->update(array_fill_keys($translatedFields, State::STATE_CUSTOM));
+            $exportedState = $state->export();
 
-        } catch (\Exception $e) {
-            LogUtility::log($this->logger, 'Error building l10n_state: {error}', [
+            return is_string($exportedState) ? $exportedState : null;
+
+        } catch (\Throwable $e) {
+            LogUtility::log($this->logger, 'Error building l10n_state for {table}:{uid}: {error}', [
                 'error' => $e->getMessage(),
-                'table' => $table
+                'table' => $table,
+                'uid' => $localizedUid,
             ], LogUtility::MESSAGE_ERROR);
 
-            return '{}';
+            return null;
         }
     }
 

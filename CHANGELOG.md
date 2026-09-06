@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Fixes
+- Preserved existing `l10n_state` entries when automatic translations update localized records, so fields manually switched to "Custom value" remain decoupled and are not overwritten by subsequent source-record saves, thanks to febuchner ([Issue #158](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/158)).
+
 ### Compatibility
 - Modernized extension-owned TCA definitions to use associative item arrays and the dedicated `datetime` type, removing the corresponding TYPO3 v13 and v14 deprecations without changing the stored data or backend behavior.
 - Replaced the deprecated custom `logTable` option of TYPO3's `DatabaseWriter` with an extension-specific writer that continues to persist AutoTranslate records in `tx_autotranslate_log` across TYPO3 v12-v14.
