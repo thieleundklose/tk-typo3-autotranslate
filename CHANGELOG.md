@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [2.11.0] - 2026-09-06
 
 ### Fixes
 - Preserved existing `l10n_state` entries when automatic translations update localized records, so fields manually switched to "Custom value" remain decoupled and are not overwritten by subsequent source-record saves, thanks to febuchner ([Issue #158](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/158)).
