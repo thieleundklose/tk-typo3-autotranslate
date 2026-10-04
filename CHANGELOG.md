@@ -3,7 +3,8 @@
 ## Unreleased
 
 - Added an opt-in site setting to update existing translated page slugs through TYPO3's DataHandler when translated slug source fields change, allowing EXT:redirects to update same-language subpage paths.
-- The same setting now regenerates the source page slug on automatic translation after a title change, before updating translated slugs.
+- The same setting now regenerates the source page slug after a title change even without selected target languages, before updating any translated slugs.
+- Batch and manual full page translations also regenerate the source slug before updating translated page slugs.
 - Added `autotranslate:slugs:repair` to regenerate default-language page slugs and repair stale translated parent paths, with page IDs, target languages, descendant levels, and a dry-run option.
 
 ## [2.11.0] - 2026-09-06

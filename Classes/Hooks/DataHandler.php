@@ -171,7 +171,7 @@ class DataHandler implements SingletonInterface
         }
 
         $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
-        if ($translationSettings === null) {
+        if ($translationSettings === null && !($table === 'pages' && !empty($siteConfiguration['autotranslatePagesUpdateSlug']))) {
             return;
         }
 
@@ -232,6 +232,30 @@ class DataHandler implements SingletonInterface
                     continue;
                 }
 
+                if (
+                    $table === 'pages'
+                    && $changedFields !== null
+                    && !in_array('slug', $changedFields, true)
+                    && (bool)TranslationHelper::siteConfigurationValue($pageId, ['autotranslatePagesUpdateSlug'])
+                    && SlugUtility::usesTranslatedFields(
+                        SlugUtility::slugFields('pages') ?? [],
+                        array_intersect_key($record, array_flip($changedFields))
+                    )
+                ) {
+                    try {
+                        $slug = SlugUtility::generateSlug($record, 'pages', 'slug');
+                        if ($slug !== null) {
+                            SlugUtility::updatePageSlug((int)$recordUid, $slug);
+                        }
+                    } catch (\Exception $e) {
+                        FlashMessageUtility::addMessage(
+                            'Error updating source page slug: ' . $e->getMessage(),
+                            'Page Slug Update Error',
+                            FlashMessageUtility::MESSAGE_ERROR
+                        );
+                    }
+                }
+
                 $targetLanguages = GeneralUtility::trimExplode(
                     ',',
                     (string)($record[Translator::AUTOTRANSLATE_LANGUAGES] ?? ''),
@@ -245,22 +269,6 @@ class DataHandler implements SingletonInterface
                 $translator = GeneralUtility::makeInstance(Translator::class, (int)$pageId);
 
                 try {
-                    if (
-                        $table === 'pages'
-                        && $changedFields !== null
-                        && !in_array('slug', $changedFields, true)
-                        && (bool)TranslationHelper::siteConfigurationValue($pageId, ['autotranslatePagesUpdateSlug'])
-                        && SlugUtility::usesTranslatedFields(
-                            SlugUtility::slugFields('pages') ?? [],
-                            array_intersect_key($record, array_flip($changedFields))
-                        )
-                    ) {
-                        $slug = SlugUtility::generateSlug($record, 'pages', 'slug');
-                        if ($slug !== null) {
-                            SlugUtility::updatePageSlug((int)$recordUid, $slug);
-                        }
-                    }
-
                     $translationResult = self::runWithSuspendedHook(static function () use ($translator, $table, $recordUid, $parentObject, $targetLanguages, $changedFields) {
                         return $translator->translateWithResult(
                             $table,

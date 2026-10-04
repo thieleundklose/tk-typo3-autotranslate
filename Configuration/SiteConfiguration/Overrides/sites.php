@@ -110,7 +110,7 @@ foreach ($tablesToTranslate as $table) {
     if ($table === 'pages' && !empty(SlugUtility::slugFields('pages'))) {
         $GLOBALS['SiteConfiguration']['site']['columns']['autotranslatePagesUpdateSlug'] = [
             'label' => 'Update source and translated page slugs when their titles change',
-            'description' => 'Regenerates the source page slug when a title change triggers automatic translation, then updates translated slugs. Uses TYPO3 DataHandler so EXT:redirects can update subpage paths. Existing custom slugs may be replaced.',
+            'description' => 'Regenerates the source page slug when a slug generator field changes, even without selected translation languages, and during batch translation of page titles. Updates translated slugs after translation. Uses TYPO3 DataHandler so EXT:redirects can update subpage paths. Existing custom slugs may be replaced.',
             'config' => [
                 'type' => 'check',
                 'renderType' => 'checkboxToggle',

@@ -200,6 +200,23 @@ class Translator implements LoggerAwareInterface
         if ($languageIds === []) {
             return TranslationResult::skipped('No target language was selected for translation.');
         }
+
+        // Batch and manual full translations do not pass through the source-page DataHandler hook.
+        if (
+            $table === 'pages'
+            && $changedFields === null
+            && (bool)TranslationHelper::siteConfigurationValue($this->pageId, ['autotranslatePagesUpdateSlug'])
+            && SlugUtility::usesTranslatedFields(
+                SlugUtility::slugFields('pages') ?? [],
+                array_intersect_key($record, array_flip($columns))
+            )
+        ) {
+            $slug = SlugUtility::generateSlug($record, 'pages', 'slug');
+            if ($slug !== null) {
+                SlugUtility::updatePageSlug($recordUid, $slug);
+            }
+        }
+
         foreach ($languageIds as $languageId) {
             $localizedContents[$languageId] = [];
 
