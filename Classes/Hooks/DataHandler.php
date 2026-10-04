@@ -18,6 +18,7 @@ namespace ThieleUndKlose\Autotranslate\Hooks;
 
 use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
 use ThieleUndKlose\Autotranslate\Utility\Records;
+use ThieleUndKlose\Autotranslate\Utility\SlugUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use ThieleUndKlose\Autotranslate\Service\FileMetadataTranslationService;
 use TYPO3\CMS\Core\SingletonInterface;
@@ -244,6 +245,22 @@ class DataHandler implements SingletonInterface
                 $translator = GeneralUtility::makeInstance(Translator::class, (int)$pageId);
 
                 try {
+                    if (
+                        $table === 'pages'
+                        && $changedFields !== null
+                        && !in_array('slug', $changedFields, true)
+                        && (bool)TranslationHelper::siteConfigurationValue($pageId, ['autotranslatePagesUpdateSlug'])
+                        && SlugUtility::usesTranslatedFields(
+                            SlugUtility::slugFields('pages') ?? [],
+                            array_intersect_key($record, array_flip($changedFields))
+                        )
+                    ) {
+                        $slug = SlugUtility::generateSlug($record, 'pages', 'slug');
+                        if ($slug !== null) {
+                            SlugUtility::updatePageSlug((int)$recordUid, $slug);
+                        }
+                    }
+
                     $translationResult = self::runWithSuspendedHook(static function () use ($translator, $table, $recordUid, $parentObject, $targetLanguages, $changedFields) {
                         return $translator->translateWithResult(
                             $table,

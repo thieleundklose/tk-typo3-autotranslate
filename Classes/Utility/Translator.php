@@ -281,7 +281,11 @@ class Translator implements LoggerAwareInterface
                     Records::updateRecord($table, $localizedUid, $translatedColumns);
                 }
 
-                if (!$existingTranslation) {
+                if (!$existingTranslation || (
+                    $table === 'pages'
+                    && (bool)TranslationHelper::siteConfigurationValue($this->pageId, ['autotranslatePagesUpdateSlug'])
+                    && SlugUtility::usesTranslatedFields(SlugUtility::slugFields($table) ?? [], $translatedColumns, $existingTranslation)
+                )) {
                     $this->generateSlugs($table, $localizedUid);
                 }
 
@@ -1914,7 +1918,13 @@ class Translator implements LoggerAwareInterface
             }
 
             if (!empty($fieldsToUpdate)) {
-                Records::updateRecord($table, $uid, $fieldsToUpdate);
+                if ($table === 'pages' && isset($fieldsToUpdate['slug'])) {
+                    SlugUtility::updatePageSlug($uid, $fieldsToUpdate['slug']);
+                    unset($fieldsToUpdate['slug']);
+                }
+                if ($fieldsToUpdate !== []) {
+                    Records::updateRecord($table, $uid, $fieldsToUpdate);
+                }
             }
         }
     }

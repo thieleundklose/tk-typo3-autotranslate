@@ -14,6 +14,12 @@ services:
         command: "autotranslate:batch:run"
         description: "Command for automatic translation of a number of elements."
 
+  ThieleUndKlose\Autotranslate\Command\RepairPageSlugs:
+    tags:
+      - name: console.command
+        command: "autotranslate:slugs:repair"
+        description: "Regenerate default-language page slugs and repair translated parent paths."
+
   ThieleUndKlose\Autotranslate\TsConfig\Loader:
     public: true
     tags:

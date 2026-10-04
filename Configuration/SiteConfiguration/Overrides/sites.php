@@ -4,6 +4,7 @@ use ThieleUndKlose\Autotranslate\Utility\DeeplApiHelper;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
+use ThieleUndKlose\Autotranslate\Utility\SlugUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 
 $siteConfiguration = isset($_REQUEST['site']) ? GeneralUtility::makeInstance(SiteFinder::class)->getSiteByIdentifier($_REQUEST['site'])->getConfiguration(): null;
@@ -105,6 +106,20 @@ foreach ($tablesToTranslate as $table) {
         ],
     ];
     $additionalFields[] = $fieldname;
+
+    if ($table === 'pages' && !empty(SlugUtility::slugFields('pages'))) {
+        $GLOBALS['SiteConfiguration']['site']['columns']['autotranslatePagesUpdateSlug'] = [
+            'label' => 'Update source and translated page slugs when their titles change',
+            'description' => 'Regenerates the source page slug when a title change triggers automatic translation, then updates translated slugs. Uses TYPO3 DataHandler so EXT:redirects can update subpage paths. Existing custom slugs may be replaced.',
+            'config' => [
+                'type' => 'check',
+                'renderType' => 'checkboxToggle',
+                'default' => 0,
+                'items' => [[0 => '', 1 => '']],
+            ],
+        ];
+        $additionalFields[] = 'autotranslatePagesUpdateSlug';
+    }
 
     // only show if there are textfields to translate
     if (!empty(TranslationHelper::unusedTranslateableColumns($table, '', TranslationHelper::COLUMNS_TRANSLATEABLE_GROUP_TEXTFIELD))) {
