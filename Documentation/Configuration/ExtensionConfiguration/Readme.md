@@ -16,7 +16,7 @@ where the file relation columns can be selected, for example `level_three_image`
 
 Enable **Enable detailed debug logging for Autotranslate** (`general.debug`) to store detailed translation messages in the AutoTranslate log shown in the BatchTranslation backend module.
 
-The setting controls log persistence, not editor feedback:
+For detailed translation messages, the setting controls log persistence, not editor feedback:
 
 | Message level | `general.debug = 0` | `general.debug = 1` | Backend flash message |
 | --- | --- | --- | --- |
@@ -27,6 +27,8 @@ The setting controls log persistence, not editor feedback:
 Notices describe expected no-op situations, for example saving a record without changing a configured translation field. Warnings indicate a configuration condition that may need attention, for example selecting target languages while no translatable fields are configured. Errors indicate an actual failed translation, such as an invalid API key, missing DeepL target-language mapping or API failure. This also applies to partial multi-language results: successful target languages are kept, but every failed target language is reported as an error.
 
 Regular CLI item-processing status may still be written independently of detailed translation logging. Flash messages are never suppressed by the debug setting.
+
+Automatic DataHandler hook outcomes are also logged independently of this setting so errors and skipped translations remain visible in sessionless CLI runs.
 
 ## Additional supported record tables
 

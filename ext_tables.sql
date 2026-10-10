@@ -66,5 +66,6 @@ CREATE TABLE tx_autotranslate_log (
     message text,
     data text,
 
-    KEY request (request_id)
+    KEY request (request_id),
+    KEY time_micro (time_micro)
 );

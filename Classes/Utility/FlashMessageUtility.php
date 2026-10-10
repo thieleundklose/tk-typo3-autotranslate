@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Utility;
 
+use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
 use TYPO3\CMS\Core\Information\Typo3Version;
@@ -28,6 +29,10 @@ final class FlashMessageUtility
      */
     public static function addMessage(string $message, string $title = '', int $severity = self::MESSAGE_OK): void
     {
+        if (Environment::isCli()) {
+            return;
+        }
+
         // Adjust severity based on TYPO3 version
         $severity = self::adjustSeverityForTypo3Version($severity);
 
