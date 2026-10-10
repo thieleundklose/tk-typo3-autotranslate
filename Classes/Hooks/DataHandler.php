@@ -18,6 +18,7 @@ namespace ThieleUndKlose\Autotranslate\Hooks;
 
 use TYPO3\CMS\Backend\Utility\BackendUtility;
 use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
+use TYPO3\CMS\Core\Log\LogManager;
 use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\SlugUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
@@ -220,6 +221,11 @@ class DataHandler implements SingletonInterface
             return;
         }
 
+        if ($this->fileMetadataTranslationQueue === [] && $this->translationQueue === []) {
+            return;
+        }
+
+        $logger = GeneralUtility::makeInstance(LogManager::class)->getLogger(self::class);
         $fileMetadataTranslationQueue = $this->fileMetadataTranslationQueue;
         $this->fileMetadataTranslationQueue = [];
 
@@ -229,6 +235,11 @@ class DataHandler implements SingletonInterface
                 try {
                     $fileMetadataTranslationService->translate((int)$metadataUid, $changedFields);
                 } catch (\Exception $e) {
+                    $logger->error('File metadata translation failed for sys_file_metadata:{uid}: {error}', [
+                        'uid' => (int)$metadataUid,
+                        'error' => $e->getMessage(),
+                        'exception' => $e,
+                    ]);
                     FlashMessageUtility::addMessage(
                         'Error during file metadata translation: ' . $e->getMessage(),
                         'File Metadata Translation Error',
@@ -275,6 +286,11 @@ class DataHandler implements SingletonInterface
                             SlugUtility::updatePageSlug((int)$recordUid, $slug);
                         }
                     } catch (\Exception $e) {
+                        $logger->error('Source page slug update failed for pages:{uid}: {error}', [
+                            'uid' => (int)$recordUid,
+                            'error' => $e->getMessage(),
+                            'exception' => $e,
+                        ]);
                         FlashMessageUtility::addMessage(
                             'Error updating source page slug: ' . $e->getMessage(),
                             'Page Slug Update Error',
@@ -308,6 +324,11 @@ class DataHandler implements SingletonInterface
                     });
                     if ($translationResult->hasErrors()) {
                         $hasTranslations = $translationResult->hasTranslations();
+                        $logger->error('Translation completed with errors for {table}:{uid}: {errors}', [
+                            'table' => $table,
+                            'uid' => (int)$recordUid,
+                            'errors' => $translationResult->getErrorSummary(),
+                        ]);
                         FlashMessageUtility::addMessage(
                             'Translation completed with errors: ' . $translationResult->getErrorSummary(),
                             $hasTranslations ? 'Translation incomplete' : 'Translation failed',
@@ -315,6 +336,17 @@ class DataHandler implements SingletonInterface
                         );
                     } elseif (!$translationResult->hasTranslations()) {
                         $reason = $translationResult->getSkippedReasonSummary();
+                        $logMessage = 'Translation skipped for {table}:{uid}: {reason}';
+                        $logContext = [
+                            'table' => $table,
+                            'uid' => (int)$recordUid,
+                            'reason' => $reason !== '' ? $reason : 'No translation work for this record.',
+                        ];
+                        if ($translationResult->hasWarnings()) {
+                            $logger->warning($logMessage, $logContext);
+                        } else {
+                            $logger->notice($logMessage, $logContext);
+                        }
                         FlashMessageUtility::addMessage(
                             $reason !== ''
                                 ? 'No translation was performed: ' . $reason
@@ -326,6 +358,12 @@ class DataHandler implements SingletonInterface
                         );
                     }
                 } catch (\Throwable $e) {
+                    $logger->error('Translation failed for {table}:{uid}: {error}', [
+                        'table' => $table,
+                        'uid' => (int)$recordUid,
+                        'error' => $e->getMessage(),
+                        'exception' => $e,
+                    ]);
                     FlashMessageUtility::addMessage(
                         'Error during translation: ' . $e->getMessage(),
                         'Translation Error',

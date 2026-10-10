@@ -6,7 +6,9 @@ namespace ThieleUndKlose\Autotranslate\Tests\Functional\Utility;
 
 use ThieleUndKlose\Autotranslate\Utility\Records;
 use ThieleUndKlose\Autotranslate\Utility\SlugUtility;
+use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Configuration\SiteWriter;
+use TYPO3\CMS\Core\Localization\LanguageServiceFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -37,7 +39,8 @@ final class SlugUtilityTest extends FunctionalTestCase
     public function testPageSlugUpdateUsesCurrentCoreDataHandler(): void
     {
         $this->importCSVDataSet(__DIR__ . '/../Fixtures/Database/pages.csv');
-        GeneralUtility::makeInstance(SiteWriter::class)->write('slug-test', [
+        $siteWriter = class_exists(SiteWriter::class) ? SiteWriter::class : SiteConfiguration::class;
+        GeneralUtility::makeInstance($siteWriter)->write('slug-test', [
             'rootPageId' => 1,
             'base' => 'https://example.test/',
             'languages' => [[
@@ -56,6 +59,8 @@ final class SlugUtilityTest extends FunctionalTestCase
             'deleted' => 0,
         ]);
         $this->setUpBackendUser(1);
+        $GLOBALS['LANG'] = GeneralUtility::makeInstance(LanguageServiceFactory::class)
+            ->createFromUserPreferences($GLOBALS['BE_USER']);
 
         self::assertTrue(SlugUtility::updatePageSlug(2, '/renamed-page'));
         self::assertSame('/renamed-page', Records::getRecord('pages', 2, 'slug'));

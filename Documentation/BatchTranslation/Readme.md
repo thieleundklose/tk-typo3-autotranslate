@@ -50,6 +50,20 @@ The `autotranslate_last` timestamp is only updated when DeepL produced at least 
 
 ## Logging
 
-Notice and Warning messages are written to the AutoTranslate log only when **Enable detailed debug logging for Autotranslate** (`general.debug`) is enabled in the extension settings. The corresponding backend flash messages are shown independently of this option.
+Detailed Notice and Warning messages from batch translation are written to the AutoTranslate log only when **Enable detailed debug logging for Autotranslate** (`general.debug`) is enabled in the extension settings. The corresponding backend flash messages are shown independently of this option.
 
 Error messages are always logged so failed scheduler, CLI and backend runs remain diagnosable. The CLI also writes its regular item-processing status and prints the result of each processed item.
+
+Automatic DataHandler hook outcomes are also logged independently of the debug setting, including skipped translations, so CLI runs retain their diagnostics without a backend session.
+
+### Cleaning up old log entries
+
+AutoTranslate stores its log entries in `tx_autotranslate_log`. To remove old entries automatically:
+
+1. In TYPO3's Scheduler, add a **Table garbage collection** task.
+2. Select `tx_autotranslate_log` and set the number of days to retain.
+3. Schedule the task to run regularly.
+
+An existing Table garbage collection task for **all tables** includes the AutoTranslate log with a default retention period of 180 days. If neither task exists, log entries are kept indefinitely.
+
+After updating the extension, flush TYPO3 caches so the new logger configuration is loaded, then run the database schema update to add the index on `time_micro`. Existing entries already have timestamps and need no data migration. Entries older than the retention period are deleted on the next cleanup run, including old entries with a timestamp of `0`. For a large log table, schedule that first run during a quiet period.

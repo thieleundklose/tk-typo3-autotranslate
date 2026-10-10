@@ -10,6 +10,11 @@ $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Command']
         \ThieleUndKlose\Autotranslate\Log\Writer\AutotranslateDatabaseWriter::class => [],
     ],
 ];
+$GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Hooks']['DataHandler']['writerConfiguration'] = [
+    \Psr\Log\LogLevel::DEBUG => [
+        \ThieleUndKlose\Autotranslate\Log\Writer\AutotranslateDatabaseWriter::class => [],
+    ],
+];
 $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Utility']['LogUtility']['writerConfiguration'] = [
     \Psr\Log\LogLevel::DEBUG => [
         \ThieleUndKlose\Autotranslate\Log\Writer\AutotranslateDatabaseWriter::class => [],
@@ -29,6 +34,11 @@ $GLOBALS['TYPO3_CONF_VARS']['LOG']['ThieleUndKlose']['Autotranslate']['Service']
     \Psr\Log\LogLevel::INFO => [
         \ThieleUndKlose\Autotranslate\Log\Writer\AutotranslateDatabaseWriter::class => [],
     ],
+];
+
+$GLOBALS['TYPO3_CONF_VARS']['SC_OPTIONS']['scheduler']['tasks'][\TYPO3\CMS\Scheduler\Task\TableGarbageCollectionTask::class]['options']['tables']['tx_autotranslate_log'] = [
+    'dateField' => 'time_micro',
+    'expirePeriod' => 180,
 ];
 
 // xlass optional 3rd party extension to use apiKey dependent on site config

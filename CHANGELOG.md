@@ -1,17 +1,21 @@
 # Changelog
 
-## Unreleased
+## [3.6.0] - 2026-10-10
 
 - Added an opt-in site setting to update existing translated page slugs through TYPO3's DataHandler when translated slug source fields change, allowing EXT:redirects to update same-language subpage paths.
 - The same setting now regenerates the source page slug after a title change even without selected target languages, before updating any translated slugs.
 - Batch and manual full page translations also regenerate the source slug before updating translated page slugs.
 - Added `autotranslate:slugs:repair` to regenerate default-language page slugs and repair stale translated parent paths, with page IDs, target languages, descendant levels, and a dry-run option.
+- Registered `tx_autotranslate_log` for TYPO3's Table garbage collection Scheduler task, so administrators can choose a log retention period without a separate command.
 
 ### Fixes
+- Prevented sessionless CLI DataHandler saves from failing when automatic translation reports an error or skips a record. Flash messages are no longer enqueued in CLI requests, while the hook logs errors, warnings and skipped results with record context, thanks to CybotTM ([Issue #165](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/165)).
+- Routed DataHandler hook diagnostics to `tx_autotranslate_log` so they appear alongside the extension's existing logs and follow the same retention policy.
 - Batch runs now treat both `NULL` and an empty string in `tx_autotranslate_batch_item.error` as no error, so eligible items are no longer skipped with "No translation to run!". New backend items default to an empty error string, and existing `NULL` values can be read safely, thanks to xerc ([Issue #162](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/162)).
 
 ### Upgrade Notes
-- No database migration is required. Existing due items with `error IS NULL` may be processed by the next batch run if they meet the other selection criteria.
+- Flush TYPO3 caches after deployment so the updated DataHandler logger configuration is loaded. Apply TYPO3's database schema update to add the index on `tx_autotranslate_log.time_micro`. Existing log entries need no data migration. An existing all-tables garbage collection task will delete entries older than 180 days on its next run.
+- Existing due batch items with `error IS NULL` may be processed by the next batch run if they meet the other selection criteria; they need no data migration.
 
 ## [3.5.0] - 2026-09-06
 
