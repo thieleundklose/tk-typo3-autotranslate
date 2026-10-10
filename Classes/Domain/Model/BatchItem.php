@@ -69,9 +69,9 @@ class BatchItem extends AbstractEntity
     protected string $frequency = '';
 
     /**
-     * @var string
+     * @var string|null
      */
-    protected string $error = '';
+    protected ?string $error = '';
 
     /**
      * @var bool
@@ -211,18 +211,18 @@ class BatchItem extends AbstractEntity
      */
     public function getError(): string
     {
-        return $this->error;
+        return $this->error ?? '';
     }
 
     /**
      * Set the value of error
      *
-     * @param string $error
+     * @param string|null $error
      * @return void
      */
-    public function setError(string $error): void
+    public function setError(?string $error): void
     {
-        $this->error = $error;
+        $this->error = $error ?? '';
     }
 
         /**

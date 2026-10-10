@@ -6,10 +6,23 @@ namespace ThieleUndKlose\Autotranslate\Tests\Unit\Domain\Model;
 
 use DateTime;
 use PHPUnit\Framework\TestCase;
+use ReflectionProperty;
 use ThieleUndKlose\Autotranslate\Domain\Model\BatchItem;
 
 final class BatchItemTest extends TestCase
 {
+    public function testNullErrorFromDatabaseIsTreatedAsNoError(): void
+    {
+        $item = new BatchItem();
+        (new ReflectionProperty(BatchItem::class, 'error'))->setValue($item, null);
+
+        self::assertSame('', $item->getError());
+        self::assertTrue($item->isExecutable());
+
+        $item->setError(null);
+        self::assertSame('', $item->getError());
+    }
+
     public function testSuccessfulRecurringRunIsReportedWhileWaitingForNextExecution(): void
     {
         $item = $this->createRecurringItem(new DateTime('+1 hour'));

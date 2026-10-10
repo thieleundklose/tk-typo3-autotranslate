@@ -111,6 +111,7 @@ return [
             'label' => 'LLL:EXT:autotranslate/Resources/Private/Language/locallang_db.xlf:autotranslate_batch.error',
             'config' => [
                 'type' => 'text',
+                'default' => '',
                 'cols' => 40,
                 'rows' => 15,
             ],

@@ -7,6 +7,12 @@
 - Batch and manual full page translations also regenerate the source slug before updating translated page slugs.
 - Added `autotranslate:slugs:repair` to regenerate default-language page slugs and repair stale translated parent paths, with page IDs, target languages, descendant levels, and a dry-run option.
 
+### Fixes
+- Batch runs now treat both `NULL` and an empty string in `tx_autotranslate_batch_item.error` as no error, so eligible items are no longer skipped with "No translation to run!". New backend items default to an empty error string, and existing `NULL` values can be read safely, thanks to xerc ([Issue #162](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/162)).
+
+### Upgrade Notes
+- No database migration is required. Existing due items with `error IS NULL` may be processed by the next batch run if they meet the other selection criteria.
+
 ## [2.11.0] - 2026-09-06
 
 ### Fixes

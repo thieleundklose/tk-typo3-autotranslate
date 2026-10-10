@@ -229,8 +229,11 @@ final class BatchTranslation extends Command implements LoggerAwareInterface
                     $queryBuilder->expr()->isNull('translated'),
                     $queryBuilder->expr()->gt('translate', 'translated'),
                 ),
-                // only load items where error is empty
-                $queryBuilder->expr()->eq('error', $queryBuilder->createNamedParameter('')),
+                // Both NULL and an empty string mean that no error is recorded.
+                $queryBuilder->expr()->or(
+                    $queryBuilder->expr()->isNull('error'),
+                    $queryBuilder->expr()->eq('error', $queryBuilder->createNamedParameter('')),
+                ),
                 // only loaditems with next translation date in the past
                 $queryBuilder->expr()->lt('translate', $queryBuilder->createNamedParameter($now->getTimestamp())),
                 // only load active items
