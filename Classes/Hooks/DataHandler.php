@@ -18,6 +18,7 @@ namespace ThieleUndKlose\Autotranslate\Hooks;
 
 use ThieleUndKlose\Autotranslate\Utility\FlashMessageUtility;
 use ThieleUndKlose\Autotranslate\Utility\Records;
+use ThieleUndKlose\Autotranslate\Utility\SlugUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 use ThieleUndKlose\Autotranslate\Service\FileMetadataTranslationService;
 use TYPO3\CMS\Core\SingletonInterface;
@@ -170,7 +171,7 @@ class DataHandler implements SingletonInterface
         }
 
         $translationSettings = TranslationHelper::translationSettingsDefaults($siteConfiguration, $table);
-        if ($translationSettings === null) {
+        if ($translationSettings === null && !($table === 'pages' && !empty($siteConfiguration['autotranslatePagesUpdateSlug']))) {
             return;
         }
 
@@ -229,6 +230,30 @@ class DataHandler implements SingletonInterface
                 $record = Records::getRecord($table, (int)$recordUid);
                 if ($record === null) {
                     continue;
+                }
+
+                if (
+                    $table === 'pages'
+                    && $changedFields !== null
+                    && !in_array('slug', $changedFields, true)
+                    && (bool)TranslationHelper::siteConfigurationValue($pageId, ['autotranslatePagesUpdateSlug'])
+                    && SlugUtility::usesTranslatedFields(
+                        SlugUtility::slugFields('pages') ?? [],
+                        array_intersect_key($record, array_flip($changedFields))
+                    )
+                ) {
+                    try {
+                        $slug = SlugUtility::generateSlug($record, 'pages', 'slug');
+                        if ($slug !== null) {
+                            SlugUtility::updatePageSlug((int)$recordUid, $slug);
+                        }
+                    } catch (\Exception $e) {
+                        FlashMessageUtility::addMessage(
+                            'Error updating source page slug: ' . $e->getMessage(),
+                            'Page Slug Update Error',
+                            FlashMessageUtility::MESSAGE_ERROR
+                        );
+                    }
                 }
 
                 $targetLanguages = GeneralUtility::trimExplode(

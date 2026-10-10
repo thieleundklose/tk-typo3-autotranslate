@@ -16,12 +16,78 @@ declare(strict_types=1);
 
 namespace ThieleUndKlose\Autotranslate\Utility;
 
+use ThieleUndKlose\Autotranslate\Hooks\DataHandler as AutotranslateDataHandler;
+use TYPO3\CMS\Core\DataHandling\DataHandler;
 use TYPO3\CMS\Core\DataHandling\Model\RecordStateFactory;
 use TYPO3\CMS\Core\DataHandling\SlugHelper;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class SlugUtility
 {
+    public static function usesTranslatedFields(array $slugFields, array $translatedFields, array $previousRecord = []): bool
+    {
+        foreach ($slugFields as $slugField) {
+            foreach ($slugField['config']['generatorOptions']['fields'] ?? [] as $fieldNames) {
+                foreach (GeneralUtility::trimExplode(',', implode(',', (array)$fieldNames), true) as $fieldName) {
+                    if (
+                        array_key_exists($fieldName, $translatedFields)
+                        && (!array_key_exists($fieldName, $previousRecord)
+                            || (string)$previousRecord[$fieldName] !== (string)$translatedFields[$fieldName])
+                    ) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /** Store a non-empty slug through DataHandler so EXT:redirects sees the change. */
+    public static function updatePageSlug(int $uid, string $slug): bool
+    {
+        $previousSlug = Records::getRecord('pages', $uid, 'slug');
+        if ($previousSlug === null || $slug === '' || $slug === $previousSlug) {
+            return false;
+        }
+
+        $dataHandler = GeneralUtility::makeInstance(DataHandler::class);
+        AutotranslateDataHandler::runWithSuspendedHook(static function () use ($dataHandler, $uid, $slug): void {
+            $dataHandler->start(['pages' => [$uid => ['slug' => $slug]]], []);
+            $dataHandler->process_datamap();
+        });
+
+        if ($dataHandler->errorLog !== []) {
+            throw new \RuntimeException(implode(' ', $dataHandler->errorLog));
+        }
+
+        if (Records::getRecord('pages', $uid, 'slug') === $previousSlug) {
+            throw new \RuntimeException(sprintf('TYPO3 did not update the slug of page %d.', $uid));
+        }
+
+        return true;
+    }
+
+    /** Keep a page's own path segment while replacing an obsolete parent path. */
+    public static function replaceParentPrefix(string $slug, string $newParentSlug, array $oldParentSlugs): ?string
+    {
+        $newPrefix = rtrim($newParentSlug, '/');
+        if (strpos($slug, $newPrefix . '/') === 0) {
+            return null;
+        }
+
+        usort($oldParentSlugs, static function (string $a, string $b): int {
+            return strlen($b) <=> strlen($a);
+        });
+        foreach ($oldParentSlugs as $oldParentSlug) {
+            $oldPrefix = rtrim($oldParentSlug, '/');
+            if ($oldPrefix !== '' && strpos($slug, $oldPrefix . '/') === 0) {
+                return $newPrefix . substr($slug, strlen($oldPrefix));
+            }
+        }
+
+        return null;
+    }
 
     /**
      * Receive possible slug fields which should be generated for new items.

@@ -1,6 +1,11 @@
 # Changelog
 
-## [Unreleased]
+## Unreleased
+
+- Added an opt-in site setting to update existing translated page slugs through TYPO3's DataHandler when translated slug source fields change, allowing EXT:redirects to update same-language subpage paths.
+- The same setting now regenerates the source page slug after a title change even without selected target languages, before updating any translated slugs.
+- Batch and manual full page translations also regenerate the source slug before updating translated page slugs.
+- Added `autotranslate:slugs:repair` to regenerate default-language page slugs and repair stale translated parent paths, with page IDs, target languages, descendant levels, and a dry-run option.
 
 ### Fixes
 - Batch runs now treat both `NULL` and an empty string in `tx_autotranslate_batch_item.error` as no error, so eligible items are no longer skipped with "No translation to run!". New backend items default to an empty error string, and existing `NULL` values can be read safely, thanks to xerc ([Issue #162](https://github.com/thieleundklose/tk-typo3-autotranslate/issues/162)).
