@@ -116,4 +116,30 @@ final class SlugUtilityTest extends TestCase
 
         self::assertNull($result);
     }
+
+    public function testSlugRegenerationOnlyFollowsTranslatedGeneratorFields(): void
+    {
+        $slugFields = ['slug' => [
+            'config' => ['generatorOptions' => ['fields' => [['nav_title', 'title']]]],
+        ]];
+
+        self::assertFalse(SlugUtility::usesTranslatedFields($slugFields, ['description' => 'Changed']));
+        self::assertTrue(SlugUtility::usesTranslatedFields($slugFields, ['title' => 'Translated']));
+        self::assertFalse(SlugUtility::usesTranslatedFields($slugFields, ['title' => 'Unchanged'], ['title' => 'Unchanged']));
+    }
+
+    public function testReplacingOnlyTheParentPrefixPreservesTheTranslatedLeaf(): void
+    {
+        self::assertSame(
+            '/industries/bakery/cakes',
+            SlugUtility::replaceParentPrefix('/branchen/bakery/cakes', '/industries', ['/branchen'])
+        );
+        self::assertSame(
+            '/industries/bakery/cakes',
+            SlugUtility::replaceParentPrefix('/branchen/bakery/cakes', '/industries/bakery', ['/branchen/baeckerei', '/branchen/bakery'])
+        );
+        self::assertNull(SlugUtility::replaceParentPrefix('/industries/bakery', '/industries', ['/branchen']));
+        self::assertNull(SlugUtility::replaceParentPrefix('/branchenhilfe/bakery', '/industries', ['/branchen']));
+        self::assertNull(SlugUtility::replaceParentPrefix('/custom/bakery', '/industries', ['/branchen']));
+    }
 }
