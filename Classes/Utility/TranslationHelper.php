@@ -471,6 +471,29 @@ class TranslationHelper
     }
 
     /**
+     * Resolve the page id that carries the site of a record.
+     *
+     * A record on the root level (pid 0), for example a system category, belongs to no page and
+     * therefore to no site. When the installation has exactly one site, its root page stands in,
+     * so the languages and the field lists of that site apply. With several sites none can be
+     * chosen and 0 is returned. A page id that is set, and any page record, is returned unchanged.
+     *
+     * @param int $pid Page id of the record, 0 on the root level
+     * @param string $table Table of the record
+     * @return int Page id to look the site up with, 0 when there is none
+     */
+    public static function resolveSitePageId(int $pid, string $table): int
+    {
+        if ($pid !== 0 || $table === 'pages') {
+            return $pid;
+        }
+
+        $sites = array_values(GeneralUtility::makeInstance(SiteFinder::class)->getAllSites());
+
+        return count($sites) === 1 ? $sites[0]->getRootPageId() : 0;
+    }
+
+    /**
      * Receive state to use glossary
      *
      * @param int
