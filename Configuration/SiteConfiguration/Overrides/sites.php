@@ -22,7 +22,7 @@ if (!empty($siteConfiguration['deeplAuthKey'])) {
 
 $deeplApiKeyDetails = DeeplApiHelper::checkApiKey($apiKey);
 if ($source) {
-    $maskedApiKey = str_repeat('*', 20) . substr($apiKey, 20);
+    $maskedApiKey = DeeplApiHelper::maskApiKey($apiKey);
     $deeplAuthKeyDescription[] = 'Defined: ' . $source . ' (' . $maskedApiKey . ')';
 }
 if ($deeplApiKeyDetails['usage']) {

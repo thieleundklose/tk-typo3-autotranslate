@@ -27,6 +27,21 @@ class DeeplApiHelper
     }
 
     /**
+     * Mask an API key for display, only the last four characters stay visible.
+     *
+     * A key of eight characters or less is masked completely, since four visible characters
+     * would reveal too much of it.
+     */
+    public static function maskApiKey(string $apiKey): string
+    {
+        if (strlen($apiKey) <= 8) {
+            return str_repeat('*', 20);
+        }
+
+        return str_repeat('*', 20) . substr($apiKey, -4);
+    }
+
+    /**
      * Prüft, ob der DeepL API-Key gültig ist und gibt optional die Usage zurück.
      *
      * @param ?string $apiKey
