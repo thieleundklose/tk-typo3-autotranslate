@@ -558,23 +558,9 @@ class BatchTranslationBaseController extends ActionController
 
         $this->deeplApiKeyDetails = \ThieleUndKlose\Autotranslate\Utility\DeeplApiHelper::checkApiKey($apiKey);
 
-        if ($apiKey) {
-            $maskedApiKey = '';
-            $count = 0;
-            for ($i = 0; $i < strlen($apiKey); $i++) {
-                $char = $apiKey[$i];
-                if ($char === '-') {
-                    $maskedApiKey .= '-';
-                } elseif ($count < 20) {
-                    $maskedApiKey .= '*';
-                    $count++;
-                } else {
-                    $maskedApiKey .= $char;
-                }
-            }
-        } else {
-            $maskedApiKey = '(not set)';
-        }
+        $maskedApiKey = $apiKey
+            ? \ThieleUndKlose\Autotranslate\Utility\DeeplApiHelper::maskApiKey((string)$apiKey)
+            : '(not set)';
 
         $description = [];
         $messageType = FlashMessageUtility::adjustSeverityForTypo3Version(FlashMessageUtility::MESSAGE_INFO);
