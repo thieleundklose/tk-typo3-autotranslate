@@ -96,6 +96,39 @@ class TranslationHelper
     }
 
     /**
+     * Select the text columns of an inline reference record that need a translation.
+     *
+     * A column is translated when the form submitted it, or when the translation still holds the
+     * untouched source value, which is the case for a copy that was just localized. A column that
+     * the form did not submit and that differs from the source was translated or edited before
+     * and is left alone. Without submitted form data for the record, or without a translation
+     * record, all columns are returned.
+     *
+     * @param string[] $columns Configured text columns of the reference table
+     * @param array<string, mixed>|null $submittedRow Row of the submitted form data, null when the form submitted none
+     * @param array<string, mixed>|null $translation Stored translation record
+     * @param array<string, mixed> $sourceRecord Stored source record
+     * @return string[]
+     */
+    public static function filterReferenceColumnsToTranslate(
+        array $columns,
+        ?array $submittedRow,
+        ?array $translation,
+        array $sourceRecord
+    ): array {
+        if ($submittedRow === null) {
+            return array_values($columns);
+        }
+
+        return array_values(array_filter(
+            $columns,
+            static fn (string $column): bool => array_key_exists($column, $submittedRow)
+                || $translation === null
+                || ($translation[$column] ?? null) === ($sourceRecord[$column] ?? null)
+        ));
+    }
+
+    /**
      * Collect translateable fields from TCA.
      *
      * @param string $table

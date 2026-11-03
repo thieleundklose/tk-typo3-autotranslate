@@ -427,9 +427,17 @@ class Translator implements LoggerAwareInterface
                     }
 
                     if (!empty($columnsReference)) {
-                        $recordReference = $this->getReferenceRecordForTranslation($referenceTable, (int)$referenceUid, $parentObject);
+                        $recordReference = $this->getReferenceRecordForTranslation($referenceTable, (int)$referenceUid);
                         if (is_array($recordReference)) {
-                            $translatedColumns = $this->translateRecordProperties($recordReference, $targetLanguageUid, $columnsReference, $referenceTable, $translatedReferenceUid);
+                            $columnsToTranslate = $this->getReferenceColumnsToTranslate(
+                                $referenceTable,
+                                (int)$referenceUid,
+                                $translatedReferenceUid,
+                                $columnsReference,
+                                $recordReference,
+                                $parentObject
+                            );
+                            $translatedColumns = $this->translateRecordProperties($recordReference, $targetLanguageUid, $columnsToTranslate, $referenceTable, $translatedReferenceUid);
                             if (count($translatedColumns)) {
                                 Records::updateRecord($referenceTable, $translatedReferenceUid, $translatedColumns);
                             }
@@ -451,14 +459,48 @@ class Translator implements LoggerAwareInterface
         }
     }
 
-    private function getReferenceRecordForTranslation(string $referenceTable, int $referenceUid, ?DataHandler $parentObject): ?array
+    /**
+     * Load the source reference record as stored.
+     *
+     * The translation runs after all DataHandler operations, so the stored record already carries
+     * the editor's changes. The submitted form data must not stand in for it, because an inline
+     * record that was collapsed in the form only submits its hidden toggle and has no text fields.
+     */
+    private function getReferenceRecordForTranslation(string $referenceTable, int $referenceUid): ?array
     {
-        if ($parentObject !== null && isset($parentObject->datamap[$referenceTable][$referenceUid])) {
-            return $parentObject->datamap[$referenceTable][$referenceUid];
-        }
-
         $recordReference = Records::getRecord($referenceTable, $referenceUid);
         return is_array($recordReference) ? $recordReference : null;
+    }
+
+    /**
+     * Select the text columns of a reference record that need a translation.
+     *
+     * Without submitted form data for the record all configured columns are translated. With
+     * submitted data a column is translated when the form submitted it, or when the translation
+     * still holds the untouched source value, which is the case for a copy that was just
+     * localized. A column that was translated or edited before and that the form did not submit
+     * is left alone.
+     *
+     * @param string[] $columns Configured text columns of the reference table
+     * @return string[]
+     */
+    private function getReferenceColumnsToTranslate(
+        string $referenceTable,
+        int $referenceUid,
+        int $translatedReferenceUid,
+        array $columns,
+        array $sourceRecord,
+        ?DataHandler $parentObject
+    ): array {
+        $submitted = $parentObject?->datamap[$referenceTable][$referenceUid] ?? null;
+        $translation = is_array($submitted) ? Records::getRecord($referenceTable, $translatedReferenceUid) : null;
+
+        return TranslationHelper::filterReferenceColumnsToTranslate(
+            $columns,
+            is_array($submitted) ? $submitted : null,
+            is_array($translation) ? $translation : null,
+            $sourceRecord
+        );
     }
 
     private function shouldProcessReferenceColumn(
@@ -1195,7 +1237,7 @@ class Translator implements LoggerAwareInterface
                         continue;
                     }
 
-                    $recordReference = $this->getReferenceRecordForTranslation($referenceTable, (int)$referenceUid, $parentObject);
+                    $recordReference = $this->getReferenceRecordForTranslation($referenceTable, (int)$referenceUid);
 
                     if (!is_array($recordReference)) {
                         continue;
