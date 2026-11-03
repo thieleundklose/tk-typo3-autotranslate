@@ -175,6 +175,9 @@ class DataHandler implements SingletonInterface
         $pid = $this->resolvePid($table, (int)$recordUid, $fields);
         $pageId = ($pid === 0 && $table === 'pages') ? $recordUid : $pid;
 
+        // A record on the root level has no page, the only site of the installation stands in for it.
+        $pageId = TranslationHelper::resolveSitePageId((int)$pageId, $table);
+
         // Skip auto translation if page id is not set, because no site configuration could be exist on root page 0.
         if (empty($pageId)) {
             return;

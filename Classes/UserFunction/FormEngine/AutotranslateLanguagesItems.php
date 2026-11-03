@@ -57,6 +57,9 @@ class AutotranslateLanguagesItems {
             $sitePid = (int)$row['uid'];
         }
 
+        // A record on the root level has no page, the only site of the installation stands in for it.
+        $sitePid = TranslationHelper::resolveSitePageId($sitePid, $table);
+
         // Exit early if sitePid is still 0 (creating pages on root level)
         if ($sitePid === 0) {
             return;

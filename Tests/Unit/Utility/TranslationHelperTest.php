@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace ThieleUndKlose\Autotranslate\Tests\Unit\Utility;
 
 use PHPUnit\Framework\TestCase;
+use TYPO3\CMS\Core\Site\Entity\Site;
+use TYPO3\CMS\Core\Site\SiteFinder;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use ThieleUndKlose\Autotranslate\Utility\TranslationHelper;
 
 final class TranslationHelperTest extends TestCase
@@ -96,5 +99,58 @@ final class TranslationHelperTest extends TestCase
                 ['description', 'title']
             )
         );
+    }
+
+    protected function tearDown(): void
+    {
+        GeneralUtility::purgeInstances();
+        parent::tearDown();
+    }
+
+    public function testResolveSitePageIdKeepsAPageIdThatIsSet(): void
+    {
+        self::assertSame(42, TranslationHelper::resolveSitePageId(42, 'tt_content'));
+    }
+
+    public function testResolveSitePageIdKeepsTheRootLevelForAPageRecord(): void
+    {
+        $this->registerSites(7);
+
+        self::assertSame(0, TranslationHelper::resolveSitePageId(0, 'pages'));
+    }
+
+    public function testResolveSitePageIdUsesTheRootPageOfTheOnlySiteForARootLevelRecord(): void
+    {
+        $this->registerSites(7);
+
+        self::assertSame(7, TranslationHelper::resolveSitePageId(0, 'sys_category'));
+    }
+
+    public function testResolveSitePageIdReturnsZeroWithSeveralSites(): void
+    {
+        $this->registerSites(7, 9);
+
+        self::assertSame(0, TranslationHelper::resolveSitePageId(0, 'sys_category'));
+    }
+
+    public function testResolveSitePageIdReturnsZeroWithoutSites(): void
+    {
+        $this->registerSites();
+
+        self::assertSame(0, TranslationHelper::resolveSitePageId(0, 'sys_category'));
+    }
+
+    private function registerSites(int ...$rootPageIds): void
+    {
+        $sites = [];
+        foreach ($rootPageIds as $rootPageId) {
+            $site = $this->createStub(Site::class);
+            $site->method('getRootPageId')->willReturn($rootPageId);
+            $sites['site' . $rootPageId] = $site;
+        }
+
+        $siteFinder = $this->createStub(SiteFinder::class);
+        $siteFinder->method('getAllSites')->willReturn($sites);
+        GeneralUtility::addInstance(SiteFinder::class, $siteFinder);
     }
 }
