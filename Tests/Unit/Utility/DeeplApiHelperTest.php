@@ -37,6 +37,16 @@ final class DeeplApiHelperTest extends TestCase
         self::assertSame($replacement, DeeplApiHelper::createTranslator('a-deepl-key'));
     }
 
+    public function testTheConfiguredTranslatorNeedsNoApiKeyToBeCreated(): void
+    {
+        // Translator::translateRecordProperties() passes its key as it is, null
+        // when no DeepL key is configured anywhere.
+        $replacement = new DeeplApiHelperTestTranslator();
+        $this->configure(DeeplApiHelperTestTranslator::class, [DeeplApiHelperTestTranslator::class => $replacement]);
+
+        self::assertSame($replacement, DeeplApiHelper::createTranslator(null));
+    }
+
     public function testALeadingBackslashIsAccepted(): void
     {
         $replacement = new DeeplApiHelperTestTranslator();

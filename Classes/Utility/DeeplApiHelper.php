@@ -21,9 +21,9 @@ class DeeplApiHelper
      */
     private static array $apiKeyCheckCache = [];
 
-    public static function createTranslator(string $apiKey): Translator
+    public static function createTranslator(?string $apiKey): Translator
     {
-        return self::configuredTranslator() ?? new Translator($apiKey, self::translatorOptions());
+        return self::configuredTranslator() ?? new Translator((string)$apiKey, self::translatorOptions());
     }
 
     /**
