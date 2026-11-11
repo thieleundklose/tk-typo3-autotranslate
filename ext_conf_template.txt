@@ -7,6 +7,9 @@ additionalReferenceTables = sys_file_reference
 # cat=general/O; type=string; label=DeepL API Key
 apiKey =
 
+# cat=general/O; type=string; label=Translator class: Fully qualified name of a class extending \DeepL\Translator that translates instead of the DeepL client, for example a bridge to another translation service. It is resolved from the dependency injection container and must be a public service. The DeepL API key is not used while it is set. Empty uses DeepL.
+translatorClass =
+
 # cat=general/O; type=string; label=Fields to be copied into translated records: Comma separated list of fields
 fieldsToCopy = pi_flexform, hidden
 

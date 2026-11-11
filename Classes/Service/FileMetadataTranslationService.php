@@ -91,7 +91,8 @@ class FileMetadataTranslationService implements LoggerAwareInterface
         }
 
         $apiKey = $this->extensionConfigurationValue('apiKey', null);
-        if (!is_string($apiKey) || trim($apiKey) === '') {
+        $apiKey = is_string($apiKey) ? trim($apiKey) : '';
+        if ($apiKey === '' && !DeeplApiHelper::hasConfiguredTranslator()) {
             $this->log('Skipping sys_file_metadata translation because no DeepL API key is configured.', [], LogUtility::MESSAGE_WARNING);
             return;
         }

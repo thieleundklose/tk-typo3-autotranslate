@@ -79,6 +79,22 @@ $GLOBALS['TYPO3_CONF_VARS']['HTTP']['proxy'] = [
 
 The proxy is used for API key validation, DeepL language loading, glossary access and translation requests.
 
+## Translator class
+
+The extension setting **Translator class** (`translatorClass`) lets another translation service translate instead of DeepL. It names a class that extends `\DeepL\Translator`. AutoTranslate resolves it from the dependency injection container, so it must be a public service, and uses it wherever it would create a DeepL client.
+
+```php
+$GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['autotranslate']['translatorClass'] = \Vendor\Extension\Translation\MyTranslator::class;
+```
+
+While the setting is set:
+
+- The DeepL API key is neither required nor checked, and the backend shows no DeepL usage.
+- The class has to override every method AutoTranslate calls: `translateText()`, `getSourceLanguages()` and `getTargetLanguages()`, and `listGlossaries()` when the glossary is enabled.
+- A class that does not extend `\DeepL\Translator`, or a service that resolves to something else, is reported as an invalid key and fails the translation. AutoTranslate never falls back to DeepL in that case.
+
+An empty setting keeps DeepL.
+
 ## Global file metadata translation
 
 AutoTranslate can translate global FAL metadata records from `sys_file_metadata`.
