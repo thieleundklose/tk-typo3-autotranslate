@@ -21,9 +21,67 @@ class DeeplApiHelper
      */
     private static array $apiKeyCheckCache = [];
 
-    public static function createTranslator(string $apiKey): Translator
+    public static function createTranslator(?string $apiKey): Translator
     {
-        return new Translator($apiKey, self::translatorOptions());
+        return self::configuredTranslator() ?? new Translator((string)$apiKey, self::translatorOptions());
+    }
+
+    /**
+     * Whether the extension setting translatorClass replaces the DeepL client.
+     *
+     * A misconfigured setting counts as set, so that checkApiKey() reports it
+     * instead of falling back to DeepL.
+     */
+    public static function hasConfiguredTranslator(): bool
+    {
+        try {
+            return self::configuredTranslatorClass() !== null;
+        } catch (\Throwable $e) {
+            return true;
+        }
+    }
+
+    /**
+     * The translator the extension setting translatorClass names, resolved
+     * from the dependency injection container, or null when the setting is
+     * empty. The class must extend \DeepL\Translator and be a public service.
+     * It translates instead of the DeepL client, with its own access to its
+     * provider, so the DeepL API key is not used.
+     */
+    private static function configuredTranslator(): ?Translator
+    {
+        $translatorClass = self::configuredTranslatorClass();
+        if ($translatorClass === null) {
+            return null;
+        }
+
+        $translator = GeneralUtility::getContainer()->get($translatorClass);
+        if (!$translator instanceof Translator) {
+            throw new \RuntimeException(sprintf(
+                'The service "%s" named in the autotranslate setting translatorClass is not a \\DeepL\\Translator.',
+                $translatorClass
+            ), 1794326401);
+        }
+
+        return $translator;
+    }
+
+    private static function configuredTranslatorClass(): ?string
+    {
+        $translatorClass = $GLOBALS['TYPO3_CONF_VARS']['EXTENSIONS']['autotranslate']['translatorClass'] ?? null;
+        if (!is_string($translatorClass) || trim($translatorClass) === '') {
+            return null;
+        }
+
+        $translatorClass = ltrim(trim($translatorClass), '\\');
+        if (!is_a($translatorClass, Translator::class, true)) {
+            throw new \InvalidArgumentException(sprintf(
+                'The autotranslate setting translatorClass names "%s", which is not a class extending \\DeepL\\Translator.',
+                $translatorClass
+            ), 1794326402);
+        }
+
+        return $translatorClass;
     }
 
     /**
@@ -34,6 +92,29 @@ class DeeplApiHelper
      */
     public static function checkApiKey(?string $apiKey): array
     {
+        if (self::hasConfiguredTranslator()) {
+            try {
+                self::configuredTranslator();
+            } catch (\Throwable $e) {
+                return [
+                    'isValid' => false,
+                    'usage' => null,
+                    'charactersLeft' => 0,
+                    'error' => 'Translator class error: ' . $e->getMessage(),
+                    'warning' => null,
+                ];
+            }
+
+            // The configured translator manages its own provider access.
+            return [
+                'isValid' => true,
+                'usage' => null,
+                'charactersLeft' => null,
+                'error' => null,
+                'warning' => null,
+            ];
+        }
+
         if (!$apiKey) {
             return [
                 'isValid' => false,
@@ -109,7 +190,12 @@ class DeeplApiHelper
         if (!in_array($type, ['source', 'target'], true)) {
             throw new \InvalidArgumentException(sprintf('Invalid type "%s". Allowed values are "source" or "target".', $type));
         }
-        $cacheIdentifier = 'deepl_' . $type . '_languages_' . md5($apiKey);
+        try {
+            $translatorClass = self::configuredTranslatorClass() ?? '';
+        } catch (\Throwable $e) {
+            return [];
+        }
+        $cacheIdentifier = 'deepl_' . $type . '_languages_' . md5($apiKey . '|' . $translatorClass);
 
         /** @var \TYPO3\CMS\Core\Cache\Frontend\VariableFrontend $cache */
         $cache = null;
