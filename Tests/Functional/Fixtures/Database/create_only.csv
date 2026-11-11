@@ -1,0 +1,8 @@
+"pages",,,,,,
+,"uid","pid","title","deleted","hidden","sys_language_uid"
+,1,0,"Root",0,0,0
+"tt_content",,,,,,,
+,"uid","pid","CType","header","sys_language_uid","l18n_parent","deleted"
+,10,1,"text","Hello",0,0,0
+,11,1,"text","Hallo, von Hand korrigiert",1,10,0
+,20,1,"text","Not translated yet",0,0,0

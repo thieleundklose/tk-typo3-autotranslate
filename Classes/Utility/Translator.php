@@ -245,6 +245,15 @@ class Translator implements LoggerAwareInterface
                     continue;
                 }
 
+                if ($translateMode === self::TRANSLATE_MODE_CREATE_ONLY && $existingTranslation) {
+                    LogUtility::log($this->logger, 'No Translation of {table} with uid {uid} because mode "create only" and the translation exists.', [
+                        'table' => $table,
+                        'uid' => $recordUid
+                    ]);
+                    $translationResult->addSkippedReason('An existing target-language record was kept in create-only mode.');
+                    continue;
+                }
+
                 $deeplTargetLanguage = $this->deeplTargetLanguage((int)$languageId);
                 if ($deeplTargetLanguage === null || trim($deeplTargetLanguage) === '') {
                     throw new \RuntimeException(sprintf(
@@ -667,6 +676,16 @@ class Translator implements LoggerAwareInterface
 
         if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && empty($referenceTranslation)) {
             LogUtility::log($this->logger, 'No {referenceTable} {referenceUid} Translation of {table} with uid {uid} because mode "update only".', [
+                'referenceTable' => $referenceTable,
+                'table' => $parentTable,
+                'uid' => $parentUid,
+                'referenceUid' => $referenceUid,
+            ]);
+            return null;
+        }
+
+        if ($translateMode === self::TRANSLATE_MODE_CREATE_ONLY && !empty($referenceTranslation)) {
+            LogUtility::log($this->logger, 'No {referenceTable} {referenceUid} Translation of {table} with uid {uid} because mode "create only" and the translation exists.', [
                 'referenceTable' => $referenceTable,
                 'table' => $parentTable,
                 'uid' => $parentUid,
@@ -1192,6 +1211,10 @@ class Translator implements LoggerAwareInterface
 
                     $referenceTranslation = Records::getRecordTranslation($referenceTable, (int)$referenceUid, $targetLanguageUid);
                     if ($translateMode === self::TRANSLATE_MODE_UPDATE_ONLY && empty($referenceTranslation)) {
+                        continue;
+                    }
+
+                    if ($translateMode === self::TRANSLATE_MODE_CREATE_ONLY && !empty($referenceTranslation)) {
                         continue;
                     }
 

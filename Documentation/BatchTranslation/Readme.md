@@ -26,6 +26,18 @@ You can of course also execute the Symfony command directly via cronjob or via t
 autotranslate:batch:run 5
 ```
 
+### Translation mode
+
+Each job has a mode:
+
+| Mode | A record without translation | A record with translation |
+| --- | --- | --- |
+| Create and update | Translation is created | All configured fields are translated again and overwritten |
+| Update only | Skipped | All configured fields are translated again and overwritten |
+| Create new (missing) translation only | Translation is created | Kept as it is, including its relation records |
+
+Use "Create new (missing) translation only" to translate what is missing in a page tree without replacing translations that editors corrected by hand.
+
 ## Translation results and messages
 
 AutoTranslate distinguishes expected no-op results, configuration warnings and actual translation errors. Backend editors receive these results as TYPO3 flash messages. Batch jobs additionally keep their result state in the batch overview.
